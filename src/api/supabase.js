@@ -8,7 +8,8 @@ import * as shape from './shape.js';
 const PCOLS = '(id,username,display_name,avatar_url)';
 const POST_AUTHOR = 'author:profiles!posts_author_id_fkey' + PCOLS;
 const COMMENT_AUTHOR = 'author:profiles!comments_author_id_fkey' + PCOLS;
-const FEED_COLS = 'id,author_id,cat,kind,title,excerpt,url,images,code_lang,code_head,tool,tags,version,remix_of,remix_of_version,pinned,hidden,hidden_reason,locked,is_example,up_count,down_count,comment_count,created_at,updated_at,author_username,author_name,author_avatar';
+const COMMUNITY = 'community:communities(id,slug,name)';
+const FEED_COLS = 'id,author_id,community_id,community_slug,community_name,kind,title,excerpt,url,images,code_lang,code_head,tool,tags,version,remix_of,remix_of_version,pinned,hidden,hidden_reason,locked,is_example,up_count,down_count,comment_count,created_at,updated_at,author_username,author_name,author_avatar';
 
 export function createSupabaseApi(url, key) {
   const sb = createClient(url, key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' } });
@@ -51,8 +52,9 @@ export function createSupabaseApi(url, key) {
   api.listPosts = async (o) => {
     const limit = o.limit || 30, offset = o.offset || 0;
     let q = sb.from('post_feed').select(FEED_COLS);
-    if (o.cat) q = q.eq('cat', o.cat);
-    if (!(api.me && ['mod', 'admin'].includes(api.me.role)) || o.special !== 'mod') q = q.eq('hidden', false);
+    if (o.communityId) q = q.eq('community_id', o.communityId);
+    if (o.special === 'home') { if (!o.followIds?.length) return { posts: [], hasMore: false }; q = q.in('community_id', o.followIds); }
+    q = q.eq('hidden', false);
     if (o.authorId) q = q.eq('author_id', o.authorId);
     if (o.tool) q = q.eq('tool', o.tool);
     if (o.tag) q = q.contains('tags', [o.tag]);
@@ -60,7 +62,7 @@ export function createSupabaseApi(url, key) {
     if (o.special === 'saved') { const ids = [...(await api.mySaves())]; if (!ids.length) return { posts: [], hasMore: false }; q = q.in('id', ids); }
     let sort = o.special === 'gems' ? 'top' : o.sort;
     if (o.special === 'gems') q = q.eq('is_gem', true);
-    if (!o.special && !o.authorId && sort !== 'pending') q = q.order('pinned', { ascending: false });
+    if (o.communityId && sort !== 'pending') q = q.order('pinned', { ascending: false });
     if (sort === 'new') q = q.order('created_at', { ascending: false });
     else if (sort === 'top') { if (o.win && o.win !== 'all' && o.special !== 'gems') q = q.gte('created_at', new Date(Date.now() - shape.WINDOWS[o.win]).toISOString()); q = q.order('score', { ascending: false }).order('created_at', { ascending: false }); }
     else if (sort === 'contro') q = q.gt('contro', 0).order('contro', { ascending: false });
@@ -71,7 +73,7 @@ export function createSupabaseApi(url, key) {
   };
 
   api.getPost = async (id) => {
-    const row = check(await sb.from('posts').select(`*, ${POST_AUTHOR}`).eq('id', id).maybeSingle());
+    const row = check(await sb.from('posts').select(`*, ${POST_AUTHOR}, ${COMMUNITY}`).eq('id', id).maybeSingle());
     if (!row) return null;
     const p = shape.post(row);
     if (p.remixOf) { const r = check(await sb.from('posts').select('id,title').eq('id', p.remixOf).maybeSingle()); p.remixTitle = r?.title || null; }
@@ -120,7 +122,25 @@ export function createSupabaseApi(url, key) {
 
   api.report = async (type, id, reason, note) => { check(await sb.from('reports').insert({ target_type: type === 'p' ? 'post' : 'comment', target_id: id, reason, note, reporter_id: api.me.id })); };
   api.myReports = async () => (api.me ? new Set(check(await sb.from('reports').select('target_type,target_id').eq('reporter_id', api.me.id).is('resolved_at', null)).map((r) => `${r.target_type[0]}:${r.target_id}`)) : new Set());
-  api.boardStats = async (cat) => check(await sb.rpc('board_stats', { board: cat || null }));
+  api.boardStats = async (cid) => check(await sb.rpc('board_stats', { cid: cid || null }));
+
+  // communities
+  const CCOLS = 'id,slug,name,description,rules,default_kind,creator_id,is_default,member_count,post_count,created_at';
+  api.listCommunities = async ({ q, sort = 'members', limit = 100 } = {}) => {
+    let qq = sb.from('communities').select(CCOLS);
+    if (q) { const t = q.replace(/[%,()*\\]/g, ' ').trim(); if (t) qq = qq.or(`name.ilike.*${t}*,slug.ilike.*${t}*,description.ilike.*${t}*`); }
+    qq = sort === 'new' ? qq.order('created_at', { ascending: false }) : qq.order('member_count', { ascending: false }).order('post_count', { ascending: false });
+    return check(await qq.limit(limit)).map(shape.community);
+  };
+  api.getCommunity = async (slug) => shape.community(check(await sb.from('communities').select(CCOLS).eq('slug', slug).maybeSingle()));
+  api.myCommunities = async () => (api.me ? check(await sb.from('community_members').select(`role, community:communities(${CCOLS})`).eq('user_id', api.me.id))
+    .filter((r) => r.community).map((r) => ({ role: r.role, community: shape.community(r.community) })) : []);
+  api.follow = async (cid) => { check(await sb.from('community_members').insert({ community_id: cid, user_id: api.me.id })); };
+  api.unfollow = async (cid) => { check(await sb.from('community_members').delete().eq('community_id', cid).eq('user_id', api.me.id)); };
+  api.createCommunity = async (f) => check(await sb.rpc('create_community', { p: { slug: f.slug, name: f.name, description: f.description, rules: f.rules, default_kind: f.defaultKind } }));
+  api.updateCommunity = async (id, f) => { check(await sb.from('communities').update({ name: f.name, description: f.description, rules: f.rules, default_kind: f.defaultKind }).eq('id', id)); };
+  api.communityMods = async (cid) => check(await sb.from('community_members').select('user:profiles(id,username,display_name,avatar_url)').eq('community_id', cid).eq('role', 'mod')).map((r) => shape.author(r.user)).filter(Boolean);
+  api.setCommunityMod = async (cid, username, on) => { check(await sb.rpc('set_community_mod', { cid, uname: username, make_mod: on })); };
 
   api.notifications = async () => check(await sb.from('notifications')
     .select('id,kind,created_at,read_at,post_id,comment_id,actor:profiles!notifications_actor_id_fkey(id,username,display_name,avatar_url),post:posts!notifications_post_id_fkey(title),comment:comments!notifications_comment_id_fkey(text)')
@@ -160,7 +180,7 @@ export function createSupabaseApi(url, key) {
     posts: check(await sb.from('post_feed').select(FEED_COLS).eq('hidden', true).order('updated_at', { ascending: false }).limit(100)).map(shape.post),
     comments: check(await sb.from('comments').select(`*, ${COMMENT_AUTHOR}`).eq('hidden', true).order('created_at', { ascending: false }).limit(100)).map(shape.comment),
   });
-  api.log = async (action, type, id, label = '', reason = '') => { try { check(await sb.from('mod_log').insert({ action, target_type: type, target_id: id, label, reason, actor_id: api.me.id })); } catch { /* logging must not block the action */ } };
+  api.log = async (action, type, id, label = '', reason = '', communityId = null) => { try { check(await sb.from('mod_log').insert({ action, target_type: type, target_id: id, label, reason, actor_id: api.me.id, community_id: communityId })); } catch { /* logging must not block the action */ } };
   api.listModLog = async () => check(await sb.from('mod_log').select('*, actor:profiles!mod_log_actor_id_fkey(id,username,display_name,avatar_url)').order('created_at', { ascending: false }).limit(60))
     .map((r) => ({ id: r.id, action: r.action, type: r.target_type, targetId: r.target_id, label: r.label, reason: r.reason, createdAt: Date.parse(r.created_at), actor: shape.author(r.actor) }));
 
@@ -173,6 +193,6 @@ export function createSupabaseApi(url, key) {
 }
 
 function toRow(f) {
-  return { cat: f.cat, kind: f.kind, title: f.title, body: f.body, url: f.url, images: f.images, code: f.code, code_lang: f.codeLang, code_head: f.codeHead,
+  return { community_id: f.communityId, kind: f.kind, title: f.title, body: f.body, url: f.url, images: f.images, code: f.code, code_lang: f.codeLang, code_head: f.codeHead,
     tool: f.tool, prompt: f.prompt, tags: f.tags, remix_of: f.remixOf || '', remix_of_version: f.remixOfVersion || '' };
 }

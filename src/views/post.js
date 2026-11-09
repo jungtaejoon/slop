@@ -1,4 +1,4 @@
-import { api, S, $, app, CAT, CATS, KINDS, FLAIRS, voteBox, verdictInner, who, avatarHtml, sandboxFrame, savePrefs, loadMyVotes, canWrite, isMod, requireLogin, toast, errMsg, go } from '../core.js';
+import { api, S, $, app, KINDS, FLAIRS, voteBox, verdictInner, who, avatarHtml, sandboxFrame, savePrefs, loadMyVotes, canWrite, isMod, isCommunityMod, remember, commLink, requireLogin, toast, errMsg, go } from '../core.js';
 import { esc, md, safeUrl, domain, ago, diffHtml } from '../text.js';
 
 export function closePost() { S.d?.unsub?.(); S.d = null; }
@@ -16,7 +16,8 @@ export async function renderPost(v) {
     d.post = S.cache.get(post.id); d.versions = versions; d.comments = comments; d.loaded = true;
     await loadMyVotes([post.id], comments.map((c) => c.id));
     if (S.d !== d) return;
-    $('#crumb').href = '#/c/' + post.cat; $('#crumb').textContent = '← ' + (CAT[post.cat]?.l || '게시판');
+    if (post.community) { remember(post.community); $('#crumb').href = '#/c/' + post.community.slug; $('#crumb').textContent = '← ' + post.community.name; }
+    if (isMod()) api.listCommunities({ limit: 200 }).then((l) => { l.forEach(remember); if (S.d === d) drawArticle(); }).catch(() => {});
     document.title = `${post.title} · Slop Lab`;
     drawArticle(); drawThread(); drawSide();
     let t; d.unsub = api.subscribeComments(v.id, () => { clearTimeout(t); t = setTimeout(reloadComments, 400); });
@@ -35,7 +36,7 @@ function drawArticle() {
   const d = S.d, p = d?.post, el = $('#pArticle'); if (!p || !el) return;
   const v = curVer() || { n: p.version, title: p.title, body: p.body, url: p.url, images: p.images, code: p.code, prompt: p.prompt };
   const latest = d.versions.length ? d.versions[d.versions.length - 1].n : p.version, old = v.n !== latest, prev = d.versions.find((x) => x.n === v.n - 1);
-  const mine = api.me && p.authorId === api.me.id;
+  const mine = api.me && p.authorId === api.me.id, canMod = isCommunityMod(p.communityId);
   let main = '';
   if (p.kind === 'link' && safeUrl(v.url)) main += `<a class="linkcard" href="${esc(v.url)}" target="_blank" rel="noopener noreferrer"><span class="d">${esc(domain(v.url))} ↗</span><span>${esc(v.url)}</span></a>`;
   if (p.kind === 'image' && v.images?.length) main += `<div class="gallery${v.images.length === 1 ? ' one' : ''}">${v.images.map((u) => `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="" loading="lazy"></a>`).join('')}</div>`;
@@ -48,10 +49,10 @@ function drawArticle() {
   }
   if (v.body) main += `<div class="md">${md(v.body)}</div>`;
   if ((p.kind === 'text' || p.kind === 'link' || p.kind === 'image') && prev && (prev.body || '') !== (v.body || '')) main += `<details class="prompt"><summary>v${prev.n} 대비 본문 변경점</summary>${diffHtml(prev.body || '', v.body || '')}</details>`;
-  if (v.prompt) main += `<details class="prompt"${p.cat === 'prompt' ? ' open' : ''}><summary>사용한 프롬프트</summary><pre>${esc(v.prompt)}</pre></details>`;
+  if (v.prompt) main += `<details class="prompt"${p.community?.slug === 'prompt' ? ' open' : ''}><summary>사용한 프롬프트</summary><pre>${esc(v.prompt)}</pre></details>`;
   el.innerHTML = `<article class="article">${voteBox('p', p.id)}<div class="content">
     <div><div class="pmeta">${p.pinned ? '<span class="pill pin">고정</span>' : ''}${p.hidden ? '<span class="pill warn">숨김</span>' : ''}${p.locked ? '<span class="pill">댓글 잠김</span>' : ''}
-      <a class="cat" href="#/c/${p.cat}">${esc(CAT[p.cat]?.l || '기타')}</a><span class="pill">${esc(KINDS[p.kind]?.[0] || '')}</span>
+      ${commLink(p.community)}<span class="pill">${esc(KINDS[p.kind]?.[0] || '')}</span>
       ${p.tool ? `<button class="pill tool" data-act="tool" data-v="${esc(p.tool)}">${esc(p.tool)}</button>` : ''}<span class="pill gem" data-gembadge="${p.id}"${p.isGem ? '' : ' hidden'}>보석</span>${p.isExample ? '<span class="pill ex">예시</span>' : ''}
       ${who(p.author, p.isExample)}<span>${ago(p.createdAt)}</span>${p.version > 1 ? `<span>· 수정 ${ago(p.updatedAt)}</span>` : ''}</div>
     <h1>${esc(v.title || p.title)}</h1>
@@ -62,9 +63,9 @@ function drawArticle() {
     ${p.tags.length ? `<div class="chips">${p.tags.map((t) => `<button class="chip" data-act="tag" data-v="${esc(t)}">#${esc(t)}</button>`).join('')}</div>` : ''}
     <div class="pact"><button class="btn ghost" data-act="save" data-id="${p.id}">${S.saves.has(p.id) ? '저장됨' : '저장'}</button><button class="btn ghost" data-act="share" data-id="${p.id}" data-title="${esc(p.title)}">공유</button>
       ${canWrite() ? `<a class="btn ghost" href="#/remix/${p.id}/${v.n}">리믹스</a>` : ''}${(mine || isMod()) && canWrite() ? `<a class="btn ghost" href="#/edit/${p.id}">수정판 올리기</a>` : ''}
-      ${mine || isMod() ? `<button class="btn ghost danger" id="delPost">${d.delArm ? '정말 삭제할까요? 한 번 더 누르세요' : '삭제'}</button>` : ''}
+      ${mine || canMod ? `<button class="btn ghost danger" id="delPost">${d.delArm ? '정말 삭제할까요? 한 번 더 누르세요' : '삭제'}</button>` : ''}
       ${api.me && !mine ? `<button class="btn ghost" data-act="report" data-t="p" data-id="${p.id}">${S.reports.has('p:' + p.id) ? '신고함' : '신고'}</button>` : ''}</div>
-    ${isMod() ? modBar(p) : ''}
+    ${canMod ? modBar(p) : ''}
   </div></article>`;
   const sb = $('#stageBody');
   if (sb) {
@@ -80,7 +81,7 @@ function drawArticle() {
   if (del) del.onclick = async () => {
     if (!d.delArm) { d.delArm = true; drawArticle(); return; }
     del.disabled = true;
-    try { await api.deletePost(p.id); if (isMod() && !mine) await api.log('delete', 'post', p.id, p.title); S.cache.delete(p.id); toast('삭제했어요'); go('/c/' + p.cat); }
+    try { await api.deletePost(p.id); if (canMod && !mine) await api.log('delete', 'post', p.id, p.title, '', p.communityId); S.cache.delete(p.id); toast('삭제했어요'); go(p.community ? '/c/' + p.community.slug : '/'); }
     catch (e) { toast(errMsg(e, '삭제하지 못했어요')); del.disabled = false; }
   };
 }
@@ -90,12 +91,12 @@ function modBar(p) {
     <button class="btn sm" data-act="mod" data-op="pin" data-t="p" data-id="${p.id}">${p.pinned ? '고정 해제' : '게시판 상단 고정'}</button>
     <button class="btn sm" data-act="mod" data-op="${p.hidden ? 'unhide' : 'hide'}" data-t="p" data-id="${p.id}">${p.hidden ? '숨김 해제' : '숨기기'}</button>
     <button class="btn sm" data-act="mod" data-op="${p.locked ? 'unlock' : 'lock'}" data-t="p" data-id="${p.id}">${p.locked ? '댓글 잠금 해제' : '댓글 잠금'}</button>
-    <select class="inline" id="moveCat" aria-label="게시판 이동">${CATS.map(([k, l]) => `<option value="${k}"${k === p.cat ? ' selected' : ''}>${k === p.cat ? '게시판: ' : ''}${esc(l)}${k === p.cat ? '' : '로 이동'}</option>`).join('')}</select>
-    ${p.authorId && p.authorId !== api.me?.id ? `<button class="btn sm danger" data-act="mod" data-op="ban" data-t="u" data-id="${p.authorId}" data-name="${esc(p.author?.name || '')}">작성자 제한</button>` : ''}</div>`;
+    ${isMod() ? `<select class="inline" id="moveCat" aria-label="커뮤니티 이동">${[...S.comms.values()].sort((a, b) => a.name.localeCompare(b.name, 'ko')).map((c) => `<option value="${c.id}"${c.id === p.communityId ? ' selected' : ''}>${c.id === p.communityId ? '커뮤니티: ' : ''}${esc(c.name)}${c.id === p.communityId ? '' : '로 이동'}</option>`).join('')}</select>` : ''}
+    ${isMod() && p.authorId && p.authorId !== api.me?.id ? `<button class="btn sm danger" data-act="mod" data-op="ban" data-t="u" data-id="${p.authorId}" data-name="${esc(p.author?.name || '')}">작성자 제한</button>` : ''}</div>`;
 }
 document.addEventListener('change', async (e) => {
-  if (e.target.id !== 'moveCat' || !S.d?.post) return; const p = S.d.post, cat = e.target.value;
-  try { await api.modUpdatePost(p.id, { cat }); p.cat = cat; await api.log('move', 'post', p.id, p.title, CAT[cat].l); toast(`${CAT[cat].l} 게시판으로 옮겼어요`); drawArticle(); } catch (err) { toast(errMsg(err, '옮기지 못했어요')); }
+  if (e.target.id !== 'moveCat' || !S.d?.post) return; const p = S.d.post, cid = e.target.value, c = S.comms.get(cid);
+  try { await api.modUpdatePost(p.id, { community_id: cid }); p.communityId = cid; p.community = { id: cid, slug: c.slug, name: c.name }; await api.log('move', 'post', p.id, p.title, c.name, cid); toast(`${c.name}(으)로 옮겼어요`); drawArticle(); } catch (err) { toast(errMsg(err, '옮기지 못했어요')); }
 });
 export function redrawPost() { if (S.d) { drawArticle(); drawThread(); drawSide(); } }
 
@@ -103,7 +104,7 @@ export function redrawPost() { if (S.d) { drawArticle(); drawThread(); drawSide(
 function drawThread() {
   const d = S.d, p = d?.post, el = $('#pThread'); if (!p || !el) return;
   const focusKey = document.activeElement?.dataset?.draft, caret = document.activeElement?.selectionStart;
-  const sortK = S.prefs.csort, all = d.comments, ids = new Set(all.map((c) => c.id));
+  const canMod = isCommunityMod(p.communityId), sortK = S.prefs.csort, all = d.comments, ids = new Set(all.map((c) => c.id));
   const kids = {}; all.forEach((c) => (kids[c.parentId && ids.has(c.parentId) ? c.parentId : 'root'] ??= []).push(c));
   const order = (arr) => arr.slice().sort(sortK === 'new' ? (a, b) => b.createdAt - a.createdAt : sortK === 'old' ? (a, b) => a.createdAt - b.createdAt
     : (a, b) => (b.up - b.down + (b.flair === 'gem' ? 0.5 : 0)) - (a.up - a.down + (a.flair === 'gem' ? 0.5 : 0)) || b.createdAt - a.createdAt);
@@ -120,10 +121,10 @@ function drawThread() {
         ${c.flair !== 'opinion' ? `<span class="flair ${esc(c.flair)}">${esc(FLAIRS[c.flair] || '')}</span>` : ''}`}<span class="pill">v${c.version}</span>${c.hidden ? '<span class="pill warn">숨김</span>' : ''}${c.resolvedIn ? `<a class="pill gem" href="#/p/${p.id}/v/${c.resolvedIn}" style="text-decoration:none">v${c.resolvedIn}에서 반영</a>` : ''}<span>${ago(c.createdAt)}${c.editedAt ? ' · 수정됨' : ''}</span></div>
       ${d.editing === c.id ? box('edit:' + c.id, '') : `<div class="ctext">${c.deleted ? '<span class="muted">[삭제된 댓글]</span>' : esc(c.text)}</div>`}
       ${c.deleted ? '' : `<div class="cact">${voteBox('c', c.id, true)}${canWrite() && !p.locked && depth < 8 ? `<button class="linkbtn" data-reply="${c.id}">답글</button>` : ''}
-        ${mine && canWrite() ? `<button class="linkbtn" data-edit="${c.id}">수정</button>` : ''}${mine || isMod() ? `<button class="linkbtn" data-delc="${c.id}">삭제</button>` : ''}
+        ${mine && canWrite() ? `<button class="linkbtn" data-edit="${c.id}">수정</button>` : ''}${mine || canMod ? `<button class="linkbtn" data-delc="${c.id}">삭제</button>` : ''}
         ${api.me && !mine ? `<button class="linkbtn" data-act="report" data-t="c" data-id="${c.id}">${S.reports.has('c:' + c.id) ? '신고함' : '신고'}</button>` : ''}
         ${api.me && p.authorId === api.me.id && (c.flair === 'improve' || c.flair === 'question') && !c.resolvedIn ? `<button class="linkbtn" data-resolve="${c.id}">반영함 표시 (v${p.version})</button>` : ''}
-        ${isMod() ? `<button class="linkbtn" data-act="mod" data-op="${c.hidden ? 'unhide' : 'hide'}" data-t="c" data-id="${c.id}">${c.hidden ? '숨김 해제' : '숨기기'}</button>${c.authorId && c.authorId !== api.me?.id ? `<button class="linkbtn" data-act="mod" data-op="ban" data-t="u" data-id="${c.authorId}" data-name="${esc(c.author?.name || '')}">작성자 제한</button>` : ''}` : ''}</div>`}
+        ${canMod ? `<button class="linkbtn" data-act="mod" data-op="${c.hidden ? 'unhide' : 'hide'}" data-t="c" data-id="${c.id}">${c.hidden ? '숨김 해제' : '숨기기'}</button>${isMod() && c.authorId && c.authorId !== api.me?.id ? `<button class="linkbtn" data-act="mod" data-op="ban" data-t="u" data-id="${c.authorId}" data-name="${esc(c.author?.name || '')}">작성자 제한</button>` : ''}` : ''}</div>`}
       ${d.replyTo === c.id ? box(c.id, '답글을 남겨 주세요') : ''}
       ${ch.map((x) => node(x, depth + 1)).join('')}</div></div>`;
   };
@@ -165,7 +166,7 @@ async function threadClick(e) {
     } catch (err) { t.disabled = false; toast(errMsg(err, '댓글을 저장하지 못했어요. 다시 시도해 주세요')); }
   } else if (D.delc) {
     const hasKids = d.comments.some((c) => c.parentId === D.delc), c = d.comments.find((x) => x.id === D.delc); t.disabled = true;
-    try { await api.deleteComment(D.delc, hasKids); if (hasKids) Object.assign(c, { deleted: true, text: '' }); else d.comments = d.comments.filter((x) => x.id !== D.delc); if (isMod() && c.authorId !== api.me.id) await api.log('delete', 'comment', c.id, c.text.slice(0, 60)); drawThread(); }
+    try { await api.deleteComment(D.delc, hasKids); if (hasKids) Object.assign(c, { deleted: true, text: '' }); else d.comments = d.comments.filter((x) => x.id !== D.delc); if (isCommunityMod(p.communityId) && c.authorId !== api.me.id) await api.log('delete', 'comment', c.id, c.text.slice(0, 60), '', p.communityId); drawThread(); }
     catch (err) { toast(errMsg(err, '삭제하지 못했어요')); t.disabled = false; }
   } else if (D.resolve) {
     t.disabled = true; try { await api.resolveComment(D.resolve, p.version); d.comments.find((c) => c.id === D.resolve).resolvedIn = p.version; drawThread(); toast('반영함으로 표시했어요'); } catch (err) { toast(errMsg(err)); t.disabled = false; }
@@ -181,7 +182,7 @@ function drawSide() {
       <button class="btn sm" id="sumGo" ${d.comments.filter((c) => !c.deleted).length ? '' : 'disabled title="댓글이 생기면 요약할 수 있어요"'}>${d.sum ? '다시 요약' : '요약하기'}</button></section>` : ''}
     ${d.versions.length > 1 ? `<section class="panel"><h2>수정 이력</h2><div class="hist">${d.versions.slice().reverse().map((x) => `<a href="#/p/${p.id}/v/${x.n}" aria-current="${x.n === v?.n}"><b class="mono">v${x.n}</b><div><div>${esc(x.note || '메모 없음')}</div><div class="m">${ago(x.createdAt)} · 이 버전에 단 의견 ${d.comments.filter((c) => c.version === x.n).length}</div></div></a>`).join('')}</div></section>` : ''}
     ${d.remixes?.length ? `<section class="panel"><h2>이 글의 리믹스</h2><div class="hist">${d.remixes.map((x) => `<a href="#/p/${x.id}"><b class="mono">${x.score}</b><div>${esc(x.title)}<div class="m">${ago(x.createdAt)}</div></div></a>`).join('')}</div></section>` : ''}
-    <section class="panel"><h2>작성 정보</h2><p>${who(p.author, p.isExample)}</p><p>${esc(CAT[p.cat]?.l || '')} · ${esc(KINDS[p.kind]?.[0] || '')}${p.tool ? ` · ${esc(p.tool)}` : ''}</p>
+    <section class="panel"><h2>작성 정보</h2><p>${who(p.author, p.isExample)}</p><p>${p.community ? esc(p.community.name) : ''} · ${esc(KINDS[p.kind]?.[0] || '')}${p.tool ? ` · ${esc(p.tool)}` : ''}</p>
       ${p.isExample ? '<p>Slop Lab이 게시판 사용법을 보여 주려고 Claude로 만들어 올린 예시예요. 판정과 의견은 실제로 남길 수 있어요.</p>' : ''}</section>`;
   const sg = $('#sumGo'); if (sg) sg.onclick = () => summarize(sg);
 }

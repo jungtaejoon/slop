@@ -19,7 +19,9 @@ export function post(r) {
   return {
     id: r.id, authorId: r.author_id,
     author: r.author ? author(r.author) : r.author_username ? { id: r.author_id, username: r.author_username, name: r.author_name || r.author_username, avatar: r.author_avatar || '' } : null,
-    cat: r.cat, kind: r.kind, title: r.title, body: r.body ?? r.excerpt ?? '', excerpt: r.excerpt ?? (r.body || '').slice(0, 400),
+    communityId: r.community_id,
+    community: r.community ? community(r.community) : r.community_slug ? { id: r.community_id, slug: r.community_slug, name: r.community_name } : null,
+    kind: r.kind, title: r.title, body: r.body ?? r.excerpt ?? '', excerpt: r.excerpt ?? (r.body || '').slice(0, 400),
     url: r.url || '', images: r.images || [], code: r.code, codeLang: r.code_lang || '', codeHead: r.code_head || '',
     tool: r.tool || '', prompt: r.prompt || '', tags: r.tags || [], version: r.version || 1,
     remixOf: r.remix_of || null, remixOfVersion: r.remix_of_version || null,
@@ -46,3 +48,8 @@ export function profile(r) {
 }
 
 export const WINDOWS = { day: 864e5, week: 6048e5, month: 2592e6, all: Infinity };
+
+export function community(r) {
+  return r ? { id: r.id, slug: r.slug, name: r.name, description: r.description || '', rules: r.rules || '', defaultKind: r.default_kind || 'text',
+    creatorId: r.creator_id || null, isDefault: !!r.is_default, members: r.member_count ?? 0, posts: r.post_count ?? 0, createdAt: r.created_at ? Date.parse(r.created_at) : 0 } : null;
+}

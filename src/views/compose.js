@@ -1,4 +1,4 @@
-import { api, S, $, app, CAT, CATS, KINDS, TOOLS, MAX_CODE, MAX_BODY, sandboxFrame, canWrite, isMod, toast, errMsg, go } from '../core.js';
+import { api, S, $, app, KINDS, TOOLS, MAX_CODE, MAX_BODY, sandboxFrame, canWrite, isMod, remember, commBySlug, toast, errMsg, go } from '../core.js';
 import { esc, md, safeUrl, domain } from '../text.js';
 
 const DRAFT = 'slop-draft-v2';
@@ -12,8 +12,12 @@ export async function renderCompose(v) {
     if (!api.me) try { sessionStorage.setItem('slop-after-login', location.hash); } catch { /* */ }
     return;
   }
-  let f = { cat: v.cat || S.view.lastCat || 'web', kind: null, title: '', body: '', url: '', code: '', codeLang: '', tool: '', prompt: '', tags: '', images: [] }, src = null, ver = null, open = [];
-  if (v.mode === 'new') { try { const dft = JSON.parse(localStorage.getItem(DRAFT) || 'null'); if (dft && (dft.title || dft.body || dft.code)) { Object.assign(f, dft); if (v.cat) f.cat = v.cat; st.restored = true; } } catch { /* */ } }
+  let all = []; try { all = await api.listCommunities({ limit: 300 }); all.forEach(remember); } catch { /* fall back to known ones */ }
+  if (S.c !== st) return;
+  if (!all.length) all = [...S.comms.values()];
+  const fromSlug = v.slug ? (commBySlug(v.slug) || all.find((c) => c.slug === v.slug)) : null;
+  let f = { communityId: fromSlug?.id || S.lastCommunity || '', kind: null, title: '', body: '', url: '', code: '', codeLang: '', tool: '', prompt: '', tags: '', images: [] }, src = null, ver = null, open = [];
+  if (v.mode === 'new') { try { const dft = JSON.parse(localStorage.getItem(DRAFT) || 'null'); if (dft && (dft.title || dft.body || dft.code)) { Object.assign(f, dft); if (fromSlug) f.communityId = fromSlug.id; st.restored = true; } } catch { /* */ } }
   else {
     app.innerHTML = '<div class="skel" style="height:300px"></div>';
     try { [src, ver] = await Promise.all([api.getPost(v.id), api.getVersions(v.id)]); } catch { /* handled below */ }
@@ -21,16 +25,20 @@ export async function renderCompose(v) {
     ver = ver?.find((x) => x.n === (v.mode === 'edit' ? src?.version : v.n)) || ver?.[ver.length - 1];
     if (!src || !ver) { app.innerHTML = '<a class="crumb" href="#/">← 게시판으로</a><div class="banner">원본 글을 찾을 수 없어요.</div>'; return; }
     if (v.mode === 'edit' && src.authorId !== api.me.id && !isMod()) { app.innerHTML = `<div class="banner">작성자만 수정판을 올릴 수 있어요. 대신 <a href="#/remix/${src.id}/${ver.n}">리믹스</a>해 보세요.</div>`; return; }
-    f = { cat: src.cat, kind: src.kind, title: v.mode === 'remix' ? `${src.title} (리믹스)`.slice(0, 120) : ver.title, body: ver.body, url: ver.url, code: ver.code, codeLang: src.codeLang, tool: src.tool, prompt: ver.prompt, tags: src.tags.join(', '), images: v.mode === 'edit' ? [...ver.images] : [] };
+    f = { communityId: src.communityId, kind: src.kind, title: v.mode === 'remix' ? `${src.title} (리믹스)`.slice(0, 120) : ver.title, body: ver.body, url: ver.url, code: ver.code, codeLang: src.codeLang, tool: src.tool, prompt: ver.prompt, tags: src.tags.join(', '), images: v.mode === 'edit' ? [...ver.images] : [] };
     st.src = src; st.ver = ver;
     if (v.mode === 'edit') { try { open = (await api.listComments(v.id)).filter((c) => !c.deleted && !c.resolvedIn && (c.flair === 'improve' || c.flair === 'question')); } catch { /* optional */ } }
     if (S.c !== st) return;
   }
-  f.kind ??= CAT[f.cat]?.dk || 'text'; st.images = [...f.images];
+  const byId = (id) => S.comms.get(id) || all.find((c) => c.id === id);
+  f.kind ??= byId(f.communityId)?.defaultKind || 'text'; st.images = [...f.images]; st.byId = byId;
+  const followed = all.filter((c) => S.my.has(c.id)), others = all.filter((c) => !S.my.has(c.id));
+  const opt = (c) => `<option value="${c.id}"${c.id === f.communityId ? ' selected' : ''}>${esc(c.name)} · c/${esc(c.slug)}</option>`;
   const head = v.mode === 'new' ? '새 글' : v.mode === 'edit' ? `수정판 올리기 · v${src.version + 1}` : `리믹스: ${esc(src.title)}`;
-  app.innerHTML = `<a class="crumb" href="${v.mode === 'new' ? '#/' + (f.cat ? 'c/' + f.cat : '') : '#/p/' + v.id}">← 돌아가기</a><div class="compose"><form class="form" id="cmp" novalidate>
+  app.innerHTML = `<a class="crumb" href="${v.mode === 'new' ? (fromSlug ? '#/c/' + esc(fromSlug.slug) : '#/') : '#/p/' + v.id}">← 돌아가기</a><div class="compose"><form class="form" id="cmp" novalidate>
     <h1>${head}</h1>${st.restored ? '<div class="banner" style="margin:0">작성하던 초안을 불러왔어요. <button type="button" class="linkbtn" id="clearDraft">비우기</button></div>' : ''}
-    <div class="grid2"><div class="field"><label for="fCat">게시판</label><select id="fCat">${CATS.map(([k, l]) => `<option value="${k}"${f.cat === k ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select></div>
+    <div class="grid2"><div class="field"><label for="fCat">커뮤니티</label><select id="fCat"${v.mode === 'edit' ? ' disabled' : ''}><option value="">커뮤니티를 고르세요</option>${followed.length ? `<optgroup label="팔로우 중">${followed.map(opt).join('')}</optgroup>` : ''}${others.length ? `<optgroup label="다른 커뮤니티">${others.map(opt).join('')}</optgroup>` : ''}</select>
+        <span class="hint">맞는 곳이 없으면 <a href="#/communities/new">새로 만들 수 있어요</a>.</span></div>
       <div class="field"><label for="fTool">만든 도구</label><input type="text" id="fTool" list="toolList" maxlength="40" value="${esc(f.tool)}" placeholder="예: Claude, Midjourney, Suno"><datalist id="toolList">${TOOLS.map((t) => `<option value="${esc(t)}">`).join('')}</datalist></div></div>
     <div class="field"><span class="flabel">형식</span><div class="kinds" role="group">${Object.entries(KINDS).map(([k, [l, dd]]) => `<button type="button" data-kind="${k}" aria-pressed="${f.kind === k}">${l}<small>${dd}</small></button>`).join('')}</div></div>
     <div class="field"><label for="fTitle">제목</label><input type="text" id="fTitle" maxlength="120" value="${esc(f.title)}" placeholder="무엇을 만들었고, 어디가 볼 만한가요?"></div>
@@ -64,7 +72,7 @@ function bind(v, f) {
   };
   kindSet(f.kind);
   app.querySelectorAll('[data-kind]').forEach((b) => (b.onclick = () => { st.kindTouched = true; kindSet(b.dataset.kind); draft(); }));
-  $('#fCat').onchange = () => { S.view.lastCat = $('#fCat').value; if (!st.kindTouched) kindSet(CAT[$('#fCat').value].dk); draft(); };
+  $('#fCat').onchange = () => { S.lastCommunity = $('#fCat').value; const c = st.byId($('#fCat').value); if (!st.kindTouched && c) kindSet(c.defaultKind); draft(); };
   const code = $('#fCode'), sz = () => { const b = new Blob([code.value]).size; $('#codeSize').textContent = `${(b / 1024).toFixed(1)} KB / 200 KB`; $('#codeSize').style.color = b > MAX_CODE ? 'var(--warn)' : ''; };
   const runPv = () => { if (!code.value.trim()) return; $('#pv').replaceChildren(sandboxFrame(code.value, '미리보기')); $('#pvWrap').hidden = false; };
   code.oninput = () => { sz(); draft(); }; sz();
@@ -100,7 +108,7 @@ function bind(v, f) {
 
 function readForm() {
   const kind = S.c.kind, code = $('#fCode').value, hasCode = kind === 'html' || kind === 'code';
-  return { cat: $('#fCat').value, kind, title: $('#fTitle').value.trim(), body: $('#fBody').value.trim(), url: kind === 'link' ? $('#fUrl').value.trim() : '',
+  return { communityId: $('#fCat').value, kind, title: $('#fTitle').value.trim(), body: $('#fBody').value.trim(), url: kind === 'link' ? $('#fUrl').value.trim() : '',
     code: hasCode ? code : '', codeLang: kind === 'code' ? $('#fLang').value.trim() : '', codeHead: kind === 'code' ? code.split('\n').slice(0, 8).join('\n').slice(0, 600) : '',
     tool: $('#fTool').value.trim(), prompt: $('#fPrompt').value.trim(), images: kind === 'image' ? [...S.c.images] : [],
     tags: [...new Set($('#fTags').value.split(',').map((t) => t.trim().toLowerCase().replace(/^#/, '')).filter(Boolean))].slice(0, 5).map((t) => t.slice(0, 24)) };
@@ -117,7 +125,7 @@ async function suggest(btn) {
   btn.disabled = true; out.textContent = '보는 중…';
   try {
     const r = await api.ai('classify', { draft: { title: f.title, tool: f.tool, url: $('#fUrl').value, body: f.body.slice(0, 2000), prompt: f.prompt.slice(0, 1000), code: f.code.slice(0, 1500) } });
-    if (r.cat && CAT[r.cat]) $('#fCat').value = r.cat;
+    if (r.community) { const c = [...S.comms.values()].find((x) => x.slug === r.community); if (c && $(`#fCat option[value="${c.id}"]`)) $('#fCat').value = c.id; }
     if (r.kind && KINDS[r.kind]) app.querySelector(`[data-kind="${r.kind}"]`)?.click();
     if (r.title && !$('#fTitle').value.trim()) $('#fTitle').value = String(r.title).slice(0, 120);
     if (Array.isArray(r.tags) && !$('#fTags').value.trim()) $('#fTags').value = r.tags.slice(0, 5).join(', ');
@@ -129,7 +137,7 @@ async function suggest(btn) {
 
 async function submit(v) {
   const st = $('#subStatus'), btn = $('#submitBtn'), f = readForm();
-  const err = !f.title ? '제목을 적어 주세요.' : f.kind === 'link' && !safeUrl(f.url) ? 'http:// 또는 https://로 시작하는 링크 주소를 넣어 주세요.'
+  const err = !f.communityId ? '올릴 커뮤니티를 골라 주세요.' : !f.title ? '제목을 적어 주세요.' : f.kind === 'link' && !safeUrl(f.url) ? 'http:// 또는 https://로 시작하는 링크 주소를 넣어 주세요.'
     : f.kind === 'image' && !f.images.length ? '이미지를 한 장 이상 올려 주세요.' : (f.kind === 'html' || f.kind === 'code') && !f.code.trim() ? '코드를 넣어 주세요.'
     : new Blob([f.code]).size > MAX_CODE ? '코드가 200KB를 넘어요.' : f.kind === 'text' && !f.body ? '본문을 적어 주세요.' : '';
   if (err) { st.textContent = err; return; }

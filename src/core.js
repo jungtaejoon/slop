@@ -6,19 +6,6 @@ import { esc } from './text.js';
 const SB_URL = import.meta.env.VITE_SUPABASE_URL, SB_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 export const api = SB_URL && SB_KEY ? createSupabaseApi(SB_URL, SB_KEY) : createDemoApi();
 
-export const CATS = [
-  ['web', '웹·앱', 'AI로 만든 웹페이지, 앱, 도구. 실행물로 올리면 바로 돌려볼 수 있어요.', 'html'],
-  ['game', '게임', 'AI가 만든 게임과 장난감. 플레이해 보고 판정해 주세요.', 'html'],
-  ['art', '이미지·아트', '생성 이미지, 일러스트, 디자인 시안.', 'image'],
-  ['writing', '글·이야기', '시, 소설, 에세이, 가사 같은 AI 글.', 'text'],
-  ['music', '음악·오디오', '생성 음악과 사운드. 링크나 실행물로 공유해요.', 'link'],
-  ['video', '영상', '생성 영상과 애니메이션. 링크나 실행물로 공유해요.', 'link'],
-  ['code', '코드·자동화', '스크립트, 함수, 자동화 레시피.', 'code'],
-  ['prompt', '프롬프트·대화', '쓸 만한 프롬프트와 인상적인 대화 기록.', 'text'],
-  ['idea', '아이디어·기획', 'AI가 낸 사업·기획·연구 아이디어.', 'text'],
-  ['etc', '기타', '어디에도 안 맞는 것들.', 'text'],
-];
-export const CAT = Object.fromEntries(CATS.map(([k, l, d, dk]) => [k, { k, l, d, dk }]));
 export const KINDS = { text: ['글', '본문 중심'], link: ['링크', '외부 주소'], image: ['이미지', '사진 업로드'], html: ['실행물', 'HTML 바로 실행'], code: ['코드', '복사해서 쓰기'] };
 export const FLAIRS = { opinion: '의견', gem: '가치 발견', improve: '개선 제안', question: '질문', info: '출처·정보' };
 export const TOOLS = ['Claude', 'ChatGPT', 'Gemini', 'Midjourney', 'Stable Diffusion', 'DALL·E', 'Flux', 'Suno', 'Udio', 'Sora', 'Runway', 'Cursor', 'Copilot', 'v0', 'Lovable'];
@@ -32,6 +19,8 @@ export const S = {
   votes: { p: {}, c: {} },   // my votes
   saves: new Set(), reports: new Set(), unread: 0,
   d: null, c: null,          // post-detail and compose state
+  comms: new Map(),          // community id -> community
+  my: new Map(),             // followed community id -> my role ('member' | 'mod')
 };
 try { Object.assign(S.prefs, JSON.parse(localStorage.getItem('slop-prefs') || '{}')); } catch { /* defaults */ }
 export const savePrefs = () => { try { localStorage.setItem('slop-prefs', JSON.stringify(S.prefs)); } catch { /* ignore */ } };
@@ -41,12 +30,38 @@ export const app = document.getElementById('app');
 export const me = () => api.me;
 export const isMod = () => ['mod', 'admin'].includes(api.me?.role);
 export const canWrite = () => !!(api.me && !api.me.banned);
+export const isCommunityMod = (cid) => isMod() || S.my.get(cid) === 'mod';
+export const anyCommunityMod = () => isMod() || [...S.my.values()].includes('mod');
+export const followIds = () => [...S.my.keys()];
+export const remember = (c) => { if (c) S.comms.set(c.id, Object.assign(S.comms.get(c.id) || {}, c)); return c && S.comms.get(c.id); };
+export const commBySlug = (slug) => [...S.comms.values()].find((c) => c.slug === slug) || null;
+export const commLink = (c) => (c ? `<a class="cat" href="#/c/${esc(c.slug)}">${esc(c.name)}</a>` : '<span class="cat">알 수 없는 커뮤니티</span>');
+
+export async function loadMyCommunities() {
+  S.my = new Map();
+  if (!api.me) return;
+  try { for (const { role, community } of await api.myCommunities()) { remember(community); S.my.set(community.id, role); } } catch (e) { console.error(e); }
+}
+
+// follow / unfollow with an optimistic button update
+export async function toggleFollow(cid) {
+  if (!requireLogin('팔로우하려면 로그인해 주세요')) return;
+  const on = !S.my.has(cid), c = S.comms.get(cid);
+  if (!on && S.my.get(cid) === 'mod') { toast('운영 중인 커뮤니티는 팔로우를 끊을 수 없어요'); return; }
+  on ? S.my.set(cid, 'member') : S.my.delete(cid);
+  if (c) c.members += on ? 1 : -1;
+  const sync = () => { document.querySelectorAll(`[data-act="follow"][data-id="${cid}"]`).forEach((b) => { b.textContent = S.my.has(cid) ? '팔로우 중' : '팔로우'; b.classList.toggle('pri', !S.my.has(cid)); }); document.querySelectorAll(`[data-members="${cid}"]`).forEach((el) => (el.textContent = c?.members ?? '')); window.dispatchEvent(new Event('slop:follows')); };
+  sync();
+  try { await (on ? api.follow(cid) : api.unfollow(cid)); toast(on ? `${c?.name || '커뮤니티'}를 팔로우했어요` : '팔로우를 끊었어요'); }
+  catch (e) { on ? S.my.delete(cid) : S.my.set(cid, 'member'); if (c) c.members += on ? -1 : 1; sync(); toast(errMsg(e)); }
+}
+export const followBtn = (c, sm) => c ? `<button class="btn${sm ? ' sm' : ''}${S.my.has(c.id) ? '' : ' pri'}" data-act="follow" data-id="${c.id}">${S.my.has(c.id) ? '팔로우 중' : '팔로우'}</button>` : '';
 export const go = (h) => { if (location.hash === '#' + h) window.dispatchEvent(new HashChangeEvent('hashchange')); else location.hash = h; };
 
 let toastT;
 export function toast(m) { const t = $('#toast'); t.textContent = m; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => (t.hidden = true), 2800); }
 export const errMsg = (e, fallback = '저장하지 못했어요. 다시 시도해 주세요.') =>
-  e?.code === '42501' ? (api.me?.banned ? '작성이 제한된 계정이에요.' : '권한이 없어요.') : e?.code === '23505' ? '이미 쓰이고 있는 값이에요.' : e?.code === 'too_large' ? e.message : e?.code === 'demo' ? e.message : fallback;
+  e?.code === '42501' ? (api.me?.banned ? '작성이 제한된 계정이에요.' : '권한이 없어요.') : e?.code === '23505' ? '이미 쓰이고 있는 값이에요.' : e?.code === '54000' ? '커뮤니티는 하루에 두 개까지 만들 수 있어요.' : e?.code === 'too_large' ? e.message : e?.code === 'demo' ? e.message : fallback;
 
 export function requireLogin(msg = '로그인이 필요해요') {
   if (api.me) { if (api.me.banned) { toast('작성이 제한된 계정이에요'); return false; } return true; }
