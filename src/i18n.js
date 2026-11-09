@@ -214,6 +214,14 @@ const D = {
   '확인을 위해 아이디를 입력해 주세요': 'Type your username to confirm', '지우는 중…': 'Deleting…', '계정을 삭제했어요': 'Account deleted',
   '사이트의 마지막 관리자는 계정을 지울 수 없어요.': "The site's last admin can't delete their account.", '계정을 삭제하지 못했어요. 잠시 후 다시 시도해 주세요.': "Couldn't delete the account. Please try again shortly.",
   '데모에서는 계정을 지울 수 없어요': "You can't delete accounts in the demo",
+  // installable app
+  '앱 설치': 'Install app', '앱으로 받기': 'Get the app', '앱으로 설치하기': 'Install as an app', '뒤로': 'Back',
+  '설치하면 홈 화면 아이콘으로 바로 열리고, 주소창 없이 전체 화면으로 써요.': 'Once installed it opens from your home screen, full screen, without the address bar.',
+  'Safari 아래쪽의 공유 버튼(네모에서 위로 나가는 화살표)을 눌러요.': 'In Safari, tap the Share button (the square with an arrow pointing up).',
+  '목록에서 "홈 화면에 추가"를 골라요.': 'Choose "Add to Home Screen".', '오른쪽 위 "추가"를 누르면 끝이에요.': 'Tap "Add" in the top right. Done.',
+  'iPhone에서는 Safari에서만 돼요. 카카오톡 같은 앱 안에서 열었다면 Safari로 열어 주세요.': 'On iPhone this only works in Safari. If you opened this inside another app, open it in Safari first.',
+  '브라우저 메뉴(⋮ 또는 ≡)를 열어요.': 'Open the browser menu (⋮ or ≡).', '"앱 설치" 또는 "홈 화면에 추가"를 골라요.': 'Choose "Install app" or "Add to Home screen".',
+  'Chrome, Edge, 삼성 인터넷에서 돼요.': 'Works in Chrome, Edge and Samsung Internet.', '앱을 설치했어요. 홈 화면에서 열어 보세요': 'Installed. Open it from your home screen.',
   // swipe mode
   '넘겨보기': 'Swipe', '넘겨보며 구경하기': 'Swipe through', '나가기': 'Exit', '볼 글이 아직 없어요.': 'Nothing to show yet.', '플레이하기': 'Play', '탭해서 플레이': 'Tap to play',
   '✕ 그만하기': '✕ Done', '↑ 위로 넘기면 다음 글': '↑ Swipe up for the next one', '불러오는 중이에요. 잠시 후 다시 눌러 주세요': 'Still loading. Tap again in a moment',

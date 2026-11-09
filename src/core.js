@@ -207,6 +207,28 @@ export function openShare(path, title, lead = '') {
 }
 export const share = (id, title) => openShare(`p/${id}/`, title);
 
+/* ---------- installable app (PWA) ---------- */
+export const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+let installPrompt = null; // Chrome/Edge/Samsung Internet hand us this; iOS Safari never does
+window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installPrompt = e; });
+window.addEventListener('appinstalled', () => { installPrompt = null; toast('앱을 설치했어요. 홈 화면에서 열어 보세요'); });
+export function openInstall() {
+  if (installPrompt) { const p = installPrompt; installPrompt = null; p.prompt(); return; }
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const d = $('#dlg'), f = $('#dlgForm'), back = document.activeElement;
+  f.innerHTML = `<h2>앱으로 설치하기</h2>
+    <p class="muted" style="margin:0;font-size:13px">설치하면 홈 화면 아이콘으로 바로 열리고, 주소창 없이 전체 화면으로 써요.</p>
+    ${ios ? `<ol class="steps"><li>Safari 아래쪽의 공유 버튼(네모에서 위로 나가는 화살표)을 눌러요.</li><li>목록에서 "홈 화면에 추가"를 골라요.</li><li>오른쪽 위 "추가"를 누르면 끝이에요.</li></ol>
+      <p class="hint" style="margin:0">iPhone에서는 Safari에서만 돼요. 카카오톡 같은 앱 안에서 열었다면 Safari로 열어 주세요.</p>`
+    : `<ol class="steps"><li>브라우저 메뉴(⋮ 또는 ≡)를 열어요.</li><li>"앱 설치" 또는 "홈 화면에 추가"를 골라요.</li></ol>
+      <p class="hint" style="margin:0">Chrome, Edge, 삼성 인터넷에서 돼요.</p>`}
+    <div class="row"><span class="sp"></span><button type="button" class="btn sm" id="dlgCancel">닫기</button></div>`;
+  d.hidden = false;
+  const close = () => { d.hidden = true; f.innerHTML = ''; back?.focus?.(); };
+  $('#dlgCancel').onclick = close; d.onclick = (ev) => { if (ev.target === d) close(); }; f.onkeydown = (ev) => { if (ev.key === 'Escape') close(); }; f.onsubmit = (ev) => ev.preventDefault();
+  $('#dlgCancel').focus();
+}
+
 /* ---------- icons (lucide-style, stroke) ---------- */
 const P = {
   comment: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/>',

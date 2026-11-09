@@ -1,4 +1,4 @@
-import { api, S, $, app, KINDS, voteBox, who, sandboxFrame, savePrefs, loadMyVotes, canWrite, isCommunityMod, followIds, remember, commBySlug, commLink, followBtn, icon, gradFor, cav } from '../core.js';
+import { api, S, $, app, KINDS, voteBox, who, sandboxFrame, savePrefs, loadMyVotes, canWrite, isCommunityMod, followIds, remember, commBySlug, commLink, followBtn, icon, gradFor, cav, isStandalone } from '../core.js';
 import { md } from '../text.js';
 import { t as tr } from '../i18n.js';
 import { esc, safeUrl, safeImgs, domain, ago } from '../text.js';
@@ -28,7 +28,7 @@ export async function renderFeed() {
   const welcome = !api.me && !welcomeOff && !c ? `<section class="welcome" id="welcome"><div><h2>AI가 만든 것, 그냥 넘기지 마세요</h2>
       <p>사람들은 AI 결과물을 쉽게 "슬롭"이라고 부르지만, 그 안에도 쓸모 있고 재미있는 게 숨어 있어요. 여기서 같이 캐내요.</p>
       <ol><li><b>둘러보고 써 봐요.</b> 실행물은 그 자리에서 바로 돌아가요.</li><li><b>▲보석 / ▼슬롭으로 판정해요.</b> 이유를 댓글로 남기면 더 좋아요.</li><li><b>내가 만든 것도 올려요.</b> 판정과 의견을 받아 다음 버전으로 키워요.</li></ol>
-      <div class="row"><a class="btn pri" href="#/shorts">넘겨보며 구경하기</a><a class="btn" href="#/judge">지금 하나 판정해 보기</a><a class="btn" href="#/login">가입하기</a><a class="btn" href="#/communities">커뮤니티 둘러보기</a><button class="btn ghost" id="welcomeOff">닫기</button></div></div></section>` : '';
+      <div class="row"><a class="btn pri" href="#/shorts">넘겨보며 구경하기</a><a class="btn" href="#/judge">지금 하나 판정해 보기</a><a class="btn" href="#/login">가입하기</a>${!isStandalone() && matchMedia('(pointer:coarse)').matches ? '<button class="btn" data-act="install">앱으로 받기</button>' : ''}<a class="btn" href="#/communities">커뮤니티 둘러보기</a><button class="btn ghost" id="welcomeOff">닫기</button></div></div></section>` : '';
   app.innerHTML = `${welcome}<div class="layout"><div style="min-width:0">
     <div class="fhead"><div class="chead">${c ? cav(c, true) : ''}<div><h1>${esc(title)}</h1><p${c ? ' class="mono"' : ''}>${esc(sub)}</p>${c?.description ? `<p>${esc(c.description)}</p>` : ''}</div></div>
       <div class="row">${c ? followBtn(c) : ''}${v.special === 'gems' ? '<button class="btn" data-act="sharebest">이번 주 보석 공유</button>' : ''}${v.special !== 'saved' ? `<a class="btn${c ? '' : ' pri'}" href="#/submit${c ? '/' + esc(c.slug) : ''}">글쓰기</a>` : ''}</div></div>

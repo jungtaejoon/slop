@@ -2,7 +2,7 @@ import './styles.css';
 import { startTranslator, lang, setLang } from './i18n.js';
 startTranslator();
 { const ls = document.getElementById('langSel'); ls.value = lang; ls.onchange = () => setLang(ls.value); }
-import { api, S, $, icon, isMod, anyCommunityMod, go, currentHash, toAppUrl, countView, vote, toggleSave, toggleFollow, report, share, openShare, avatarHtml, toast, loadMyCommunities } from './core.js';
+import { api, S, $, icon, isMod, anyCommunityMod, go, currentHash, toAppUrl, countView, BASE_PATH, isStandalone, openInstall, vote, toggleSave, toggleFollow, report, share, openShare, avatarHtml, toast, loadMyCommunities } from './core.js';
 import { esc } from './text.js';
 import { renderFeed } from './views/feed.js';
 import { renderPost, closePost } from './views/post.js';
@@ -76,6 +76,8 @@ export function renderBoards() {
     ...followed.map((c) => ['c:' + c.slug, c.name, '#/c/' + c.slug]),
     ...(api.me ? [['saved', '저장함', '#/saved']] : []), ...(anyCommunityMod() ? [['mod', '운영', '#/mod']] : [])];
   $('#boards').innerHTML = items.map(([k, l, h]) => `<a href="${h}" aria-current="${cur === k}">${esc(l)}</a>`).join('');
+  // installed app: there is no browser back button, so show our own away from home
+  const hb = $('#hBack'); if (hb) hb.hidden = !(isStandalone() && S.lastHash && !(v.name === 'feed' && v.special === 'home'));
 }
 
 export function renderAuth() {
@@ -86,7 +88,7 @@ export function renderAuth() {
     <button class="authbtn" id="meBtn" aria-haspopup="menu" aria-expanded="false" style="border:0;background:none;padding:0;cursor:pointer">${avatarHtml(m, 34).replace('class="av', 'class="me av')}</button>
     <div class="menu" id="meMenu" role="menu" hidden><div class="who-line">${esc(m.name)} · @${esc(m.username)}${m.role !== 'member' ? ` · ${m.role === 'admin' ? '관리자' : '운영자'}` : ''}</div>
       <a href="#/u/${esc(m.username)}" role="menuitem">내 프로필</a><a href="#/saved" role="menuitem">저장함</a><a href="#/settings" role="menuitem">프로필 설정</a>
-      <a href="#/communities/new" role="menuitem">커뮤니티 만들기</a>${anyCommunityMod() ? '<a href="#/mod" role="menuitem">운영</a>' : ''}<button id="logout" role="menuitem">로그아웃</button></div>`;
+      <a href="#/communities/new" role="menuitem">커뮤니티 만들기</a>${anyCommunityMod() ? '<a href="#/mod" role="menuitem">운영</a>' : ''}${isStandalone() ? '' : '<button data-act="install" role="menuitem">앱 설치</button>'}<button id="logout" role="menuitem">로그아웃</button></div>`;
   const btn = $('#meBtn'), menu = $('#meMenu');
   btn.onclick = (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; btn.setAttribute('aria-expanded', String(!menu.hidden)); };
   $('#logout').onclick = async () => { await api.signOut(); toast('로그아웃했어요'); go('/'); };
@@ -114,6 +116,7 @@ document.addEventListener('click', (e) => {
   else if (act === 'tag') { e.preventDefault(); S.filters = { ...S.filters, tag: t.dataset.v }; S.view.name === 'feed' ? renderFeed() : go('/popular'); }
   else if (act === 'follow') { e.preventDefault(); toggleFollow(id); }
   else if (act === 'mod') { e.preventDefault(); modAction(t.dataset.op, t.dataset.t, id, t.dataset); }
+  else if (act === 'install') { e.preventDefault(); openInstall(); }
 });
 // the account menu closes on any outside click, on Esc and on navigation
 function closeMenu() { const m = $('#meMenu'); if (m && !m.hidden) { m.hidden = true; $('#meBtn')?.setAttribute('aria-expanded', 'false'); } }
@@ -138,6 +141,14 @@ gq.addEventListener('input', () => { clearTimeout(gqT); gqT = setTimeout(() => {
 document.addEventListener('keydown', (e) => { if (e.key === '/' && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName)) { e.preventDefault(); gq.focus(); } });
 
 /* ---------- boot ---------- */
+// installable app: register the service worker (production only); ?nosw removes it again
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  if (new URLSearchParams(location.search).has('nosw')) navigator.serviceWorker.getRegistrations().then((rs) => rs.forEach((r) => r.unregister()));
+  else window.addEventListener('load', () => navigator.serviceWorker.register(BASE_PATH + 'sw.js').catch(() => {}));
+}
+document.body.classList.toggle('standalone', isStandalone());
+$('#hBack').onclick = () => (history.length > 1 ? history.back() : go('/'));
+
 async function boot() {
   if (api.mode === 'demo') {
     $('#modeBar').hidden = false;

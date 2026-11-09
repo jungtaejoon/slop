@@ -17,7 +17,11 @@
   <meta name="twitter:card" content="summary_large_image">
   <!-- /page-meta -->
   <meta name="google-site-verification" content="syOTC8ZfqRmwV8QeHG3fYtRB4T6rPhqrI0CsW6oUaZs">
-  <meta name="theme-color" content="#121412">
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#F6F6F3">
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0C0E11">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <meta name="apple-mobile-web-app-title" content="Slop Lab">
@@ -32,6 +36,7 @@
   <header class="top">
     <div class="wrap">
       <div class="bar">
+        <button class="hback" id="hBack" type="button" aria-label="뒤로" hidden>←</button>
         <a class="logo" href="#/" aria-label="Slop Lab"><svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#14B8A6"/><stop offset=".6" stop-color="#3B82C4"/><stop offset="1" stop-color="#6D5BD0"/></linearGradient></defs><rect width="64" height="64" rx="16" fill="url(#lg)"/><path d="M32 12 48 28 32 52 16 28Z" fill="#fff"/><path d="M32 12 40 28 32 52 24 28Z" fill="#000" fill-opacity=".14"/><path d="M16 28h32" stroke="#000" stroke-opacity=".12" stroke-width="1.5"/></svg><span class="wm"><b>Slop<i>.</i>Lab</b><span>AI가 만든 것들 속에서 보석을 캐는 곳</span></span></a>
         <input class="gsearch" id="gq" type="search" placeholder="제목·내용·도구 검색  ( / )" aria-label="검색">
         <div class="sp"></div>
@@ -45,7 +50,7 @@
   <div class="modebar" id="modeBar" hidden><div class="wrap" id="modeBarText"></div></div>
   <div class="wrap" id="banNote" hidden><div class="banner warnb" style="margin:14px 0 0"></div></div>
   <main class="wrap" id="app"></main>
-  <footer><div class="wrap"><span>Slop Lab · AI가 만든 것을 그냥 넘기지 말고, 써 보고, 판정하고, 이유를 남기는 곳</span><span class="sp"></span><nav class="foot-links" aria-label="Site"><a href="#/terms">이용약관</a><a href="#/privacy">개인정보 처리방침</a><a href="https://github.com/jungtaejoon/slop-lab" target="_blank" rel="noopener">GitHub</a></nav></div></footer>
+  <footer><div class="wrap"><span>Slop Lab · AI가 만든 것을 그냥 넘기지 말고, 써 보고, 판정하고, 이유를 남기는 곳</span><span class="sp"></span><nav class="foot-links" aria-label="Site"><a href="#" class="install-link" data-act="install">앱 설치</a><a href="#/terms">이용약관</a><a href="#/privacy">개인정보 처리방침</a><a href="https://github.com/jungtaejoon/slop-lab" target="_blank" rel="noopener">GitHub</a></nav></div></footer>
   <div class="dlg-back" id="dlg" hidden><form class="dlg" id="dlgForm" role="dialog" aria-modal="true"></form></div>
   <div class="toast" id="toast" role="status" hidden></div>
   <script type="module" src="/src/main.js"></script>
