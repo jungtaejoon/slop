@@ -29,6 +29,7 @@ export function createSupabaseApi(url, key) {
     await loadMe(data.session);
     sb.auth.onAuthStateChange((evt, session) => {
       if (evt === 'TOKEN_REFRESHED') return;
+      if (evt === 'PASSWORD_RECOVERY') api.recovering = true;
       loadMe(session).then(() => listeners.forEach((f) => f(api.me)));
     });
     return api.me;
@@ -39,6 +40,13 @@ export function createSupabaseApi(url, key) {
     check(await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname } }));
     return { sent: true };
   };
+  api.signUpPassword = async (email, password) => {
+    const data = check(await sb.auth.signUp({ email, password, options: { emailRedirectTo: location.origin + location.pathname } }));
+    return { needsConfirm: !data.session };
+  };
+  api.signInPassword = async (email, password) => { check(await sb.auth.signInWithPassword({ email, password })); };
+  api.resetPassword = async (email) => { check(await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname + '#/settings' })); };
+  api.updatePassword = async (password) => { check(await sb.auth.updateUser({ password })); };
   api.signInOAuth = async (provider) => check(await sb.auth.signInWithOAuth({ provider, options: { redirectTo: location.origin + location.pathname } }));
   api.signOut = async () => { await sb.auth.signOut(); api.me = null; listeners.forEach((f) => f(null)); };
 

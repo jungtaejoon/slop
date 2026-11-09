@@ -69,7 +69,7 @@ export function createDemoApi() {
     db.session = p.id; save(); return api.refreshMe();
   };
   api.signInEmail = async () => { throw Object.assign(new Error('데모 모드에서는 이메일 로그인이 없어요'), { code: 'demo' }); };
-  api.signInOAuth = api.signInEmail;
+  api.signInOAuth = api.signInEmail; api.signUpPassword = api.signInEmail; api.signInPassword = api.signInEmail; api.resetPassword = api.signInEmail; api.updatePassword = api.signInEmail;
   api.signOut = async () => { db.session = null; save(); api.me = null; emit(); };
   api.resetDemo = async () => { db = seed(); save(); api.me = null; emit(); };
 
