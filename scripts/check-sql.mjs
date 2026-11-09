@@ -206,6 +206,21 @@ pv.length === 2 && vc === 2 ? ok(`track_view counts known pages only (${pv.map((
 await as(U.a, `update posts set view_count = 9999 where id = $1`, [bp]);
 (await db.query(`select view_count from posts where id = $1`, [bp])).rows[0].view_count === 0 ? ok('community mods cannot edit view counts') : fail('view_count edited');
 
+// ---------------------------------------------------------------- blocking
+await as(U.a, `insert into blocks (blocked_id) values ($1)`, [U.b]);
+(await as(U.a, `select * from blocks`)).rows.length === 1 ? ok('members block another user') : fail('block not saved');
+(await as(U.b, `select * from blocks`)).rows.length === 0 ? ok('blocks are private to the blocker') : fail('blocked user sees the block');
+await expectError('cannot block yourself', () => as(U.a, `insert into blocks (blocked_id) values ($1)`, [U.a]));
+await expectError('cannot block on behalf of someone else', () => as(U.b, `insert into blocks (blocker_id, blocked_id) values ($1, $2)`, [U.a, U.m]));
+await expectError('visitors cannot block', () => as(null, `insert into blocks (blocked_id) values ($1)`, [U.a]));
+const nBefore = (await db.query(`select count(*)::int n from notifications where user_id = $1`, [U.a])).rows[0].n;
+await db.exec(`insert into notifications (user_id, kind, actor_id, post_id) values ('${U.a}', 'comment', '${U.b}', '${otherP}'), ('${U.a}', 'comment', '${U.m}', '${otherP}')`);
+const nAfter = (await db.query(`select count(*)::int n from notifications where user_id = $1`, [U.a])).rows[0].n;
+nAfter - nBefore === 1 ? ok('no notifications from a blocked user, others still arrive') : fail(`notifications +${nAfter - nBefore}`);
+await as(U.a, `delete from blocks where blocked_id = $1`, [U.b]);
+(await as(U.a, `select * from blocks`)).rows.length === 0 ? ok('members unblock') : fail('unblock failed');
+await as(U.a, `insert into blocks (blocked_id) values ($1)`, [U.b]);
+
 // ---------------------------------------------------------------- account deletion
 await expectError('visitors cannot call delete_my_account', () => as(null, `select delete_my_account(false)`));
 await expectError('the last admin cannot delete their account', () => as(U.m, `select delete_my_account(false)`));

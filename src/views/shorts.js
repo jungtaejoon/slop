@@ -31,7 +31,7 @@ export async function renderShorts(v) {
   try {
     if (v.id && !sh.queue.some((p) => p.id === v.id)) {
       const p = await api.getPost(v.id);
-      if (p) { S.cache.set(p.id, Object.assign(S.cache.get(p.id) || {}, p)); sh.queue.unshift(S.cache.get(p.id)); sh.i = 0; }
+      if (p && !p.blockedAuthor) { S.cache.set(p.id, Object.assign(S.cache.get(p.id) || {}, p)); sh.queue.unshift(S.cache.get(p.id)); sh.i = 0; }
     } else if (v.id) sh.i = sh.queue.findIndex((p) => p.id === v.id);
     if (sh.queue.length < 3) await loadMore();
   } catch (e) { console.error(e); }

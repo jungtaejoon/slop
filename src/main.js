@@ -2,7 +2,7 @@ import './styles.css';
 import { startTranslator, lang, setLang } from './i18n.js';
 startTranslator();
 { const ls = document.getElementById('langSel'); ls.value = lang; ls.onchange = () => setLang(ls.value); }
-import { api, S, $, icon, isMod, anyCommunityMod, go, currentHash, toAppUrl, countView, BASE_PATH, isStandalone, isNativeApp, openInstall, vote, toggleSave, toggleFollow, report, share, openShare, avatarHtml, toast, loadMyCommunities } from './core.js';
+import { api, S, $, icon, isMod, anyCommunityMod, go, currentHash, toAppUrl, countView, BASE_PATH, isStandalone, isNativeApp, openInstall, toggleBlock, vote, toggleSave, toggleFollow, report, share, openShare, avatarHtml, toast, loadMyCommunities } from './core.js';
 import { esc } from './text.js';
 import { renderFeed } from './views/feed.js';
 import { renderPost, closePost } from './views/post.js';
@@ -117,6 +117,7 @@ document.addEventListener('click', (e) => {
   else if (act === 'follow') { e.preventDefault(); toggleFollow(id); }
   else if (act === 'mod') { e.preventDefault(); modAction(t.dataset.op, t.dataset.t, id, t.dataset); }
   else if (act === 'install') { e.preventDefault(); openInstall(); }
+  else if (act === 'block') { e.preventDefault(); toggleBlock(id, t.dataset.name); }
 });
 // the account menu closes on any outside click, on Esc and on navigation
 function closeMenu() { const m = $('#meMenu'); if (m && !m.hidden) { m.hidden = true; $('#meBtn')?.setAttribute('aria-expanded', 'false'); } }
@@ -166,7 +167,7 @@ async function boot() {
 }
 async function afterAuth() {
   renderAuth();
-  const [saves, reports] = await Promise.all([api.mySaves().catch(() => new Set()), api.myReports().catch(() => new Set()), loadMyCommunities()]);
+  const [saves, reports] = await Promise.all([api.mySaves().catch(() => new Set()), api.myReports().catch(() => new Set()), loadMyCommunities(), api.loadBlocks()]);
   renderBoards();
   S.saves = saves; S.reports = reports;
   await refreshUnread();

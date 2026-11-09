@@ -13,6 +13,7 @@ export async function renderPost(v) {
     const [post, versions, comments] = await Promise.all([api.getPost(v.id), api.getVersions(v.id), api.listComments(v.id)]);
     if (S.d !== d) return;
     if (!post) { $('#pArticle').innerHTML = '<div class="banner">글을 찾을 수 없어요. 삭제되었거나 운영자가 숨긴 글일 수 있어요.</div>'; return; }
+    if (post.blockedAuthor) { $('#pArticle').innerHTML = `<div class="banner">차단한 사용자의 글이라 보이지 않아요. <button class="btn sm" data-act="block" data-id="${esc(post.authorId)}">차단 풀기</button></div>`; return; }
     S.cache.set(post.id, Object.assign(S.cache.get(post.id) || {}, post));
     d.post = S.cache.get(post.id); d.versions = versions; d.comments = comments; d.loaded = true;
     await loadMyVotes([post.id], comments.map((c) => c.id));
@@ -68,7 +69,8 @@ function drawArticle() {
     <div class="pact"><button class="btn ghost" data-act="save" data-id="${p.id}">${S.saves.has(p.id) ? '저장됨' : '저장'}</button><button class="btn ghost" data-act="share" data-id="${p.id}" data-title="${esc(p.title)}">공유</button>
       ${canWrite() ? `<a class="btn ghost" href="#/remix/${p.id}/${v.n}">리믹스</a>` : ''}${(mine || isMod()) && canWrite() ? `<a class="btn ghost" href="#/edit/${p.id}">수정판 올리기</a>` : ''}
       ${mine || canMod ? `<button class="btn ghost danger" id="delPost">${d.delArm ? '정말 삭제할까요? 한 번 더 누르세요' : '삭제'}</button>` : ''}
-      ${api.me && !mine ? `<button class="btn ghost" data-act="report" data-t="p" data-id="${p.id}">${S.reports.has('p:' + p.id) ? '신고함' : '신고'}</button>` : ''}</div>
+      ${api.me && !mine ? `<button class="btn ghost" data-act="report" data-t="p" data-id="${p.id}">${S.reports.has('p:' + p.id) ? '신고함' : '신고'}</button>` : ''}
+      ${api.me && !mine && p.authorId ? `<button class="btn ghost" data-act="block" data-id="${esc(p.authorId)}" data-name="${esc(p.author?.name || '')}">작성자 차단</button>` : ''}</div>
     ${canMod ? modBar(p) : ''}
   </div></article>`;
   const sb = $('#stageBody');
@@ -121,12 +123,12 @@ function drawThread() {
     const low = !c.deleted && sc <= -4 && !d.expanded.has(c.id), col = d.collapsed.has(c.id) || low;
     if (col) return `<button class="collapsed" data-expand="${c.id}">[+] ${c.deleted ? '삭제된 댓글' : low ? `점수가 낮아 접힌 댓글 (${sc}점)` : '접힌 댓글'} · 답글 ${count(c.id)}개</button>`;
     return `<div class="cmt${c.flair === 'gem' && !c.deleted ? ' gemc' : ''}" id="c-${c.id}"><button class="rail" data-collapse="${c.id}" title="접기" aria-label="이 스레드 접기"><i></i></button><div style="min-width:0">
-      <div class="ch">${c.deleted ? '<span>삭제됨</span>' : `${c.author ? `<a class="who nm" href="#/u/${esc(c.author.username)}">${avatarHtml(c.author, 22)}<span>${esc(c.author.name)}</span></a>` : '<span>탈퇴한 사용자</span>'}${c.authorId && c.authorId === p.authorId ? '<span class="pill">작성자</span>' : ''}
+      <div class="ch">${c.blocked ? '<span>차단한 사용자</span>' : c.deleted ? '<span>삭제됨</span>' : `${c.author ? `<a class="who nm" href="#/u/${esc(c.author.username)}">${avatarHtml(c.author, 22)}<span>${esc(c.author.name)}</span></a>` : '<span>탈퇴한 사용자</span>'}${c.authorId && c.authorId === p.authorId ? '<span class="pill">작성자</span>' : ''}
         ${c.flair !== 'opinion' ? `<span class="flair ${esc(c.flair)}">${esc(FLAIRS[c.flair] || '')}</span>` : ''}`}<span class="pill">v${c.version}</span>${c.hidden ? '<span class="pill warn">숨김</span>' : ''}${c.resolvedIn ? `<a class="pill gem" href="#/p/${p.id}/v/${c.resolvedIn}" style="text-decoration:none">v${c.resolvedIn}에서 반영</a>` : ''}<span>${ago(c.createdAt)}</span>${c.editedAt ? '<span>· 수정됨</span>' : ''}</div>
-      ${d.editing === c.id ? box('edit:' + c.id, '') : (c.deleted ? '<div class="muted">[삭제된 댓글]</div>' : `<div class="ctext">${esc(c.text)}</div>`)}
-      ${c.deleted ? '' : `<div class="cact">${voteBox('c', c.id, true)}${canWrite() && !p.locked && depth < 8 ? `<button class="linkbtn" data-reply="${c.id}">답글</button>` : ''}
+      ${d.editing === c.id ? box('edit:' + c.id, '') : (c.blocked ? '<div class="muted">[차단한 사용자의 댓글]</div>' : c.deleted ? '<div class="muted">[삭제된 댓글]</div>' : `<div class="ctext">${esc(c.text)}</div>`)}
+      ${c.deleted || c.blocked ? '' : `<div class="cact">${voteBox('c', c.id, true)}${canWrite() && !p.locked && depth < 8 ? `<button class="linkbtn" data-reply="${c.id}">답글</button>` : ''}
         ${mine && canWrite() ? `<button class="linkbtn" data-edit="${c.id}">수정</button>` : ''}${mine || canMod ? `<button class="linkbtn" data-delc="${c.id}">삭제</button>` : ''}
-        ${api.me && !mine ? `<button class="linkbtn" data-act="report" data-t="c" data-id="${c.id}">${S.reports.has('c:' + c.id) ? '신고함' : '신고'}</button>` : ''}
+        ${api.me && !mine ? `<button class="linkbtn" data-act="report" data-t="c" data-id="${c.id}">${S.reports.has('c:' + c.id) ? '신고함' : '신고'}</button><button class="linkbtn" data-act="block" data-id="${esc(c.authorId || '')}" data-name="${esc(c.author?.name || '')}"${c.authorId ? '' : ' hidden'}>차단</button>` : ''}
         ${api.me && p.authorId === api.me.id && (c.flair === 'improve' || c.flair === 'question') && !c.resolvedIn ? `<button class="linkbtn" data-resolve="${c.id}">반영함 표시 (v${p.version})</button>` : ''}
         ${canMod ? `<button class="linkbtn" data-act="mod" data-op="${c.hidden ? 'unhide' : 'hide'}" data-t="c" data-id="${c.id}">${c.hidden ? '숨김 해제' : '숨기기'}</button>${isMod() && c.authorId && c.authorId !== api.me?.id ? `<button class="linkbtn" data-act="mod" data-op="ban" data-t="u" data-id="${c.authorId}" data-name="${esc(c.author?.name || '')}">작성자 제한</button>` : ''}` : ''}</div>`}
       ${d.replyTo === c.id ? box(c.id, '답글을 남겨 주세요') : ''}

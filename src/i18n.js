@@ -57,6 +57,12 @@ const D = {
   '신고하려면 로그인해 주세요': 'Log in to report', '이미 신고했어요. 운영자가 확인할 거예요': 'Already reported. A moderator will review it.',
   '글 신고': 'Report post', '댓글 신고': 'Report comment',
   '신고 내용은 운영자만 볼 수 있어요. 그냥 별로라면 신고 대신 ▼슬롭으로 판정해 주세요.': "Only moderators see reports. If you just didn't like it, vote ▼ Slop instead.",
+  '차단': 'Block', '작성자 차단': 'Block author', '차단하기': 'Block', '차단 풀기': 'Unblock', '차단했어요': 'Blocked', '차단을 풀었어요': 'Unblocked',
+  '차단한 사용자': 'Blocked users', '[차단한 사용자의 댓글]': '[Comment from someone you blocked]', '차단하려면 로그인해 주세요': 'Log in to block people',
+  '이 사람의 글과 댓글이 보이지 않고, 이 사람의 반응은 알림으로 오지 않아요. 상대에게는 알리지 않아요. 설정에서 언제든 풀 수 있어요. 규칙을 어긴 글이라면 신고도 함께 해 주세요.': "You won't see their posts or comments, and you won't get notifications from them. They aren't told. You can unblock anytime in settings. If they broke the rules, please report them too.",
+  '차단한 사용자의 글이라 보이지 않아요.': "This post is from someone you blocked.", '차단한 사용자라 글을 보여 주지 않아요.': "You blocked this person, so their posts are hidden.",
+  '차단한 사용자가 없어요. 글이나 댓글, 프로필의 "차단" 버튼으로 차단할 수 있어요.': "You haven't blocked anyone. Use the Block button on a post, comment or profile.",
+  '자기 자신은 차단할 수 없어요': "You can't block yourself",
   '신고하기': 'Report', '신고함': 'Reported', '신고했어요. 운영자가 확인할 거예요': 'Reported. A moderator will review it.',
   '공유하기': 'Share', '공유 주소': 'Share link', '복사': 'Copy', '닫기': 'Close', '링크를 복사했어요': 'Link copied', '선택해 두었어요. ⌘C로 복사해 주세요': 'Selected. Press ⌘C / Ctrl+C to copy.',
   '카카오톡·슬랙·디스코드에는 주소를 복사해 붙여 넣으면 제목과 그림이 미리보기로 나와요. 새 글은 미리보기가 나오기까지 최대 3시간쯤 걸릴 수 있어요.': 'Paste the link into Slack, Discord or any chat and it shows a preview with title and image. New posts can take up to ~3 hours to get a preview.',
@@ -233,6 +239,7 @@ const D = {
 const tr = (s) => D[s] ?? s;
 const R = [
   [/^사람들은 AI 결과물을 쉽게 "슬롭"이라고 부르지만, 그 안에도 쓸모 있고 재미있는 게 숨어 있어요\. 여기서 같이 캐내요\.$/, 'People are quick to call AI output "slop", but useful and fun things hide in there too. Dig them up with us.'],
+  [/^(.+) 차단$/, 'Block $1'],
   [/^의견 (\d+)개$/, (m, n) => `${n} comment${n === '1' ? '' : 's'}`],
   [/^좋은 점을 짚을 땐 "가치 발견", 고칠 점은 "개선 제안"을 골라 주세요\.$/, 'Pointing out something good? Pick "Found value". For fixes, pick "Suggestion".'],
   [/^\*\*굵게\*\*, `코드`, - 목록, > 인용, 링크는 자동 연결돼요$/, '**bold**, `code`, - lists, > quotes; links are linked automatically'],

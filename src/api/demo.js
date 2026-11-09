@@ -62,7 +62,7 @@ export function createDemoApi() {
     p.comment_count = Object.values(db.comments).filter((c) => c.post_id === pid && !c.deleted && !c.hidden).length;
   };
   const recountC = (cid) => { const c = db.comments[cid]; if (!c) return; const vs = Object.values(db.votes).map((v) => v.c?.[cid]).filter(Boolean); c.up_count = vs.filter((v) => v > 0).length; c.down_count = vs.filter((v) => v < 0).length; };
-  const notify = (user_id, kind, extra) => { if (user_id && user_id !== api.me?.id) db.notifications.push({ id: uid(), user_id, kind, actor_id: api.me?.id || null, created_at: now(), read_at: null, ...extra }); };
+  const notify = (user_id, kind, extra) => { if (user_id && user_id !== api.me?.id && !db.blocks?.[user_id]?.[api.me?.id]) db.notifications.push({ id: uid(), user_id, kind, actor_id: api.me?.id || null, created_at: now(), read_at: null, ...extra }); };
 
   api.init = async () => { api.me = db.session ? shape.profile(prof(db.session)) : null; return api.me; };
   api.onAuthChange = (f) => listeners.add(f);
@@ -175,6 +175,11 @@ export function createDemoApi() {
     const count = (arr) => Object.entries(arr.reduce((m, k) => ((m[k] = (m[k] || 0) + 1), m), {})).sort((a, b) => b[1] - a[1]).map(([name, n]) => ({ name, n }));
     return { posts: s.length, gems: s.filter((p) => shape.isGemCounts(p.up_count, p.down_count)).length, tools: count(s.map((p) => p.tool).filter(Boolean)).slice(0, 12), tags: count(s.flatMap((p) => p.tags)).slice(0, 14) };
   };
+
+  api.myBlocks = async () => Object.keys(db.blocks?.[api.me?.id] || {});
+  api.listBlocked = async () => Object.keys(db.blocks?.[api.me?.id] || {}).map((id) => shape.author(prof(id))).filter(Boolean);
+  api.blockUser = async (id) => { need(); if (id === api.me.id) throw new Error('자기 자신은 차단할 수 없어요'); ((db.blocks ??= {})[api.me.id] ??= {})[id] = Date.now(); save(); };
+  api.unblockUser = async (id) => { need(); delete db.blocks?.[api.me.id]?.[id]; save(); };
 
   api.notifications = async () => db.notifications.filter((n) => n.user_id === api.me?.id).sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at)).slice(0, 50)
     .map((n) => ({ id: n.id, kind: n.kind, createdAt: Date.parse(n.created_at), read: !!n.read_at, postId: n.post_id, commentId: n.comment_id, actor: shape.author(prof(n.actor_id)), postTitle: db.posts[n.post_id]?.title || '', commentText: db.comments[n.comment_id]?.text || '' }));

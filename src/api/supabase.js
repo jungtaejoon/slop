@@ -187,6 +187,11 @@ export function createSupabaseApi(url, key) {
   api.communityMods = async (cid) => check(await sb.from('community_members').select('user:profiles(id,username,display_name,avatar_url)').eq('community_id', cid).eq('role', 'mod')).map((r) => shape.author(r.user)).filter(Boolean);
   api.setCommunityMod = async (cid, username, on) => { check(await sb.rpc('set_community_mod', { cid, uname: username, make_mod: on })); };
 
+  api.myBlocks = async () => (api.me ? check(await sb.from('blocks').select('blocked_id')).map((r) => r.blocked_id) : []);
+  api.listBlocked = async () => check(await sb.from('blocks').select('created_at, user:profiles!blocks_blocked_id_fkey(id,username,display_name,avatar_url)').order('created_at', { ascending: false })).map((r) => shape.author(r.user)).filter(Boolean);
+  api.blockUser = async (uid) => { check(await sb.from('blocks').upsert({ blocker_id: api.me.id, blocked_id: uid }, { onConflict: 'blocker_id,blocked_id', ignoreDuplicates: true })); };
+  api.unblockUser = async (uid) => { check(await sb.from('blocks').delete().eq('blocker_id', api.me.id).eq('blocked_id', uid)); };
+
   api.notifications = async () => check(await sb.from('notifications')
     .select('id,kind,created_at,read_at,post_id,comment_id,actor:profiles!notifications_actor_id_fkey(id,username,display_name,avatar_url),post:posts!notifications_post_id_fkey(title),comment:comments!notifications_comment_id_fkey(text)')
     .order('created_at', { ascending: false }).limit(50))

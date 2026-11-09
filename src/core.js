@@ -1,11 +1,12 @@
 // Shared state, taxonomy and the small UI pieces every view uses.
 import { createSupabaseApi } from './api/supabase.js';
 import { createDemoApi } from './api/demo.js';
+import { withBlocking } from './api/blocking.js';
 import { esc } from './text.js';
 import { lang, tt } from './i18n.js';
 
 const SB_URL = import.meta.env.VITE_SUPABASE_URL, SB_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
-export const api = SB_URL && SB_KEY ? createSupabaseApi(SB_URL, SB_KEY) : createDemoApi();
+export const api = withBlocking(SB_URL && SB_KEY ? createSupabaseApi(SB_URL, SB_KEY) : createDemoApi());
 
 export const KINDS = { text: ['글', '본문 중심'], link: ['링크', '외부 주소'], image: ['이미지', '사진 업로드'], html: ['실행물', 'HTML 바로 실행'], code: ['코드', '복사해서 쓰기'] };
 export const FLAIRS = { opinion: '의견', gem: '가치 발견', improve: '개선 제안', question: '질문', info: '출처·정보' };
@@ -114,19 +115,29 @@ export function sandboxFrame(code, title = '실행물') {
 }
 
 /* ---------- dialog ---------- */
-export function openDialog({ title, desc, reasons, submit, onSubmit, noteLabel = '자세한 내용 (선택)' }) {
+export function openDialog({ title, desc, reasons, submit, onSubmit, noteLabel = '자세한 내용 (선택)', noNote = false }) {
   const d = $('#dlg'), f = $('#dlgForm'), back = document.activeElement;
   f.innerHTML = `<h2>${esc(title)}</h2>${desc ? `<p class="muted" style="margin:0;font-size:13px">${esc(desc)}</p>` : ''}
     ${reasons ? `<div class="reasons" role="radiogroup">${reasons.map((r, i) => `<label><input type="radio" name="rsn" value="${esc(r)}"${i ? '' : ' checked'}> ${esc(r)}</label>`).join('')}</div>` : ''}
-    <textarea id="dlgNote" rows="3" maxlength="500" placeholder="${esc(noteLabel)}"></textarea>
+    ${noNote ? '' : `<textarea id="dlgNote" rows="3" maxlength="500" placeholder="${esc(noteLabel)}"></textarea>`}
     <div class="row"><span class="hint" id="dlgSt"></span><span class="sp"></span><button type="button" class="btn sm" id="dlgCancel">취소</button><button type="submit" class="btn sm pri">${esc(submit)}</button></div>`;
-  d.hidden = false; (f.querySelector('input') || f.querySelector('textarea'))?.focus();
+  d.hidden = false; (f.querySelector('input') || f.querySelector('textarea') || f.querySelector('[type=submit]'))?.focus();
   const close = () => { d.hidden = true; f.innerHTML = ''; back?.focus?.(); };
   $('#dlgCancel').onclick = close; d.onclick = (e) => { if (e.target === d) close(); }; f.onkeydown = (e) => { if (e.key === 'Escape') close(); };
   f.onsubmit = async (e) => {
-    e.preventDefault(); const reason = f.querySelector('input[name=rsn]:checked')?.value || '', note = $('#dlgNote').value.trim(), b = f.querySelector('[type=submit]'); b.disabled = true;
+    e.preventDefault(); const reason = f.querySelector('input[name=rsn]:checked')?.value || '', note = $('#dlgNote')?.value.trim() || '', b = f.querySelector('[type=submit]'); b.disabled = true;
     try { await onSubmit(reason, note); close(); } catch (err) { b.disabled = false; $('#dlgSt').textContent = errMsg(err); }
   };
+}
+
+// block or unblock someone; blocking asks first, then the current page redraws without them
+export function toggleBlock(uid, name) {
+  if (!api.me) { requireLogin('차단하려면 로그인해 주세요'); return; }
+  const redraw = () => { S.d?.unsub?.(); S.d = null; window.dispatchEvent(new HashChangeEvent('hashchange')); }; // drop the open post so it reloads
+  if (api.isBlocked(uid)) { api.unblock(uid).then(() => { toast('차단을 풀었어요'); redraw(); }, (e) => toast(errMsg(e))); return; }
+  openDialog({ title: `${name || '이 사용자'} 차단`, noNote: true, submit: '차단하기',
+    desc: '이 사람의 글과 댓글이 보이지 않고, 이 사람의 반응은 알림으로 오지 않아요. 상대에게는 알리지 않아요. 설정에서 언제든 풀 수 있어요. 규칙을 어긴 글이라면 신고도 함께 해 주세요.',
+    onSubmit: async () => { await api.block(uid); toast('차단했어요'); redraw(); } });
 }
 
 /* ---------- votes ---------- */

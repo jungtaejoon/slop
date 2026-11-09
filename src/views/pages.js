@@ -64,6 +64,7 @@ export function renderSettings() {
     <div class="field"><label for="sName">표시 이름</label><input type="text" id="sName" value="${esc(m.displayName)}" maxlength="40"></div>
     <div class="field"><label for="sBio">소개</label><textarea id="sBio" rows="3" maxlength="300" placeholder="주로 어떤 AI 결과물을 만들거나 찾나요?">${esc(m.bio)}</textarea></div>
     <div class="row"><button class="btn pri" type="submit">저장</button><span class="hint" id="setSt" role="status"></span></div></form>
+    <section class="form narrow" id="blockList" style="margin-top:14px"><h2>차단한 사용자</h2><p class="hint" style="margin:0">불러오는 중…</p></section>
     ${api.mode === 'supabase' ? `<form class="form narrow" id="pwForm" style="margin-top:14px"><h2>${api.recovering ? '새 비밀번호 정하기' : '비밀번호 바꾸기'}</h2>
       <div class="field"><label for="newPw">새 비밀번호</label><input type="password" id="newPw" autocomplete="new-password" minlength="8" placeholder="8자 이상"></div>
       <div class="row"><button class="btn" type="submit">비밀번호 저장</button><span class="hint" id="pwSt" role="status"></span></div></form>
@@ -76,6 +77,12 @@ export function renderSettings() {
   const pf = $('#pwForm');
   if (pf) { if (api.recovering) $('#newPw').focus(); pf.onsubmit = async (e) => { e.preventDefault(); const pw = $('#newPw').value, out = $('#pwSt'); if (pw.length < 8) { out.textContent = '8자 이상이어야 해요.'; return; }
     try { await api.updatePassword(pw); api.recovering = false; $('#newPw').value = ''; out.textContent = ''; toast('비밀번호를 바꿨어요'); } catch { out.textContent = '바꾸지 못했어요. 더 안전한 비밀번호를 써 보세요.'; } }; }
+  const bl = $('#blockList');
+  if (bl) api.listBlocked().then((us) => {
+    if (!bl.isConnected) return;
+    bl.innerHTML = `<h2>차단한 사용자</h2>${us.length ? us.map((u) => `<div class="row"><a class="who nm" href="#/u/${esc(u.username)}">${avatarHtml(u, 22)}<span>${esc(u.name)}</span></a><span class="sp"></span><button class="btn sm" data-act="block" data-id="${esc(u.id)}">차단 풀기</button></div>`).join('')
+      : '<p class="hint" style="margin:0">차단한 사용자가 없어요. 글이나 댓글, 프로필의 "차단" 버튼으로 차단할 수 있어요.</p>'}`;
+  }).catch(() => { if (bl.isConnected) bl.remove(); });
   const df = $('#delForm');
   if (df) {
     const inp = $('#delConfirm'), btn = $('#delBtn');
@@ -99,6 +106,7 @@ export async function renderProfile(v) {
   let p; try { p = await api.getProfileByUsername(v.username); } catch { /* */ }
   if (S.view !== v) return;
   if (!p) { app.innerHTML = '<div class="banner">이 사용자를 찾을 수 없어요.</div>'; return; }
+  const blocked = api.isBlocked(p.id);
   const [stats, list] = await Promise.all([api.profileStats(p.id).catch(() => null), api.listPosts({ authorId: p.id, sort: 'new', limit: 50 }).catch(() => ({ posts: [] }))]);
   if (S.view !== v) return;
   list.posts.forEach((x) => S.cache.set(x.id, Object.assign(S.cache.get(x.id) || {}, x)));
@@ -106,9 +114,9 @@ export async function renderProfile(v) {
   const mine = api.me?.id === p.id;
   app.innerHTML = `<div class="phead">${avatarHtml(p, 64)}<div class="t"><h1>${esc(p.name)}</h1><div class="muted"><span>@${esc(p.username)}</span> · <span>${ago(p.createdAt)} 가입</span>${p.role !== 'member' ? ` · <span>${p.role === 'admin' ? '관리자' : '운영자'}</span>` : ''}${p.banned ? ' · <span class="warn">작성 제한됨</span>' : ''}</div>${p.bio ? `<p>${esc(p.bio)}</p>` : ''}</div>
     ${stats ? `<div class="statrow"><div><b>${stats.karma}</b><span>판정 점수</span></div><div><b>${stats.gems}</b><span>보석</span></div><div><b>${stats.posts}</b><span>게시글</span></div><div><b>${stats.comments}</b><span>의견 수</span></div></div>` : ''}
-    ${mine ? '<a class="btn" href="#/settings">프로필 설정</a>' : ''}</div>
+    ${mine ? '<a class="btn" href="#/settings">프로필 설정</a>' : api.me ? `<button class="btn ghost" data-act="block" data-id="${esc(p.id)}" data-name="${esc(p.name)}">${blocked ? '차단 풀기' : '차단'}</button>` : ''}</div>
     <h2 style="margin:0 0 10px">올린 글</h2>
-    ${list.posts.length ? `<div class="list">${list.posts.map(postRow).join('')}</div>` : `<div class="banner">${mine ? '아직 올린 글이 없어요. <a href="#/submit">첫 글을 올려 보세요.</a>' : '아직 올린 글이 없어요.'}</div>`}`;
+    ${blocked ? '<div class="banner">차단한 사용자라 글을 보여 주지 않아요.</div>' : list.posts.length ? `<div class="list">${list.posts.map(postRow).join('')}</div>` : `<div class="banner">${mine ? '아직 올린 글이 없어요. <a href="#/submit">첫 글을 올려 보세요.</a>' : '아직 올린 글이 없어요.'}</div>`}`;
   document.title = `${p.name} · Slop`;
   setupPreviews(app);
 }
