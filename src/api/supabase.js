@@ -3,7 +3,11 @@
 import { createClient } from '@supabase/supabase-js';
 import * as shape from './shape.js';
 
-const AUTHOR = 'author:profiles(id,username,display_name,avatar_url)';
+// explicit FK names: votes/saves tables also link posts and comments to profiles,
+// so a bare profiles() embed is ambiguous for PostgREST
+const PCOLS = '(id,username,display_name,avatar_url)';
+const POST_AUTHOR = 'author:profiles!posts_author_id_fkey' + PCOLS;
+const COMMENT_AUTHOR = 'author:profiles!comments_author_id_fkey' + PCOLS;
 const FEED_COLS = 'id,author_id,cat,kind,title,excerpt,url,images,code_lang,code_head,tool,tags,version,remix_of,remix_of_version,pinned,hidden,hidden_reason,locked,is_example,up_count,down_count,comment_count,created_at,updated_at,author_username,author_name,author_avatar';
 
 export function createSupabaseApi(url, key) {
@@ -67,7 +71,7 @@ export function createSupabaseApi(url, key) {
   };
 
   api.getPost = async (id) => {
-    const row = check(await sb.from('posts').select(`*, ${AUTHOR}`).eq('id', id).maybeSingle());
+    const row = check(await sb.from('posts').select(`*, ${POST_AUTHOR}`).eq('id', id).maybeSingle());
     if (!row) return null;
     const p = shape.post(row);
     if (p.remixOf) { const r = check(await sb.from('posts').select('id,title').eq('id', p.remixOf).maybeSingle()); p.remixTitle = r?.title || null; }
@@ -80,9 +84,9 @@ export function createSupabaseApi(url, key) {
   api.saveVersion = async (id, f, note, resolved) => check(await sb.rpc('save_post_version', { pid: id, p: { ...toRow(f), note }, resolved }));
   api.deletePost = async (id) => { check(await sb.from('posts').delete().eq('id', id)); };
 
-  api.listComments = async (postId) => check(await sb.from('comments').select(`*, ${AUTHOR}`).eq('post_id', postId).order('created_at')).map(shape.comment);
+  api.listComments = async (postId) => check(await sb.from('comments').select(`*, ${COMMENT_AUTHOR}`).eq('post_id', postId).order('created_at')).map(shape.comment);
   api.addComment = async ({ postId, parentId, text, flair, version }) =>
-    shape.comment(check(await sb.from('comments').insert({ post_id: postId, parent_id: parentId || null, text, flair, version, author_id: api.me.id }).select(`*, ${AUTHOR}`).single()));
+    shape.comment(check(await sb.from('comments').insert({ post_id: postId, parent_id: parentId || null, text, flair, version, author_id: api.me.id }).select(`*, ${COMMENT_AUTHOR}`).single()));
   api.editComment = async (id, text) => { check(await sb.from('comments').update({ text }).eq('id', id)); };
   api.deleteComment = async (id, hasChildren) => {
     if (hasChildren) check(await sb.from('comments').update({ deleted: true, text: '' }).eq('id', id));
@@ -119,7 +123,7 @@ export function createSupabaseApi(url, key) {
   api.boardStats = async (cat) => check(await sb.rpc('board_stats', { board: cat || null }));
 
   api.notifications = async () => check(await sb.from('notifications')
-    .select('id,kind,created_at,read_at,post_id,comment_id,actor:profiles!notifications_actor_id_fkey(id,username,display_name,avatar_url),post:posts(title),comment:comments(text)')
+    .select('id,kind,created_at,read_at,post_id,comment_id,actor:profiles!notifications_actor_id_fkey(id,username,display_name,avatar_url),post:posts!notifications_post_id_fkey(title),comment:comments!notifications_comment_id_fkey(text)')
     .order('created_at', { ascending: false }).limit(50))
     .map((r) => ({ id: r.id, kind: r.kind, createdAt: Date.parse(r.created_at), read: !!r.read_at, postId: r.post_id, commentId: r.comment_id, actor: shape.author(r.actor), postTitle: r.post?.title || '', commentText: r.comment?.text || '' }));
   api.unreadCount = async () => { if (!api.me) return 0; const { count } = await sb.from('notifications').select('id', { count: 'exact', head: true }).is('read_at', null); return count || 0; };
@@ -141,7 +145,7 @@ export function createSupabaseApi(url, key) {
     const postIds = [...new Set(rows.filter((r) => r.target_type === 'post').map((r) => r.target_id))];
     const commentIds = [...new Set(rows.filter((r) => r.target_type === 'comment').map((r) => r.target_id))];
     const posts = postIds.length ? check(await sb.from('post_feed').select(FEED_COLS).in('id', postIds)).map(shape.post) : [];
-    const comments = commentIds.length ? check(await sb.from('comments').select(`*, ${AUTHOR}`).in('id', commentIds)).map(shape.comment) : [];
+    const comments = commentIds.length ? check(await sb.from('comments').select(`*, ${COMMENT_AUTHOR}`).in('id', commentIds)).map(shape.comment) : [];
     return { reports: rows.map((r) => ({ id: r.id, type: r.target_type[0], targetId: r.target_id, reason: r.reason, note: r.note, createdAt: Date.parse(r.created_at), reporter: shape.author(r.reporter) })), posts, comments };
   };
   api.resolveReports = async (type, id, resolution) => {
@@ -154,7 +158,7 @@ export function createSupabaseApi(url, key) {
   api.listBanned = async () => check(await sb.from('profiles').select('*').not('banned_at', 'is', null).order('banned_at', { ascending: false })).map(shape.profile);
   api.listHidden = async () => ({
     posts: check(await sb.from('post_feed').select(FEED_COLS).eq('hidden', true).order('updated_at', { ascending: false }).limit(100)).map(shape.post),
-    comments: check(await sb.from('comments').select(`*, ${AUTHOR}`).eq('hidden', true).order('created_at', { ascending: false }).limit(100)).map(shape.comment),
+    comments: check(await sb.from('comments').select(`*, ${COMMENT_AUTHOR}`).eq('hidden', true).order('created_at', { ascending: false }).limit(100)).map(shape.comment),
   });
   api.log = async (action, type, id, label = '', reason = '') => { try { check(await sb.from('mod_log').insert({ action, target_type: type, target_id: id, label, reason, actor_id: api.me.id })); } catch { /* logging must not block the action */ } };
   api.listModLog = async () => check(await sb.from('mod_log').select('*, actor:profiles!mod_log_actor_id_fkey(id,username,display_name,avatar_url)').order('created_at', { ascending: false }).limit(60))
