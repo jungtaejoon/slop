@@ -1,0 +1,66 @@
+{
+  "packageId": "io.github.jungtaejoon.slop",
+  "host": "jungtaejoon.github.io",
+  "name": "Slop",
+  "launcherName": "Slop",
+  "display": "standalone",
+  "themeColor": "#0C0E11",
+  "themeColorDark": "#000000",
+  "navigationColor": "#000000",
+  "navigationColorDark": "#000000",
+  "navigationDividerColor": "#000000",
+  "navigationDividerColorDark": "#000000",
+  "backgroundColor": "#0C0E11",
+  "enableNotifications": false,
+  "startUrl": "/slop/#/",
+  "iconUrl": "https://jungtaejoon.github.io/slop/icon-512.png",
+  "maskableIconUrl": "https://jungtaejoon.github.io/slop/icon-maskable-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "/Users/taejoon/.slop-android/upload-key.jks",
+    "alias": "upload"
+  },
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "shortcuts": [
+    {
+      "name": "Swipe",
+      "shortName": "Swipe",
+      "url": "https://jungtaejoon.github.io/slop/#/shorts",
+      "chosenIconUrl": "https://jungtaejoon.github.io/slop/icon-192.png"
+    },
+    {
+      "name": "Judge",
+      "shortName": "Judge",
+      "url": "https://jungtaejoon.github.io/slop/#/judge",
+      "chosenIconUrl": "https://jungtaejoon.github.io/slop/icon-192.png"
+    },
+    {
+      "name": "New post",
+      "shortName": "Post",
+      "url": "https://jungtaejoon.github.io/slop/#/submit",
+      "chosenIconUrl": "https://jungtaejoon.github.io/slop/icon-192.png"
+    }
+  ],
+  "generatorApp": "unknown",
+  "webManifestUrl": "https://jungtaejoon.github.io/slop/manifest.webmanifest",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://jungtaejoon.github.io/slop/",
+  "minSdkVersion": 24,
+  "orientation": "default",
+  "fingerprints": [],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": [],
+  "protocolHandlers": [],
+  "fileHandlers": [],
+  "launchHandlerClientMode": "",
+  "displayOverride": [],
+  "appVersion": "1.0.0"
+}

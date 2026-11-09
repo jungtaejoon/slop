@@ -5,3 +5,13 @@ dist
 supabase/.temp
 .DS_Store
 .claude
+
+# Android build outputs (rebuild with bubblewrap; the signing key lives in ~/.slop-android)
+android/*.apk
+android/*.aab
+android/*.idsig
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android-release/
