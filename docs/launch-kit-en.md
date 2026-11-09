@@ -1,26 +1,26 @@
 # English launch drafts
 
-Site: https://jungtaejoon.github.io/slop-lab/
+Site: https://jungtaejoon.github.io/slop/
 
 ## X (English)
 
 People are quick to call AI output "slop". But useful and fun things hide in there too.
 
-I built Slop Lab: a Reddit-style place to share things you made with AI, run them right on the page, and vote ▲ gem / ▼ slop. Every post keeps its versions, so feedback turns into v2.
+I built Slop: a Reddit-style place to share things you made with AI, run them right on the page, and vote ▲ gem / ▼ slop. Every post keeps its versions, so feedback turns into v2.
 
-https://jungtaejoon.github.io/slop-lab/
+https://jungtaejoon.github.io/slop/
 
 ## Hacker News (Show HN)
 
-Title: Show HN: Slop Lab – share AI-made things and vote gem or slop
+Title: Show HN: Slop – share AI-made things and vote gem or slop
 
-URL: https://jungtaejoon.github.io/slop-lab/
+URL: https://jungtaejoon.github.io/slop/
 
 First comment:
 
 People call AI output "slop", and a lot of it is. But I kept finding small AI-made things that were genuinely useful or fun, with no good place to share them and say what works.
 
-Slop Lab is a small community site for that:
+Slop is a small community site for that:
 
 - Post an app (single-file HTML runs sandboxed right on the page), code, a prompt, writing, images or a link
 - Vote ▲ gem or ▼ slop, ideally with a one-line reason; there is a quick "judge" mode that shows one post at a time
@@ -34,11 +34,11 @@ It is early and small. I would love feedback on the judging idea itself: what ma
 
 ## Product Hunt
 
-Name: Slop Lab
+Name: Slop
 
 Tagline (60 chars max): Find the gems hiding in AI-made stuff
 
-Link: https://jungtaejoon.github.io/slop-lab/
+Link: https://jungtaejoon.github.io/slop/
 
 Topics: Artificial Intelligence, Community, Web App
 
@@ -48,7 +48,7 @@ A Reddit-style community for things people made with AI. Apps run right on the p
 Maker's first comment:
 Hi Product Hunt! People are quick to call AI output "slop", and a lot of it is. But I kept running into small AI-made things that were genuinely useful or fun, with nowhere good to share them or say what actually works.
 
-So I built Slop Lab:
+So I built Slop:
 - Post an app, code, a prompt, writing, images or a link. Single-file HTML apps run sandboxed right on the page.
 - Vote ▲ gem or ▼ slop, ideally with a one-line reason. Judge mode shows one post at a time.
 - Every post keeps its versions, so feedback can turn into v2, and you can see what changed.

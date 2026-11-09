@@ -1,6 +1,6 @@
-# Slop Lab 사람 모으기 키트
+# Slop 사람 모으기 키트
 
-사이트 주소: https://jungtaejoon.github.io/slop-lab/
+사이트 주소: https://jungtaejoon.github.io/slop/
 
 ## 0. 홍보 전에 꼭 할 것 (순서대로)
 
@@ -25,9 +25,9 @@
 
 ## 2. 꾸준히 사람을 부르는 습관
 
-- **판정하기 링크를 첫 링크로**: 홍보 글에는 사이트 첫 화면 대신 `https://jungtaejoon.github.io/slop-lab/#/judge`를 걸어 보세요. 들어오자마자 카드 한 장을 보고 바로 ▲/▼를 누를 수 있어서 참여까지 걸리는 시간이 가장 짧아요.
-- **"이번 주 보석" 페이지**: `https://jungtaejoon.github.io/slop-lab/best/` 는 3시간마다 자동으로 갱신되는 순위 페이지예요. 보석함 화면의 "이번 주 보석 공유" 버튼으로 링크를 복사해 매주 스레드/X에 올리면 돼요.
-- **RSS**: `https://jungtaejoon.github.io/slop-lab/rss.xml` — 피드 구독기나 뉴스 모음 서비스에 등록할 수 있어요.
+- **판정하기 링크를 첫 링크로**: 홍보 글에는 사이트 첫 화면 대신 `https://jungtaejoon.github.io/slop/#/judge`를 걸어 보세요. 들어오자마자 카드 한 장을 보고 바로 ▲/▼를 누를 수 있어서 참여까지 걸리는 시간이 가장 짧아요.
+- **"이번 주 보석" 페이지**: `https://jungtaejoon.github.io/slop/best/` 는 3시간마다 자동으로 갱신되는 순위 페이지예요. 보석함 화면의 "이번 주 보석 공유" 버튼으로 링크를 복사해 매주 스레드/X에 올리면 돼요.
+- **RSS**: `https://jungtaejoon.github.io/slop/rss.xml` — 피드 구독기나 뉴스 모음 서비스에 등록할 수 있어요.
 - **앱처럼 설치**: 휴대폰 브라우저에서 "홈 화면에 추가"를 누르면 앱 아이콘으로 설치돼요. 홍보 글에 "홈 화면에 추가해 두면 매일 판정하기 편해요" 한 줄을 넣어 보세요.
 
 - **매주 "이번 주 보석" 정리 글**: 보석함 상위 3~5개를 스레드/X에 올리고 링크를 걸어요. 글마다 미리보기가 예쁘게 나와요.
@@ -41,7 +41,7 @@
 
 ### 긱뉴스 Show GN
 
-**제목:** Show GN: Slop Lab – AI가 만든 결과물을 올리고 '보석/슬롭'으로 판정하는 커뮤니티
+**제목:** Show GN: Slop – AI가 만든 결과물을 올리고 '보석/슬롭'으로 판정하는 커뮤니티
 
 **본문:**
 AI로 만든 것들은 쉽게 "슬롭"으로 취급되지만, 그중에는 진짜 쓸모 있거나 재미있는 것도 섞여 있다고 생각해서 만들었습니다.
@@ -53,27 +53,27 @@ AI로 만든 것들은 쉽게 "슬롭"으로 취급되지만, 그중에는 진�
 - 레딧처럼 누구나 주제별 커뮤니티를 만들고 팔로우할 수 있습니다.
 
 HTML 실행물은 샌드박스 iframe에서 바로 돌아가서, AI가 만든 작은 웹앱·게임을 설치 없이 바로 해 볼 수 있습니다.
-Vite + Supabase(RLS)로 만들었고 코드도 공개되어 있어요: https://github.com/jungtaejoon/slop-lab
+Vite + Supabase(RLS)로 만들었고 코드도 공개되어 있어요: https://github.com/jungtaejoon/slop
 
 판정 기준이나 기능에 대한 의견 환영합니다.
-https://jungtaejoon.github.io/slop-lab/
+https://jungtaejoon.github.io/slop/
 
 ### 디스콰이엇
 
 **한 줄 소개:** AI가 만든 것들 속에서 보석을 캐는 커뮤니티
 
 **본문:**
-"AI가 만든 거잖아" 한마디로 넘겨지는 결과물 중에도 진짜 쓸 만한 게 있어요. Slop Lab은 그걸 같이 골라내는 곳이에요.
+"AI가 만든 거잖아" 한마디로 넘겨지는 결과물 중에도 진짜 쓸 만한 게 있어요. Slop은 그걸 같이 골라내는 곳이에요.
 올리고 → 써 보고 → ▲보석/▼슬롭으로 판정하고 → 의견을 반영해 다음 버전으로 키워요.
 지금은 초기라 피드백 하나하나가 큰 힘이 돼요. 직접 만든 AI 결과물이 있다면 하나 올려서 판정을 받아 보세요!
-https://jungtaejoon.github.io/slop-lab/
+https://jungtaejoon.github.io/slop/
 
 ### 스레드 / X (짧게)
 
 AI가 만든 거라고 다 슬롭일까?
 직접 써 보고 ▲보석 ▼슬롭으로 판정하는 곳을 만들었어요.
 AI로 만든 웹앱·게임은 그 자리에서 바로 실행돼요. 하나 판정해 주세요 👇
-https://jungtaejoon.github.io/slop-lab/
+https://jungtaejoon.github.io/slop/
 
 ### 스레드 / X (개별 글 소개용, 매일)
 
@@ -92,9 +92,9 @@ AI로 만든 거 서로 보여 주는 곳 하나 만들었어요. 올리면 사�
 **Title:** I built a place to judge AI-made stuff: gem or slop?
 
 **Body:**
-A lot of AI output gets dismissed as "slop," but some of it is genuinely useful or fun. Slop Lab lets people post AI-made writing, images, runnable HTML apps, code and prompts. Others try them in place, vote ▲gem / ▼slop, and leave reasons ("found value", "suggest a fix"). Authors post new versions based on feedback, and anyone can remix. Communities are user-created, Reddit-style.
+A lot of AI output gets dismissed as "slop," but some of it is genuinely useful or fun. Slop lets people post AI-made writing, images, runnable HTML apps, code and prompts. Others try them in place, vote ▲gem / ▼slop, and leave reasons ("found value", "suggest a fix"). Authors post new versions based on feedback, and anyone can remix. Communities are user-created, Reddit-style.
 The UI is Korean for now. Feedback on the concept is very welcome.
-https://jungtaejoon.github.io/slop-lab/
+https://jungtaejoon.github.io/slop/
 
 ## 4. 나중에 하면 좋은 것
 
