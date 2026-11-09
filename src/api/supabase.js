@@ -48,9 +48,15 @@ export function createSupabaseApi(url, key) {
     return api.me;
   };
   api.uid = () => api.me?.id || api.guest?.id || null;
+  // public Auth settings: is email confirmation off (autoConfirm)? are guest (anonymous) sign-ins on?
+  let authSettingsP = null;
+  api.authSettings = () => (authSettingsP ??= fetch(`${url}/auth/v1/settings`, { headers: { apikey: key } })
+    .then((r) => r.json()).then((s) => ({ autoConfirm: !!s.mailer_autoconfirm, guests: !!s.external?.anonymous_users }))
+    .catch(() => ({ autoConfirm: false, guests: false })));
   // a visitor's first vote creates a guest session (Supabase Auth: anonymous sign-ins)
   api.signInGuest = async () => {
     if (api.me || api.guest) return true;
+    if (!(await api.authSettings()).guests) return false;
     try {
       const { data, error } = await sb.auth.signInAnonymously();
       if (error || !data?.user) return false;

@@ -16,15 +16,20 @@ export function renderLogin() {
   const NAMES = { google: 'Google', kakao: '카카오', github: 'GitHub' };
   const st = (S.login ??= { mode: 'signup', email: '' });
   app.innerHTML = `<form class="form narrow" id="loginForm" novalidate><h1>${st.mode === 'signup' ? '가입하기' : st.mode === 'login' ? '로그인' : st.mode === 'link' ? '메일 링크로 로그인' : '비밀번호 찾기'}</h1>
-    ${st.mode === 'signup' || st.mode === 'login' ? '<p class="hint" style="margin:0">판정(▲/▼)은 가입하지 않아도 할 수 있어요. 글과 댓글을 쓰려면 가입해 주세요.</p>' : ''}
+    ${st.mode === 'signup' || st.mode === 'login' ? '<p class="hint" id="guestHint" style="margin:0" hidden>판정(▲/▼)은 가입하지 않아도 할 수 있어요. 글과 댓글을 쓰려면 가입해 주세요.</p>' : ''}
     ${oauth.length ? `<div style="display:flex;flex-direction:column;gap:8px">${oauth.map((o) => `<button type="button" class="btn block" data-oauth="${esc(o)}">${esc(NAMES[o] || o)}로 계속하기</button>`).join('')}</div><div class="row" style="justify-content:center"><span class="hint">또는 이메일로</span></div>` : ''}
     <div class="seg" role="tablist" style="align-self:flex-start">${[['signup', '가입'], ['login', '로그인']].map(([k, l]) => `<button type="button" data-mode="${k}" aria-pressed="${st.mode === k}">${l}</button>`).join('')}</div>
     <div class="field"><label for="email">이메일</label><input type="email" id="email" autocomplete="email" required placeholder="you@example.com" value="${esc(st.email)}"></div>
-    ${st.mode === 'signup' || st.mode === 'login' ? `<div class="field"><label for="pw">비밀번호</label><input type="password" id="pw" autocomplete="${st.mode === 'signup' ? 'new-password' : 'current-password'}" minlength="8" required placeholder="8자 이상">${st.mode === 'signup' ? '<span class="hint">가입하면 확인 메일이 가요. 메일의 링크를 누르면 가입이 끝나요.</span>' : ''}</div>` : ''}
+    ${st.mode === 'signup' || st.mode === 'login' ? `<div class="field"><label for="pw">비밀번호</label><input type="password" id="pw" autocomplete="${st.mode === 'signup' ? 'new-password' : 'current-password'}" minlength="8" required placeholder="8자 이상">${st.mode === 'signup' ? '<span class="hint" id="pwHint">가입하면 확인 메일이 가요. 메일의 링크를 누르면 가입이 끝나요.</span>' : ''}</div>` : ''}
     <button class="btn pri block" type="submit" id="sendBtn">${st.mode === 'signup' ? '가입하기' : st.mode === 'login' ? '로그인' : st.mode === 'link' ? '로그인 링크 받기' : '재설정 메일 받기'}</button>
     <p class="hint" id="loginSt" role="status" style="margin:0"></p>
     <div class="row" style="justify-content:space-between">${st.mode !== 'link' ? '<button type="button" class="linkbtn" data-mode="link">비밀번호 없이 메일 링크로</button>' : '<button type="button" class="linkbtn" data-mode="login">비밀번호로 로그인</button>'}${st.mode === 'login' ? '<button type="button" class="linkbtn" data-mode="reset">비밀번호를 잊었어요</button>' : ''}</div></form>`;
   app.querySelectorAll('[data-mode]').forEach((b) => (b.onclick = () => { st.email = $('#email').value.trim(); st.mode = b.dataset.mode; renderLogin(); }));
+  // hints follow the live Auth settings (email confirmation, guest votes)
+  api.authSettings().then((s) => {
+    const g = $('#guestHint'); if (g) g.hidden = !s.guests;
+    const h = $('#pwHint'); if (h && s.autoConfirm) h.textContent = '가입하면 바로 시작할 수 있어요. 확인 메일을 기다리지 않아도 돼요.';
+  });
   $('#loginForm').onsubmit = async (e) => {
     e.preventDefault(); const email = $('#email').value.trim(), pw = $('#pw')?.value || '', out = $('#loginSt'), b = $('#sendBtn'); st.email = email;
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { out.textContent = '이메일 주소를 확인해 주세요.'; return; }

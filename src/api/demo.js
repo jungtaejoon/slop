@@ -44,6 +44,7 @@ export function createDemoApi() {
   const api = { mode: 'demo', me: null, aiAvailable: false };
   api.uid = () => api.me?.id || null;
   api.signInGuest = async () => false; // the demo has no guest mode
+  api.authSettings = async () => ({ autoConfirm: true, guests: false });
   const prof = (id) => db.profiles[id] || null;
   const isMod = () => ['mod', 'admin'].includes(api.me?.role);
   const need = () => { if (!api.me) throw Object.assign(new Error('로그인이 필요해요'), { code: '42501' }); if (api.me.banned) throw Object.assign(new Error('작성이 제한된 계정이에요'), { code: '42501' }); };
