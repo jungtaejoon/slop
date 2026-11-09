@@ -1,4 +1,4 @@
-// Slop Lab service worker: lets the site install as a phone app and reopen fast.
+// Slop service worker: lets the site install as a phone app and reopen fast.
 // - Build files under assets/ have hashed names and never change: cache first.
 // - Pages: network first; offline, the last copy (or the app shell) is shown.
 // - Icons, preview images, examples: network first with a cached fallback.
@@ -6,7 +6,7 @@
 // Visiting any page with ?nosw unregisters it (kill switch, handled in main.js).
 const VERSION = 'v1';
 const SHELL = `shell-${VERSION}`, STATIC = `static-${VERSION}`;
-const BASE = new URL(self.registration.scope).pathname; // e.g. /slop-lab/
+const BASE = new URL(self.registration.scope).pathname; // e.g. /slop/
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(SHELL).then((c) => c.addAll([BASE, `${BASE}manifest.webmanifest`, `${BASE}icon-192.png`])).then(() => self.skipWaiting()));

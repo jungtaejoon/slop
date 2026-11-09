@@ -57,8 +57,8 @@ export async function toggleFollow(cid) {
   catch (e) { on ? S.my.delete(cid) : S.my.set(cid, 'member'); if (c) c.members += on ? -1 : 1; sync(); toast(errMsg(e)); }
 }
 export const followBtn = (c, sm) => c ? `<button class="btn${sm ? ' sm' : ''}${S.my.has(c.id) ? '' : ' pri'}" data-act="follow" data-id="${c.id}">${S.my.has(c.id) ? '팔로우 중' : '팔로우'}</button>` : '';
-// The app lives at BASE_PATH (e.g. /slop-lab/). Posts and communities also exist as real
-// paths (/slop-lab/p/<id>/, /slop-lab/c/<slug>/), built for search engines and link previews.
+// The app lives at BASE_PATH (e.g. /slop/). Posts and communities also exist as real
+// paths (/slop/p/<id>/, /slop/c/<slug>/), built for search engines and link previews.
 // Those pages load this same app, which then takes the route from the path (no hash yet).
 export const BASE_PATH = new URL(document.baseURI).pathname.replace(/[^/]*$/, '');
 export function currentHash() {
@@ -97,7 +97,7 @@ export function avatarHtml(a, size = 16) {
   return `<span class="av av-fallback" style="width:${size}px;height:${size}px">${esc(ch)}</span>`;
 }
 export function who(a, isExample) {
-  if (!a) return `<span class="who">${avatarHtml({ name: 'S' })}<span>${isExample ? 'Slop Lab 예시' : '탈퇴한 사용자'}</span></span>`;
+  if (!a) return `<span class="who">${avatarHtml({ name: 'S' })}<span>${isExample ? 'Slop 예시' : '탈퇴한 사용자'}</span></span>`;
   return `<a class="who" href="#/u/${esc(a.username)}">${avatarHtml(a)}<span>${esc(a.name)}${api.me?.id === a.id ? ' (나)' : ''}</span></a>`;
 }
 
@@ -188,7 +188,7 @@ export function report(t, id) {
 export const shareUrl = (path) => `${location.origin}${BASE_PATH}${path}`;
 
 export function openShare(path, title, lead = '') {
-  const url = shareUrl(path), text = lang === 'en' ? `${tt(title)} | Gem or slop? Judge it on Slop Lab` : `${title} | Slop Lab에서 보석인지 슬롭인지 판정해 주세요`;
+  const url = shareUrl(path), text = lang === 'en' ? `${tt(title)} | Gem or slop? Judge it on Slop` : `${title} | Slop에서 보석인지 슬롭인지 판정해 주세요`;
   title = lang === 'en' ? tt(title) : title;
   if (navigator.share && matchMedia('(pointer:coarse)').matches) { navigator.share({ title, text, url }).catch(() => {}); return; }
   const e = encodeURIComponent, d = $('#dlg'), f = $('#dlgForm'), back = document.activeElement;

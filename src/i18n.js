@@ -17,7 +17,7 @@ const D = {
   // header, nav, footer
   'AI가 만든 것들 속에서 보석을 캐는 곳': 'Find the gems in AI-made stuff',
   '제목·내용·도구 검색 ( / )': 'Search titles, text, tools ( / )', '검색': 'Search', '글쓰기': 'Post', '게시판': 'Boards',
-  'Slop Lab · AI가 만든 것을 그냥 넘기지 말고, 써 보고, 판정하고, 이유를 남기는 곳': "Slop Lab · Don't just scroll past AI-made work. Try it, judge it, say why.",
+  'Slop · AI가 만든 것을 그냥 넘기지 말고, 써 보고, 판정하고, 이유를 남기는 곳': "Slop · Don't just scroll past AI-made work. Try it, judge it, say why.",
   '홈': 'Home', '인기': 'Popular', '판정하기': 'Judge', '보석함': 'Gems', '커뮤니티 찾기': 'Communities', '저장함': 'Saved', '운영': 'Moderation',
   '데모 시작': 'Try demo', '로그인': 'Log in', '알림': 'Notifications', '관리자': 'admin', '운영자': 'moderator',
   '내 프로필': 'My profile', '프로필 설정': 'Profile settings', '커뮤니티 만들기': 'Create community', '로그아웃': 'Log out', '로그아웃했어요': 'Logged out',
@@ -50,7 +50,7 @@ const D = {
   '팔로우 중': 'Following', '팔로우': 'Follow', '커뮤니티': 'Community', '팔로우를 끊었어요': 'Unfollowed',
   '저장하지 못했어요. 다시 시도해 주세요.': "Couldn't save. Please try again.", '작성이 제한된 계정이에요.': 'This account is restricted from posting.', '작성이 제한된 계정이에요': 'This account is restricted from posting',
   '권한이 없어요.': "You don't have permission.", '이미 쓰이고 있는 값이에요.': 'That is already taken.', '커뮤니티는 하루에 두 개까지 만들 수 있어요.': 'You can create up to two communities a day.',
-  '로그인이 필요해요': 'Please log in', 'Slop Lab 예시': 'Slop Lab example', '탈퇴한 사용자': 'Deleted user', '(나)': '(you)', '자세한 내용 (선택)': 'Details (optional)', '취소': 'Cancel',
+  '로그인이 필요해요': 'Please log in', 'Slop 예시': 'Slop example', '탈퇴한 사용자': 'Deleted user', '(나)': '(you)', '자세한 내용 (선택)': 'Details (optional)', '취소': 'Cancel',
   '보석: 가치 있음': 'Gem: worth it', '슬롭: 가치 없음': 'Slop: not worth it', '보석': 'Gem', '슬롭': 'Slop', '아직 판정 없음': 'No verdicts yet',
   '▲ 보석이다': '▲ Gem', '▼ 슬롭이다': '▼ Slop', '판정하려면 로그인해 주세요': 'Log in to judge', '판정을 저장하지 못했어요': "Couldn't save your verdict",
   '저장하려면 로그인해 주세요': 'Log in to save', '저장됨': 'Saved', '저장': 'Save', '저장함에 넣었어요': 'Saved', '저장함에서 뺐어요': 'Removed from saved',
@@ -190,7 +190,7 @@ const D = {
   '반영함으로 표시했어요': 'Marked as addressed', '커뮤니티 판정': 'Community verdict', '토론 요약': 'Discussion summary',
   '댓글과 판정을 Claude가 정리해 줘요. 어디가 보석이고 어디가 슬롭인지 한눈에 봐요.': 'Claude sums up the comments and votes: what is gem and what is slop, at a glance.',
   '댓글이 생기면 요약할 수 있어요': 'Available once there are comments', '다시 요약': 'Summarize again', '요약하기': 'Summarize', '수정 이력': 'Version history', '메모 없음': 'no note',
-  '이 글의 리믹스': 'Remixes', '작성 정보': 'About this post', 'Slop Lab이 게시판 사용법을 보여 주려고 Claude로 만들어 올린 예시예요. 판정과 의견은 실제로 남길 수 있어요.': 'An example Slop Lab made with Claude to show how things work. Votes and comments are real.',
+  '이 글의 리믹스': 'Remixes', '작성 정보': 'About this post', 'Slop이 게시판 사용법을 보여 주려고 Claude로 만들어 올린 예시예요. 판정과 의견은 실제로 남길 수 있어요.': 'An example Slop made with Claude to show how things work. Votes and comments are real.',
   '요약하려면 로그인해 주세요': 'Log in to summarize', '정리하는 중…': 'Summarizing…', '요약하지 못했어요.': "Couldn't summarize.",
   // guests, limits, empty states, share
   '판정(▲/▼)은 가입하지 않아도 할 수 있어요. 글과 댓글을 쓰려면 가입해 주세요.': 'You can judge (▲/▼) without an account. Sign up to post and comment.',

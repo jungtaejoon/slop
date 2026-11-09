@@ -19,7 +19,7 @@ export async function renderPost(v) {
     if (S.d !== d) return;
     if (post.community) { remember(post.community); $('#crumb').href = '#/c/' + post.community.slug; $('#crumb').textContent = '← ' + post.community.name; }
     if (isMod()) api.listCommunities({ limit: 200 }).then((l) => { l.forEach(remember); if (S.d === d) drawArticle(); }).catch(() => {});
-    document.title = `${post.title} · Slop Lab`;
+    document.title = `${post.title} · Slop`;
     drawArticle(); drawThread(); drawSide();
     let t; d.unsub = api.subscribeComments(v.id, () => { clearTimeout(t); t = setTimeout(reloadComments, 400); });
     api.listRemixes(v.id).then((r) => { if (S.d === d) { d.remixes = r; drawSide(); } }).catch(() => {});
@@ -187,7 +187,7 @@ function drawSide() {
     ${d.versions.length > 1 ? `<section class="panel"><h2>수정 이력</h2><div class="hist">${d.versions.slice().reverse().map((x) => `<a href="#/p/${p.id}/v/${x.n}" aria-current="${x.n === v?.n}"><b class="mono">v${x.n}</b><div><div${x.note ? ' data-ugc' : ''}>${esc(x.note || '메모 없음')}</div><div class="m">${ago(x.createdAt)} · 이 버전에 단 의견 ${d.comments.filter((c) => c.version === x.n).length}</div></div></a>`).join('')}</div></section>` : ''}
     ${d.remixes?.length ? `<section class="panel"><h2>이 글의 리믹스</h2><div class="hist">${d.remixes.map((x) => `<a href="#/p/${x.id}"><b class="mono">${x.score}</b><div><span data-ugc>${esc(x.title)}</span><div class="m">${ago(x.createdAt)}</div></div></a>`).join('')}</div></section>` : ''}
     <section class="panel"><h2>작성 정보</h2><p>${who(p.author, p.isExample)}</p><p>${p.community ? `<span>${esc(p.community.name)}</span> · ` : ''}<span>${esc(KINDS[p.kind]?.[0] || '')}</span>${p.tool ? ` · <span data-ugc>${esc(p.tool)}</span>` : ''}</p>
-      ${p.isExample ? '<p>Slop Lab이 게시판 사용법을 보여 주려고 Claude로 만들어 올린 예시예요. 판정과 의견은 실제로 남길 수 있어요.</p>' : ''}</section>`;
+      ${p.isExample ? '<p>Slop이 게시판 사용법을 보여 주려고 Claude로 만들어 올린 예시예요. 판정과 의견은 실제로 남길 수 있어요.</p>' : ''}</section>`;
   const sg = $('#sumGo'); if (sg) sg.onclick = () => summarize(sg);
 }
 

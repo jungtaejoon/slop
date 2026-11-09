@@ -10,7 +10,7 @@ export const LEGAL = {
     en: {
       title: 'Terms of Service',
       body: `
-<p>Slop Lab is a free community site where people share things made with AI and judge them ▲ gem or ▼ slop. It is run by an individual, ${CONTACT.name} (“we”). By using Slop Lab you agree to these terms.</p>
+<p>Slop is a free community site where people share things made with AI and judge them ▲ gem or ▼ slop. It is run by an individual, ${CONTACT.name} (“we”). By using Slop you agree to these terms.</p>
 <h2>1. Accounts</h2>
 <ul>
 <li>You must be at least 14 years old to create an account.</li>
@@ -21,7 +21,7 @@ export const LEGAL = {
 <h2>2. Your content</h2>
 <ul>
 <li>You keep ownership of what you post: posts, apps, code, images, text, prompts and comments.</li>
-<li>You give Slop Lab a worldwide, free, non-exclusive license to host, display, run (for apps), copy and share your content on the site and in its link previews, feeds and pages, for as long as it is on Slop Lab. This also lets other members remix your post on Slop Lab, with a link back to yours.</li>
+<li>You give Slop a worldwide, free, non-exclusive license to host, display, run (for apps), copy and share your content on the site and in its link previews, feeds and pages, for as long as it is on Slop. This also lets other members remix your post on Slop, with a link back to yours.</li>
 <li>Only post things you have the right to share, and follow the terms of the AI tool you used. Say which tool made it.</li>
 </ul>
 <h2>3. Community rules</h2>
@@ -36,13 +36,13 @@ export const LEGAL = {
 <h2>4. Moderation</h2>
 <p>Moderators can hide, lock, move or delete content and restrict accounts that break these rules. Use the Report button to flag problems. We may also remove content when the law requires it.</p>
 <h2>5. Apps and code made by others</h2>
-<p>Apps posted on Slop Lab run in an isolated sandbox in your browser, but they are written by other people. Try them, and use posted code, at your own risk. Everything is provided as is.</p>
+<p>Apps posted on Slop run in an isolated sandbox in your browser, but they are written by other people. Try them, and use posted code, at your own risk. Everything is provided as is.</p>
 <h2>6. No warranty, limited liability</h2>
-<p>Slop Lab is provided as is, without warranties of any kind. To the extent the law allows, we are not liable for indirect or consequential damages, for content posted by others, or for interruptions or data loss.</p>
+<p>Slop is provided as is, without warranties of any kind. To the extent the law allows, we are not liable for indirect or consequential damages, for content posted by others, or for interruptions or data loss.</p>
 <h2>7. Ending</h2>
 <p>You can delete your account at any time in Settings. We may suspend or remove accounts that break these terms.</p>
 <h2>8. Changes</h2>
-<p>We may update these terms. We'll post the new version here with a new effective date. If you keep using Slop Lab after a change, you accept the updated terms.</p>
+<p>We may update these terms. We'll post the new version here with a new effective date. If you keep using Slop after a change, you accept the updated terms.</p>
 <h2>9. Law</h2>
 <p>These terms are governed by the laws of the Republic of Korea. Disputes go to the competent courts of the Republic of Korea.</p>
 <h2>10. Contact</h2>
@@ -51,7 +51,7 @@ export const LEGAL = {
     ko: {
       title: '이용약관',
       body: `
-<p>Slop Lab은 AI로 만든 결과물을 올리고 ▲보석 / ▼슬롭으로 판정하는 무료 커뮤니티예요. 개인 ${CONTACT.name}(이하 “운영자”)이 운영해요. Slop Lab을 이용하면 이 약관에 동의하는 것으로 봐요.</p>
+<p>Slop은 AI로 만든 결과물을 올리고 ▲보석 / ▼슬롭으로 판정하는 무료 커뮤니티예요. 개인 ${CONTACT.name}(이하 “운영자”)이 운영해요. Slop을 이용하면 이 약관에 동의하는 것으로 봐요.</p>
 <h2>1. 계정</h2>
 <ul>
 <li>만 14세 이상만 계정을 만들 수 있어요.</li>
@@ -62,7 +62,7 @@ export const LEGAL = {
 <h2>2. 내가 올린 콘텐츠</h2>
 <ul>
 <li>올린 글, 실행물, 코드, 이미지, 프롬프트, 댓글의 권리는 올린 사람에게 있어요.</li>
-<li>올린 콘텐츠가 Slop Lab에 있는 동안, Slop Lab이 사이트와 링크 미리보기·피드·페이지에서 그것을 보관하고, 보여 주고, (실행물은) 실행하고, 복제·공유할 수 있는 무료·비독점·전 세계 이용 권한을 줘요. 다른 회원이 Slop Lab 안에서 원본 링크와 함께 리믹스하는 것도 여기에 포함돼요.</li>
+<li>올린 콘텐츠가 Slop에 있는 동안, Slop이 사이트와 링크 미리보기·피드·페이지에서 그것을 보관하고, 보여 주고, (실행물은) 실행하고, 복제·공유할 수 있는 무료·비독점·전 세계 이용 권한을 줘요. 다른 회원이 Slop 안에서 원본 링크와 함께 리믹스하는 것도 여기에 포함돼요.</li>
 <li>공유할 권리가 있는 것만 올리고, 사용한 AI 도구의 약관을 지켜 주세요. 어떤 도구로 만들었는지도 밝혀 주세요.</li>
 </ul>
 <h2>3. 커뮤니티 규칙</h2>
@@ -79,7 +79,7 @@ export const LEGAL = {
 <h2>5. 다른 사람이 만든 실행물과 코드</h2>
 <p>실행물은 브라우저의 격리된 공간(샌드박스)에서 돌아가지만, 다른 사람이 만든 것이에요. 실행물과 코드는 각자 판단해서 써 주세요. 모든 것은 있는 그대로 제공돼요.</p>
 <h2>6. 보증 없음과 책임 제한</h2>
-<p>Slop Lab은 어떤 보증도 없이 있는 그대로 제공돼요. 법이 허용하는 범위에서, 운영자는 간접 손해, 다른 사람이 올린 콘텐츠, 서비스 중단이나 데이터 손실에 대해 책임지지 않아요.</p>
+<p>Slop은 어떤 보증도 없이 있는 그대로 제공돼요. 법이 허용하는 범위에서, 운영자는 간접 손해, 다른 사람이 올린 콘텐츠, 서비스 중단이나 데이터 손실에 대해 책임지지 않아요.</p>
 <h2>7. 이용 종료</h2>
 <p>설정 화면에서 언제든 계정을 삭제할 수 있어요. 약관을 어긴 계정은 정지되거나 삭제될 수 있어요.</p>
 <h2>8. 약관 변경</h2>
@@ -95,7 +95,7 @@ export const LEGAL = {
     en: {
       title: 'Privacy Policy',
       body: `
-<p>This policy explains what Slop Lab collects, why, and what you can do about it. Slop Lab is run by an individual, ${CONTACT.name}.</p>
+<p>This policy explains what Slop collects, why, and what you can do about it. Slop is run by an individual, ${CONTACT.name}.</p>
 <h2>1. What we collect</h2>
 <ul>
 <li><b>Account:</b> your email address and password. The password is stored only as a hash by our login provider (Supabase). Optional profile details: username, display name, bio.</li>
@@ -131,7 +131,7 @@ export const LEGAL = {
 <h2>7. Browser storage</h2>
 <p>We use your browser's local storage for your login session, language and display preferences, and drafts. We don't use advertising or tracking cookies.</p>
 <h2>8. Children</h2>
-<p>Slop Lab is not meant for children under 14. If you are under 14, please don't create an account.</p>
+<p>Slop is not meant for children under 14. If you are under 14, please don't create an account.</p>
 <h2>9. Security</h2>
 <p>Connections use HTTPS, passwords are hashed by Supabase, and database access rules limit who can read or change each piece of data.</p>
 <h2>10. Changes</h2>
@@ -142,7 +142,7 @@ export const LEGAL = {
     ko: {
       title: '개인정보 처리방침',
       body: `
-<p>Slop Lab(운영자: ${CONTACT.name})이 어떤 개인정보를 왜 처리하는지, 이용자가 무엇을 할 수 있는지 알려 드려요.</p>
+<p>Slop(운영자: ${CONTACT.name})이 어떤 개인정보를 왜 처리하는지, 이용자가 무엇을 할 수 있는지 알려 드려요.</p>
 <h2>1. 처리하는 개인정보</h2>
 <ul>
 <li><b>계정:</b> 이메일 주소, 비밀번호(로그인 서비스 Supabase가 암호화된 값으로만 보관해요). 선택 항목: 아이디, 표시 이름, 소개.</li>
@@ -179,7 +179,7 @@ export const LEGAL = {
 <h2>7. 자동 수집 장치(쿠키 등)</h2>
 <p>로그인 상태, 언어·보기 설정, 작성 중인 초안을 브라우저의 로컬 저장소에 저장해요. 광고·추적 쿠키는 쓰지 않아요.</p>
 <h2>8. 만 14세 미만</h2>
-<p>Slop Lab은 만 14세 미만을 대상으로 하지 않아요. 만 14세 미만이면 계정을 만들지 말아 주세요.</p>
+<p>Slop은 만 14세 미만을 대상으로 하지 않아요. 만 14세 미만이면 계정을 만들지 말아 주세요.</p>
 <h2>9. 안전성 확보 조치</h2>
 <p>모든 연결은 HTTPS로 암호화되고, 비밀번호는 Supabase가 암호화된 값으로만 보관하며, 데이터베이스 접근 규칙으로 정보마다 읽고 바꿀 수 있는 사람을 제한해요.</p>
 <h2>10. 변경</h2>

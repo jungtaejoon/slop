@@ -109,7 +109,7 @@ export async function renderProfile(v) {
     ${mine ? '<a class="btn" href="#/settings">프로필 설정</a>' : ''}</div>
     <h2 style="margin:0 0 10px">올린 글</h2>
     ${list.posts.length ? `<div class="list">${list.posts.map(postRow).join('')}</div>` : `<div class="banner">${mine ? '아직 올린 글이 없어요. <a href="#/submit">첫 글을 올려 보세요.</a>' : '아직 올린 글이 없어요.'}</div>`}`;
-  document.title = `${p.name} · Slop Lab`;
+  document.title = `${p.name} · Slop`;
   setupPreviews(app);
 }
 
@@ -133,5 +133,5 @@ export function renderLegal(doc) {
   if (!d) { replaceTo('/'); return; }
   app.innerHTML = `<article class="legal" data-ugc lang="${L}"><h1>${d.title}</h1><p class="muted">${L === 'ko' ? '시행일' : 'Effective'}: ${EFFECTIVE[L]}</p>${d.body}
     <p class="muted" style="margin-top:28px"><a href="#/${other}">${LEGAL[other][L].title} →</a></p></article>`;
-  document.title = `${d.title} · Slop Lab`;
+  document.title = `${d.title} · Slop`;
 }

@@ -78,7 +78,7 @@ function frame(inner, pill) {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${DEFS}
 <rect width="${W}" height="${H}" fill="#0E1110"/><rect width="${W}" height="${H}" fill="url(#glow)"/>
 <g transform="translate(${PAD},52)"><rect width="56" height="56" rx="14" fill="url(#g)"/><path d="M28 10.5 42 24.5 28 45.5 14 24.5Z" fill="#fff"/><path d="M28 10.5 35 24.5 28 45.5 21 24.5Z" fill="#000" fill-opacity=".14"/></g>
-<text x="${PAD + 74}" y="92" font-family="Pretendard" font-weight="700" font-size="34" fill="#F4F6F3">Slop<tspan fill="#14B8A6">.</tspan>Lab</text>
+<text x="${PAD + 74}" y="92" font-family="Pretendard" font-weight="700" font-size="34" fill="#F4F6F3">Slop<tspan fill="#14B8A6">.</tspan></text>
 ${pill ? `<g transform="translate(${W - PAD - pillW},56)"><rect width="${pillW}" height="48" rx="24" fill="#1B201E" stroke="#2C3330"/><text x="${pillW / 2}" y="32" text-anchor="middle" font-family="Pretendard" font-weight="600" font-size="24" fill="#C9D1C7">${esc(pill)}</text></g>` : ''}
 ${inner}
 <rect y="${H - 12}" width="${W}" height="12" fill="url(#bar)"/>
@@ -118,7 +118,7 @@ export function communityCardSvg(c, name, description) {
   const dTop = nameY + (nameLines.length - 1) * 86 + 64;
   const descSvg = desc.map((l, i) => `<text x="${PAD}" y="${dTop + i * 46}" font-family="Pretendard" font-weight="400" font-size="34" fill="#C9D1C7">${esc(l)}</text>`).join('');
   const counts = L === 'ko' ? `팔로워 ${c.member_count} · 글 ${c.post_count}` : `${c.member_count} followers · ${c.post_count} posts`;
-  const cta = L === 'ko' ? 'Slop Lab에서 팔로우하세요' : 'Follow it on Slop Lab';
+  const cta = L === 'ko' ? 'Slop에서 팔로우하세요' : 'Follow it on Slop';
   return frame(`<text x="${PAD}" y="172" font-family="Pretendard" font-weight="600" font-size="26" letter-spacing="1" fill="#14B8A6">${L === 'ko' ? '커뮤니티' : 'COMMUNITY'} · c/${esc(c.slug)}</text>
 ${nameSvg}${descSvg}
 <text x="${PAD}" y="566" font-family="Pretendard" font-weight="700" font-size="30" fill="#F4F6F3">${esc(counts)}</text>

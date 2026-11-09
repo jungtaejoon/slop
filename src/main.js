@@ -42,7 +42,7 @@ async function route() {
   if (prev.name === 'post' && !(v.name === 'post' && v.id === prev.id)) closePost();
   if (prev.name === 'compose' && location.hash !== S.c?.hash) closeCompose();
   S.view = v; renderBoards(); trackView(v);
-  if (v.name !== 'post') document.title = 'Slop Lab';
+  if (v.name !== 'post') document.title = 'Slop';
   const samePage = prev.name === v.name && prev.id === v.id && prev.slug === v.slug && prev.special === v.special;
   if (!samePage) scrollTo(0, 0);
   if (v.name === 'feed') return renderFeed();

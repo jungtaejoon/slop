@@ -14,7 +14,7 @@ export async function renderFeed() {
     c = commBySlug(v.slug);
     if (!c) { app.innerHTML = '<div class="skel" style="height:140px"></div>'; try { c = remember(await api.getCommunity(v.slug)); } catch { /* shown below */ } if (my !== feedToken || S.view !== v) return; }
     if (!c) { app.innerHTML = `<div class="empty"><h2>"${esc(v.slug)}" 커뮤니티가 없어요</h2><p class="muted">주소를 확인하거나, 직접 만들어 보세요.</p><a class="btn pri" href="#/communities/new">커뮤니티 만들기</a> <a class="btn" href="#/communities">커뮤니티 찾기</a></div>`; return; }
-    v.communityId = c.id; document.title = `${tr(c.name)} · Slop Lab`;
+    v.communityId = c.id; document.title = `${tr(c.name)} · Slop`;
   }
   // home falls back to popular for visitors and members who follow nothing
   const homeFallback = v.special === 'home' && (!api.me || !followIds().length);
@@ -144,7 +144,7 @@ async function renderSide(c) {
         <div class="row">${followBtn(c, true)}${canWrite() ? `<a class="btn sm" href="#/submit/${esc(c.slug)}">글쓰기</a>` : ''}<button class="btn sm ghost" data-act="sharec" data-slug="${esc(c.slug)}" data-title="${esc(c.name)}">공유</button>${isCommunityMod(c.id) ? `<a class="btn sm ghost" href="#/c/${esc(c.slug)}/settings">커뮤니티 설정</a>` : ''}</div></section>
       ${c.rules ? `<section class="panel"><h2>규칙</h2><div class="md" style="font-size:13.5px">${md(c.rules)}</div></section>` : ''}
       ${mods?.length ? `<section class="panel"><h2>운영자</h2><div class="chips" style="flex-direction:column;align-items:flex-start;gap:6px">${mods.map((m) => who(m)).join('')}</div></section>` : ''}`
-      : `<section class="panel"><h2>Slop Lab</h2><p>AI가 만든 결과물을 그냥 넘기지 말고, 써 보고, 판정하고, 이유를 남기는 커뮤니티예요. 주제별 커뮤니티를 팔로우하고, 없으면 직접 만들어요.</p>
+      : `<section class="panel"><h2>Slop</h2><p>AI가 만든 결과물을 그냥 넘기지 말고, 써 보고, 판정하고, 이유를 남기는 커뮤니티예요. 주제별 커뮤니티를 팔로우하고, 없으면 직접 만들어요.</p>
         <div class="statrow"><div><b>${st ? st.posts : '–'}</b><span>게시글</span></div><div><b>${st ? st.gems : '–'}</b><span>보석</span></div>${ps ? `<div><b>${ps.karma}</b><span>내 판정 점수</span></div>` : ''}</div>
         <a class="btn gem block" href="#/judge" style="margin-bottom:8px">판정하기: 한 장씩 넘기며 판정</a>
       ${canWrite() ? '<div class="row"><a class="btn pri sm" href="#/submit">글쓰기</a><a class="btn sm" href="#/communities/new">커뮤니티 만들기</a></div>' : !api.me ? '<a class="btn block" href="#/login">로그인하고 참여하기</a>' : ''}</section>`)

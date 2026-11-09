@@ -17,7 +17,7 @@ import { createCardRenderer, postCardSvg, communityCardSvg, isKorean } from './o
 import { LEGAL, EFFECTIVE } from '../src/legal-content.js';
 
 const URL_ = process.env.VITE_SUPABASE_URL, KEY = process.env.VITE_SUPABASE_ANON_KEY;
-const SITE = (process.env.SITE_URL || 'https://jungtaejoon.github.io/slop-lab').replace(/\/?$/, '/');
+const SITE = (process.env.SITE_URL || 'https://jungtaejoon.github.io/slop').replace(/\/?$/, '/');
 const OUT = 'dist';
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const clip = (s, n) => { const t = String(s || '').replace(/[#*`>\[\]]/g, '').replace(/\s+/g, ' ').trim(); return t.length > n ? t.slice(0, n - 1) + '…' : t; };
@@ -25,10 +25,10 @@ const OG = `${SITE}og.png`;
 
 if (!existsSync(`${OUT}/index.html`)) { console.error('run vite build first'); process.exit(1); }
 
-writeFileSync(`${OUT}/404.html`, `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Slop Lab</title><script>
+writeFileSync(`${OUT}/404.html`, `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Slop</title><script>
 var p=location.pathname,m=p.match(/^(.*?\\/)(p|c|u)\\/([^/]+)\\/?$/);
 location.replace(m?m[1]+'#/'+m[2]+'/'+m[3]:p.split('/').slice(0,2).join('/')+'/');
-</script></head><body><a href="./">Go to Slop Lab</a></body></html>`);
+</script></head><body><a href="./">Go to Slop</a></body></html>`);
 
 if (!URL_ || !KEY) { console.log('demo build: share pages skipped (no Supabase settings)'); process.exit(0); }
 
@@ -45,11 +45,11 @@ if (!META_RE.test(TEMPLATE)) throw new Error('index.html lost its <!-- page-meta
 
 function appPage({ lang, title, desc, image, url, type = 'article', ld, content, imageAlt }) {
   const meta = `<!-- page-meta -->
-  <title>${esc(title)} · Slop Lab</title>
+  <title>${esc(title)} · Slop</title>
   <meta name="description" content="${esc(desc)}">
   <link rel="canonical" href="${esc(url)}">
   <meta property="og:type" content="${type}">
-  <meta property="og:site_name" content="Slop Lab">
+  <meta property="og:site_name" content="Slop">
   <meta property="og:locale" content="${lang === 'ko' ? 'ko_KR' : 'en_US'}">
   <meta property="og:title" content="${esc(title)}">
   <meta property="og:description" content="${esc(desc)}">
@@ -103,7 +103,7 @@ for (const p of posts) {
   const metaLine = meta.filter(Boolean).join(' · ');
   const desc = clip(`${p.excerpt ? clip(p.excerpt, 110) + ' — ' : ''}${metaLine}`, 180);
   const image = card(`og/p/${p.id}.png`, postCardSvg(p, `c/${p.community_slug} · ${cname}`)); if (image !== OG) cards++;
-  const author = p.is_example ? 'Slop Lab' : (p.author_name || p.author_username || '');
+  const author = p.is_example ? 'Slop' : (p.author_name || p.author_username || '');
   const content = `<article class="article prerender"><div class="content">
 <div class="pmeta"><a class="cat" href="${SITE}c/${esc(p.community_slug)}/">${esc(cname)}</a><span class="pill">${esc(KIND[lang][p.kind] || '')}</span>${p.tool ? `<span class="pill tool">${esc(p.tool)}</span>` : ''}${author ? `<span>${esc(author)}</span>` : ''}</div>
 <h1 lang="${lang}">${esc(p.title)}</h1>
@@ -115,7 +115,7 @@ ${b.tags?.length ? `<p class="muted">${b.tags.map((t) => '#' + esc(t)).join(' ')
   writeFileSync(`${OUT}/p/${p.id}/index.html`, appPage({ lang, title: p.title, desc, image, url, content,
     ld: { '@context': 'https://schema.org', '@type': 'DiscussionForumPosting', headline: p.title, text: clip(b.body || p.excerpt, 800), inLanguage: lang, url, datePublished: p.created_at, dateModified: p.updated_at,
       image, articleSection: cname,
-      author: { '@type': p.is_example || !p.author_username ? 'Organization' : 'Person', name: p.is_example ? 'Slop Lab' : (p.author_name || p.author_username || 'Slop Lab'), ...(p.author_username ? { url: `${SITE}#/u/${p.author_username}` } : {}) },
+      author: { '@type': p.is_example || !p.author_username ? 'Organization' : 'Person', name: p.is_example ? 'Slop' : (p.author_name || p.author_username || 'Slop'), ...(p.author_username ? { url: `${SITE}#/u/${p.author_username}` } : {}) },
       interactionStatistic: [{ '@type': 'InteractionCounter', interactionType: 'https://schema.org/CommentAction', userInteractionCount: p.comment_count },
         { '@type': 'InteractionCounter', interactionType: 'https://schema.org/LikeAction', userInteractionCount: p.up_count }] } }));
 }
@@ -125,7 +125,7 @@ for (const c of comms) {
   // default communities are stored in Korean; their pages are in English with the Korean kept in the description
   const en = toEnglish(c.name) !== c.name, lang = en || !isKorean(c.name) ? 'en' : 'ko';
   const name = lang === 'en' ? toEnglish(c.name) : c.name, description = lang === 'en' ? toEnglish(c.description) : c.description;
-  const desc = clip(`${description || 'A Slop Lab community for AI-made work'} · ${c.member_count} followers · ${c.post_count} posts`, 180);
+  const desc = clip(`${description || 'A Slop community for AI-made work'} · ${c.member_count} followers · ${c.post_count} posts`, 180);
   const image = card(`og/c/${c.slug}.png`, communityCardSvg(c, name, description));
   const recent = posts.filter((p) => p.community_slug === c.slug).slice(0, 30);
   const content = `<div class="fhead"><div><h1>${esc(name)}</h1><p class="mono">c/${esc(c.slug)}</p>${description ? `<p>${esc(description)}</p>` : ''}</div></div>
@@ -138,12 +138,12 @@ for (const c of comms) {
 for (const doc of ['terms', 'privacy']) {
   const d = LEGAL[doc].en;
   mkdirSync(`${OUT}/${doc}`, { recursive: true });
-  writeFileSync(`${OUT}/${doc}/index.html`, appPage({ lang: 'en', title: d.title, desc: `${d.title} of Slop Lab, effective ${EFFECTIVE.en}.`, image: OG, url: `${SITE}${doc}/`, type: 'website',
+  writeFileSync(`${OUT}/${doc}/index.html`, appPage({ lang: 'en', title: d.title, desc: `${d.title} of Slop, effective ${EFFECTIVE.en}.`, image: OG, url: `${SITE}${doc}/`, type: 'website',
     content: `<article class="legal" data-ugc lang="en"><h1>${d.title}</h1><p class="muted">Effective: ${EFFECTIVE.en}</p>${d.body}</article>` }));
 }
 
 // ---------------------------------------------------------------- home: recent posts as plain links (crawlers find every post page)
-const home = TEMPLATE.replace('<main class="wrap" id="app"></main>', `<main class="wrap" id="app"><h1>Slop Lab</h1><p>Find the gems in AI-made stuff. Try them, vote ▲ gem or ▼ slop, and say why.</p>
+const home = TEMPLATE.replace('<main class="wrap" id="app"></main>', `<main class="wrap" id="app"><h1>Slop</h1><p>Find the gems in AI-made stuff. Try them, vote ▲ gem or ▼ slop, and say why.</p>
 <div class="list">${posts.slice(0, 40).map((p) => `<article class="post prerender"><div style="min-width:0"><a class="ptitle" href="${SITE}p/${p.id}/">${esc(p.title)}</a></div></article>`).join('')}</div></main>`)
   .replace('<!-- page-meta -->', `<!-- page-meta -->\n  <link rel="canonical" href="${SITE}">`);
 writeFileSync(`${OUT}/index.html`, home);
@@ -151,13 +151,13 @@ writeFileSync(`${OUT}/index.html`, home);
 // ---------------------------------------------------------------- weekly best: a plain landing page that is easy to share every week
 function page({ title, desc, image, url, body }) {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${esc(title)} · Slop Lab</title>
+<title>${esc(title)} · Slop</title>
 <meta name="description" content="${esc(desc)}"><link rel="canonical" href="${esc(url)}">
-<meta property="og:type" content="website"><meta property="og:site_name" content="Slop Lab"><meta property="og:locale" content="en_US">
+<meta property="og:type" content="website"><meta property="og:site_name" content="Slop"><meta property="og:locale" content="en_US">
 <meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(desc)}">
 <meta property="og:image" content="${esc(image)}"><meta property="og:url" content="${esc(url)}">
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${esc(title)}"><meta name="twitter:description" content="${esc(desc)}"><meta name="twitter:image" content="${esc(image)}">
-<link rel="alternate" type="application/rss+xml" title="Slop Lab: new posts" href="${SITE}rss.xml">
+<link rel="alternate" type="application/rss+xml" title="Slop: new posts" href="${SITE}rss.xml">
 <style>body{font-family:system-ui,-apple-system,"Apple SD Gothic Neo",sans-serif;max-width:640px;margin:40px auto;padding:0 16px;line-height:1.6;color:#1a1c19}a{color:#0b7f73}</style>
 </head><body>${body}</body></html>`;
 }
@@ -168,9 +168,9 @@ if (best.length < 3) { best = rank(posts.filter((p) => p.up_count > 0)).slice(0,
 if (best.length < 3) { best = posts.slice(0, 10); bestLabel = 'recent'; }
 const bestTitle = bestLabel === 'recent' ? 'Latest AI-made posts' : `Top ${best.length} gems ${bestLabel}`;
 mkdirSync(`${OUT}/best`, { recursive: true });
-writeFileSync(`${OUT}/best/index.html`, page({ title: bestTitle, desc: clip(`The best AI-made work ${bestLabel}, as judged by Slop Lab: ${best.slice(0, 3).map((p) => p.title).join(' · ')}`, 180),
+writeFileSync(`${OUT}/best/index.html`, page({ title: bestTitle, desc: clip(`The best AI-made work ${bestLabel}, as judged by Slop: ${best.slice(0, 3).map((p) => p.title).join(' · ')}`, 180),
   image: OG, url: `${SITE}best/`,
-  body: `<p><a href="${SITE}">SLOP.LAB</a> · Find the gems in AI-made stuff</p><h1>${esc(bestTitle)}</h1>
+  body: `<p><a href="${SITE}">SLOP.</a> · Find the gems in AI-made stuff</p><h1>${esc(bestTitle)}</h1>
 <p>People tried these and voted ▲ gem / ▼ slop. Updated every 3 hours.</p>
 <ol style="padding-left:22px">${best.map((p) => `<li style="margin:0 0 14px"><a href="${SITE}p/${p.id}/" style="font-weight:700;font-size:17px">${esc(p.title)}</a><br><span style="color:#5d645b;font-size:14px">${esc(commName(p.community_name, isKorean(p.title) ? 'ko' : 'en'))} · ▲ ${p.up_count} · ▼ ${p.down_count} · ${p.comment_count} comments${p.tool ? ' · ' + esc(p.tool) : ''}</span>${p.excerpt ? `<br><span style="font-size:14px">${esc(clip(p.excerpt, 120))}</span>` : ''}</li>`).join('')}</ol>
 <p><a href="${SITE}#/judge">Judge some yourself →</a></p>` }));
@@ -179,7 +179,7 @@ writeFileSync(`${OUT}/best/index.html`, page({ title: bestTitle, desc: clip(`The
 const rssDate = (d) => new Date(d).toUTCString();
 writeFileSync(`${OUT}/rss.xml`, `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel>
-<title>Slop Lab: new posts</title><link>${SITE}</link><description>Find the gems in AI-made stuff</description>
+<title>Slop: new posts</title><link>${SITE}</link><description>Find the gems in AI-made stuff</description>
 <atom:link href="${SITE}rss.xml" rel="self" type="application/rss+xml"/>
 ${posts.slice(0, 50).map((p) => `<item><title>${esc(p.title)}</title><link>${SITE}p/${p.id}/</link><guid isPermaLink="true">${SITE}p/${p.id}/</guid><category>${esc(p.community_name)}</category><pubDate>${rssDate(p.created_at)}</pubDate><description>${esc(clip(p.excerpt, 300))}</description></item>`).join('\n')}
 </channel></rss>`);
