@@ -131,6 +131,7 @@ export function createDemoApi() {
     return { posts: list.slice(offset, offset + limit).map((p) => Object.assign(shape.post(withAuthor({ ...p, code: undefined })), why.has(p.id) ? { recReason: why.get(p.id) } : {})), hasMore: list.length > offset + limit };
   };
   api.getPost = async (id) => { const p = db.posts[id]; if (!visible(p)) return null; const r = shape.post(withAuthor(p)); if (p.remix_of) r.remixTitle = db.posts[p.remix_of]?.title || null; return r; };
+  api.getPostCodes = async (ids) => Object.fromEntries(ids.filter((id) => visible(db.posts[id])).map((id) => [id, db.posts[id].code || '']));
   api.getPostCode = async (id) => (visible(db.posts[id]) ? db.posts[id].code : '');
   api.getVersions = async (id) => (visible(db.posts[id]) ? db.versions.filter((v) => v.post_id === id).sort((a, b) => a.n - b.n).map(shape.version) : []);
   api.listRemixes = async (id) => Object.values(db.posts).filter((p) => p.remix_of === id && !p.hidden).map((p) => shape.post(withAuthor({ ...p, code: undefined })));

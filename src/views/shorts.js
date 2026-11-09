@@ -8,7 +8,7 @@
 // app; apps scrolled away are removed, which also stops their sound and CPU use.
 import { api, S, $, app, KINDS, icon, gradFor, sandboxFrame, loadMyVotes, remember, voteBox, countView, go, toast, seenPosts, REC_SEED, REC_REASONS } from '../core.js';
 import { esc, safeImgs, safeUrl, domain, ago } from '../text.js';
-import { getCode } from './feed.js';
+import { getCode, primeCodes } from './feed.js';
 
 const PAGE = 20;
 let io = null, dwell = null;
@@ -52,6 +52,7 @@ async function loadMore() {
     fresh.forEach((p) => { S.cache.set(p.id, Object.assign(S.cache.get(p.id) || {}, p)); if (p.community) remember(p.community); });
     await loadMyVotes(fresh.map((p) => p.id));
     sh.queue.push(...fresh.map((p) => S.cache.get(p.id)));
+    primeCodes(fresh.filter((p) => p.kind === 'html').map((p) => p.id)); // one request for the whole page's apps
   } finally { sh.loading = false; }
 }
 
@@ -61,7 +62,7 @@ function drawCards(from) {
   if (from === 0) sw.innerHTML = '';
   sw.insertAdjacentHTML('beforeend', S.shorts.queue.slice(from).map((p, k) => card(p, from + k)).join(''));
   sw.removeAttribute('aria-busy');
-  io ??= new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) setActive(+e.target.dataset.i); }), { root: sw, threshold: 0.6 });
+  io ??= new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) setActive(+e.target.dataset.i); }), { root: sw, threshold: 0.5 });
   [...sw.children].slice(from).forEach((c) => io.observe(c));
   if (from === 0) { sw.onclick = onClick; sw.addEventListener('scroll', hideHint, { passive: true, once: true }); }
 }
@@ -74,7 +75,7 @@ function card(p, i) {
       <button class="sw-done" data-stop="${i}">✕ 그만하기</button>`;
   else if (p.kind === 'image' && safeImgs(p.images).length) {
     const imgs = safeImgs(p.images);
-    media = `<div class="sw-media sw-gal">${imgs.map((u) => `<img src="${esc(u)}" alt="" loading="lazy" decoding="async">`).join('')}</div>${imgs.length > 1 ? `<div class="sw-dots" aria-hidden="true">${imgs.map(() => '<i></i>').join('')}</div>` : ''}`;
+    media = `<div class="sw-media sw-gal">${imgs.map((u) => `<img src="${esc(u)}" alt="" loading="${i < 3 ? 'eager' : 'lazy'}" decoding="async">`).join('')}</div>${imgs.length > 1 ? `<div class="sw-dots" aria-hidden="true">${imgs.map(() => '<i></i>').join('')}</div>` : ''}`;
   } else {
     const body = p.kind === 'code' ? p.codeHead || p.excerpt : p.excerpt;
     media = `<div class="sw-media sw-text${p.kind === 'code' ? ' code' : ''}" style="--cv:${grad}">${p.kind === 'link' && safeUrl(p.url) ? `<a class="sw-link" href="${esc(p.url)}" target="_blank" rel="noopener noreferrer">${icon('link')}<span>${esc(domain(p.url))} ↗</span></a>` : ''}
@@ -94,20 +95,26 @@ function card(p, i) {
 
 function setActive(i) {
   const sh = S.shorts, sw = $('#sw'); if (!sw || S.view.name !== 'shorts') return;
+  if (sh.i === i && sw.children[i]?.querySelector('.sw-app iframe')) return; // already set up
   sh.i = i;
-  [...sw.children].forEach((c) => { const j = +c.dataset.i; if (j !== i) { if (c.classList.contains('playing')) stopPlay(c, true); unmountApp(c); } });
-  const c = sw.children[i]; if (c?.classList.contains('k-html')) mountApp(c);
-  // prefetch the next app's code so it starts instantly
-  const nxt = sh.queue[i + 1]; if (nxt?.kind === 'html') getCode(nxt.id);
+  // the card on screen and the next one keep a live app (the next one starts early, so
+  // swiping to it is instant); every other app is removed to stop its sound and CPU use
+  [...sw.children].forEach((c) => { const j = +c.dataset.i; if (j !== i) { if (c.classList.contains('playing')) stopPlay(c, true); if (j !== i + 1) unmountApp(c); } });
+  const c = sw.children[i]; if (c?.classList.contains('k-html')) mountApp(c, i);
+  const n1 = sw.children[i + 1]; if (n1?.classList.contains('k-html')) mountApp(n1, i + 1);
+  // warm up what comes after: images of the next two cards, code of the app after that
+  for (const p of sh.queue.slice(i + 1, i + 3)) if (p.kind === 'image') safeImgs(p.images).slice(0, 2).forEach((u) => { const im = new Image(); im.decoding = 'async'; im.src = u; });
+  const n2 = sh.queue[i + 2]; if (n2?.kind === 'html') getCode(n2.id);
   clearTimeout(dwell); const id = sh.queue[i]?.id;
   dwell = setTimeout(() => { if (S.shorts?.queue[S.shorts.i]?.id === id) countView('p/' + id); }, 1200);
-  if (i >= sh.queue.length - 5 && !sh.done) { const n = sh.queue.length; loadMore().then(() => { if (S.view.name === 'shorts' && sh.queue.length > n) drawCards(n); }); }
+  if (i >= sh.queue.length - 8 && !sh.done) { const n = sh.queue.length; loadMore().then(() => { if (S.view.name === 'shorts' && sh.queue.length > n) drawCards(n); }); }
 }
 
-async function mountApp(c) {
+async function mountApp(c, i) {
   const box = c.querySelector('.sw-app'); if (!box || box.querySelector('iframe')) return;
   const id = c.dataset.id, code = await getCode(id);
-  if (!c.isConnected || +c.dataset.i !== S.shorts.i || box.querySelector('iframe')) return;
+  // still wanted? (the card on screen or the one right after it)
+  if (!c.isConnected || (S.shorts.i !== i && S.shorts.i + 1 !== i) || box.querySelector('iframe')) return;
   if (!code) { box.querySelector('.sw-ph').textContent = '미리보기를 불러오지 못했어요'; return; }
   const f = sandboxFrame(code, S.cache.get(id)?.title || '실행물');
   f.inert = true; f.tabIndex = -1; // preview: watch only, so swipes and keys stay with the feed

@@ -123,6 +123,12 @@ function thumbHtml(p) {
 }
 
 const codeCache = new Map();
+// fetch the code of several apps in one request and keep it for getCode()
+export async function primeCodes(ids) {
+  const need = ids.filter((id) => !codeCache.has(id)); if (!need.length || !api.getPostCodes) return;
+  const p = api.getPostCodes(need); need.forEach((id) => codeCache.set(id, p.then((m) => m[id] ?? '').catch(() => { codeCache.delete(id); return ''; })));
+  await p.catch(() => {});
+}
 export const getCode = (id) => { if (!codeCache.has(id)) codeCache.set(id, api.getPostCode(id).catch(() => { codeCache.delete(id); return ''; })); return codeCache.get(id); };
 let io;
 export function setupPreviews(root) {

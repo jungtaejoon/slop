@@ -547,3 +547,5 @@ body.standalone .install-link{display:none}
 /* "why recommended" labels */
 .pill.why{border-color:transparent;background:var(--sunk);color:var(--muted)}
 .sw-why{color:#e2e8f0;background:rgb(255 255 255 / .14);border-radius:999px;padding:2px 8px;font-size:12px}
+/* Swipe: skip layout and paint for cards far off screen */
+.sw-card{content-visibility:auto;contain-intrinsic-size:auto 100dvh}

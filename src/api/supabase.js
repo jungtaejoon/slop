@@ -138,6 +138,7 @@ export function createSupabaseApi(url, key) {
     if (p.remixOf) { const r = check(await sb.from('posts').select('id,title').eq('id', p.remixOf).maybeSingle()); p.remixTitle = r?.title || null; }
     return p;
   };
+  api.getPostCodes = async (ids) => (ids.length ? Object.fromEntries(check(await sb.from('posts').select('id,code').in('id', ids)).map((r) => [r.id, r.code || ''])) : {});
   api.getPostCode = async (id) => check(await sb.from('posts').select('code').eq('id', id).maybeSingle())?.code || '';
   api.getVersions = async (id) => check(await sb.from('post_versions').select('*').eq('post_id', id).order('n')).map(shape.version);
   api.listRemixes = async (id) => check(await sb.from('post_feed').select(FEED_COLS).eq('remix_of', id).eq('hidden', false).order('score', { ascending: false }).limit(5)).map(shape.post);
