@@ -1,0 +1,10 @@
+{
+  "appId": "io.github.jungtaejoon.slop",
+  "appName": "Slop",
+  "webDir": "dist",
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#0C0E11",
+    "scheme": "Slop"
+  }
+}

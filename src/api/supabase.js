@@ -5,6 +5,8 @@ import * as shape from './shape.js';
 
 // explicit FK names: votes/saves tables also link posts and comments to profiles,
 // so a bare profiles() embed is ambiguous for PostgREST
+// where sign-in e-mails send people back to: the public site when running inside the iOS app
+const authReturn = () => (/^https?:$/.test(location.protocol) ? location.origin + location.pathname : 'https://jungtaejoon.github.io/slop/');
 const PCOLS = '(id,username,display_name,avatar_url)';
 const POST_AUTHOR = 'author:profiles!posts_author_id_fkey' + PCOLS;
 const COMMENT_AUTHOR = 'author:profiles!comments_author_id_fkey' + PCOLS;
@@ -67,17 +69,17 @@ export function createSupabaseApi(url, key) {
   api.onAuthChange = (f) => listeners.add(f);
   api.refreshMe = async () => { const { data } = await sb.auth.getSession(); await loadMe(data.session); listeners.forEach((f) => f(api.me)); return api.me; };
   api.signInEmail = async (email) => {
-    check(await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname } }));
+    check(await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: authReturn() } }));
     return { sent: true };
   };
   api.signUpPassword = async (email, password) => {
-    const data = check(await sb.auth.signUp({ email, password, options: { emailRedirectTo: location.origin + location.pathname } }));
+    const data = check(await sb.auth.signUp({ email, password, options: { emailRedirectTo: authReturn() } }));
     return { needsConfirm: !data.session };
   };
   api.signInPassword = async (email, password) => { check(await sb.auth.signInWithPassword({ email, password })); };
-  api.resetPassword = async (email) => { check(await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname + '#/settings' })); };
+  api.resetPassword = async (email) => { check(await sb.auth.resetPasswordForEmail(email, { redirectTo: authReturn() + '#/settings' })); };
   api.updatePassword = async (password) => { check(await sb.auth.updateUser({ password })); };
-  api.signInOAuth = async (provider) => check(await sb.auth.signInWithOAuth({ provider, options: { redirectTo: location.origin + location.pathname } }));
+  api.signInOAuth = async (provider) => check(await sb.auth.signInWithOAuth({ provider, options: { redirectTo: authReturn() } }));
   api.signOut = async () => { identity = null; api.me = null; api.guest = null; await sb.auth.signOut(); listeners.forEach((f) => f(null)); };
 
   api.updateProfile = async ({ username, displayName, bio }) => {

@@ -1,4 +1,4 @@
-import { api, S, $, app, avatarHtml, toast, errMsg, go, replaceTo, loadMyVotes } from '../core.js';
+import { api, S, $, app, avatarHtml, toast, errMsg, go, replaceTo, loadMyVotes, isNativeApp } from '../core.js';
 import { esc, ago } from '../text.js';
 import { postRow, setupPreviews } from './feed.js';
 import { LEGAL, EFFECTIVE } from '../legal-content.js';
@@ -14,7 +14,7 @@ export function renderLogin() {
     $('#demoForm').onsubmit = async (e) => { e.preventDefault(); await api.signInDemo($('#dName').value.trim()); toast('데모 계정으로 들어왔어요'); };
     return;
   }
-  const oauth = (import.meta.env.VITE_OAUTH_PROVIDERS || '').split(',').map((x) => x.trim()).filter(Boolean);
+  const oauth = isNativeApp ? [] : (import.meta.env.VITE_OAUTH_PROVIDERS || '').split(',').map((x) => x.trim()).filter(Boolean);
   const NAMES = { google: 'Google', kakao: '카카오', github: 'GitHub' };
   const st = (S.login ??= { mode: 'signup', email: '' });
   app.innerHTML = `<form class="form narrow" id="loginForm" novalidate><h1>${st.mode === 'signup' ? '가입하기' : st.mode === 'login' ? '로그인' : st.mode === 'link' ? '메일 링크로 로그인' : '비밀번호 찾기'}</h1>

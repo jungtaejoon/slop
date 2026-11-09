@@ -2,7 +2,7 @@ import './styles.css';
 import { startTranslator, lang, setLang } from './i18n.js';
 startTranslator();
 { const ls = document.getElementById('langSel'); ls.value = lang; ls.onchange = () => setLang(ls.value); }
-import { api, S, $, icon, isMod, anyCommunityMod, go, currentHash, toAppUrl, countView, BASE_PATH, isStandalone, openInstall, vote, toggleSave, toggleFollow, report, share, openShare, avatarHtml, toast, loadMyCommunities } from './core.js';
+import { api, S, $, icon, isMod, anyCommunityMod, go, currentHash, toAppUrl, countView, BASE_PATH, isStandalone, isNativeApp, openInstall, vote, toggleSave, toggleFollow, report, share, openShare, avatarHtml, toast, loadMyCommunities } from './core.js';
 import { esc } from './text.js';
 import { renderFeed } from './views/feed.js';
 import { renderPost, closePost } from './views/post.js';
@@ -142,7 +142,7 @@ document.addEventListener('keydown', (e) => { if (e.key === '/' && !/INPUT|TEXTA
 
 /* ---------- boot ---------- */
 // installable app: register the service worker (production only); ?nosw removes it again
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
+if ('serviceWorker' in navigator && import.meta.env.PROD && !isNativeApp) {
   if (new URLSearchParams(location.search).has('nosw')) navigator.serviceWorker.getRegistrations().then((rs) => rs.forEach((r) => r.unregister()));
   else window.addEventListener('load', () => navigator.serviceWorker.register(BASE_PATH + 'sw.js').catch(() => {}));
 }

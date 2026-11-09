@@ -61,6 +61,11 @@ export const followBtn = (c, sm) => c ? `<button class="btn${sm ? ' sm' : ''}${S
 // paths (/slop/p/<id>/, /slop/c/<slug>/), built for search engines and link previews.
 // Those pages load this same app, which then takes the route from the path (no hash yet).
 export const BASE_PATH = new URL(document.baseURI).pathname.replace(/[^/]*$/, '');
+// inside the iOS app (Capacitor) the page is served from capacitor://localhost, so links meant
+// for other people and sign-in e-mails must point at the public site instead
+export const isNativeApp = !/^https?:$/.test(location.protocol) || !!window.Capacitor?.isNativePlatform?.();
+export const PUBLIC_SITE = 'https://jungtaejoon.github.io/slop/';
+export const siteBase = () => (isNativeApp ? PUBLIC_SITE : location.origin + BASE_PATH);
 export function currentHash() {
   if (location.hash.replace(/^#\/?/, '')) return location.hash;
   const rest = location.pathname.startsWith(BASE_PATH) ? location.pathname.slice(BASE_PATH.length) : '';
@@ -185,7 +190,7 @@ export function report(t, id) {
 }
 
 // shareable URL: the static preview page (link previews), which redirects into the app
-export const shareUrl = (path) => `${location.origin}${BASE_PATH}${path}`;
+export const shareUrl = (path) => siteBase() + path;
 
 export function openShare(path, title, lead = '') {
   const url = shareUrl(path), text = lang === 'en' ? `${tt(title)} | Gem or slop? Judge it on Slop` : `${title} | Slop에서 보석인지 슬롭인지 판정해 주세요`;
@@ -208,7 +213,7 @@ export function openShare(path, title, lead = '') {
 export const share = (id, title) => openShare(`p/${id}/`, title);
 
 /* ---------- installable app (PWA) ---------- */
-export const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+export const isStandalone = () => isNativeApp || matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 let installPrompt = null; // Chrome/Edge/Samsung Internet hand us this; iOS Safari never does
 window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installPrompt = e; });
 window.addEventListener('appinstalled', () => { installPrompt = null; toast('앱을 설치했어요. 홈 화면에서 열어 보세요'); });
