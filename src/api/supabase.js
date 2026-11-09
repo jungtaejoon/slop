@@ -89,7 +89,24 @@ export function createSupabaseApi(url, key) {
   api.getProfileByUsername = async (u) => shape.profile(check(await sb.from('profiles').select('*').eq('username', u).maybeSingle()));
   api.profileStats = async (id) => check(await sb.rpc('profile_stats', { uid: id }));
 
+  // personalized order from recommend_posts(); plain filters (search, tag, tool, author, saved) use "hot" instead
+  const recOk = (o) => o.sort === 'rec' && !o.q && !o.tag && !o.tool && !o.authorId && !['saved', 'gems'].includes(o.special);
+  async function recommend(o) {
+    const limit = o.limit || 30, offset = o.offset || 0;
+    if (o.special === 'home' && !o.followIds?.length) return { posts: [], hasMore: false };
+    const ranked = check(await sb.rpc('recommend_posts', { p_lang: o.clang || 'all', p_community: o.communityId || null, p_follow_only: o.special === 'home',
+      p_seen: (o.seen || []).slice(-200), p_seed: o.seed || 0, p_offset: offset, p_limit: limit + 1 }));
+    const ids = ranked.slice(0, limit).map((r) => r.post_id);
+    if (!ids.length) return { posts: [], hasMore: false };
+    const rows = check(await sb.from('post_feed').select(FEED_COLS).in('id', ids)), byId = new Map(rows.map((r) => [r.id, r]));
+    const why = new Map(ranked.map((r) => [r.post_id, r.reason]));
+    let posts = ids.map((id) => byId.get(id)).filter(Boolean).map((r) => Object.assign(shape.post(r), { recReason: why.get(r.id) }));
+    if (o.communityId) posts = [...posts.filter((p) => p.pinned), ...posts.filter((p) => !p.pinned)];
+    return { posts, hasMore: ranked.length > limit };
+  }
   api.listPosts = async (o) => {
+    if (recOk(o)) { try { return await recommend(o); } catch (e) { console.warn('recommend_posts unavailable, using hot', e); } o = { ...o, sort: 'hot' }; }
+    else if (o.sort === 'rec') o = { ...o, sort: 'hot' };
     const limit = o.limit || 30, offset = o.offset || 0;
     let q = sb.from('post_feed').select(FEED_COLS);
     if (o.communityId) q = q.eq('community_id', o.communityId);

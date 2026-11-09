@@ -57,6 +57,8 @@ const D = {
   '신고하려면 로그인해 주세요': 'Log in to report', '이미 신고했어요. 운영자가 확인할 거예요': 'Already reported. A moderator will review it.',
   '글 신고': 'Report post', '댓글 신고': 'Report comment',
   '신고 내용은 운영자만 볼 수 있어요. 그냥 별로라면 신고 대신 ▼슬롭으로 판정해 주세요.': "Only moderators see reports. If you just didn't like it, vote ▼ Slop instead.",
+  '추천': 'For you', '좋아한 글과 비슷해요': 'Similar to posts you liked', '새 글 · 첫 판정을 기다려요': 'New · waiting for its first verdicts', '보석 판정을 받은 글': 'Judged a gem',
+  '팔로우한 커뮤니티': 'From a community you follow', '반응이 많은 글': 'Getting lots of reactions', '새로운 발견': 'Something new', '이미 판정한 글': 'You judged this',
   '차단': 'Block', '작성자 차단': 'Block author', '차단하기': 'Block', '차단 풀기': 'Unblock', '차단했어요': 'Blocked', '차단을 풀었어요': 'Unblocked',
   '차단한 사용자': 'Blocked users', '[차단한 사용자의 댓글]': '[Comment from someone you blocked]', '차단하려면 로그인해 주세요': 'Log in to block people',
   '이 사람의 글과 댓글이 보이지 않고, 이 사람의 반응은 알림으로 오지 않아요. 상대에게는 알리지 않아요. 설정에서 언제든 풀 수 있어요. 규칙을 어긴 글이라면 신고도 함께 해 주세요.': "You won't see their posts or comments, and you won't get notifications from them. They aren't told. You can unblock anytime in settings. If they broke the rules, please report them too.",

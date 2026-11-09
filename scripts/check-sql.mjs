@@ -221,6 +221,38 @@ await as(U.a, `delete from blocks where blocked_id = $1`, [U.b]);
 (await as(U.a, `select * from blocks`)).rows.length === 0 ? ok('members unblock') : fail('unblock failed');
 await as(U.a, `insert into blocks (blocked_id) values ($1)`, [U.b]);
 
+// ---------------------------------------------------------------- recommendations
+{
+  const rec = async (uid, args = '') => (await as(uid, `select post_id, score, reason from recommend_posts(${args})`)).rows;
+  const rank = (rows, id) => rows.findIndex((r) => r.post_id === id);
+  const visitor = await rec(null);
+  const hiddenIds = new Set((await db.query(`select id from posts where hidden`)).rows.map((r) => r.id));
+  visitor.length > 0 && !visitor.some((r) => hiddenIds.has(r.post_id)) ? ok(`recommend_posts works for visitors (${visitor.length} posts, none hidden)`) : fail('visitor recommendations');
+  const mine = new Set((await db.query(`select id from posts where author_id = $1`, [U.a])).rows.map((r) => r.id));
+  const forA = await rec(U.a, `p_limit => 100`);
+  !forA.some((r) => mine.has(r.post_id)) ? ok('your own posts are not recommended to you') : fail('own posts recommended');
+  const ko = await rec(null, `p_lang => 'ko', p_limit => 100`), titles = (await db.query(`select id, title from posts`)).rows;
+  const tmap = Object.fromEntries(titles.map((r) => [r.id, r.title]));
+  ko.length && ko.every((r) => /[가-힣]/.test(tmap[r.post_id])) ? ok(`language filter: ${ko.length} Korean posts`) : fail('p_lang');
+  // taste: liking one music post lifts the other music posts for that user
+  // the community with the most posts (not by A) that A hasn't voted on yet
+  const music = (await db.query(`with c as (select community_id from posts where not hidden and author_id is distinct from $1 and id not in (select post_id from post_votes where user_id = $1) group by community_id order by count(*) desc limit 1)
+    select p.id from posts p join c using (community_id) where not p.hidden and p.author_id is distinct from $1 and p.id not in (select post_id from post_votes where user_id = $1) order by p.created_at`, [U.a])).rows.map((r) => r.id);
+  if (music.length >= 2) {
+    const before = await rec(U.a, `p_limit => 100`);
+    await as(U.a, `insert into post_votes (post_id, value) values ($1, 1) on conflict (post_id, user_id) do update set value = 1`, [music[0]]);
+    const after = await rec(U.a, `p_limit => 100`), other = after.find((r) => r.post_id === music[1]);
+    const was = before.find((r) => r.post_id === music[1]).score;
+    other.score > was && rank(after, music[1]) <= rank(before, music[1]) && other.reason === 'taste' ? ok(`taste: a gem vote on one post lifts another in the same community (score ${was.toFixed(2)} → ${other.score.toFixed(2)}, reason "${other.reason}")`) : fail(`taste ${was} → ${other?.score} ${other?.reason}`);
+    const judged = after.find((r) => r.post_id === music[0]);
+    judged.reason === 'judged' && rank(after, music[0]) > rank(before, music[0]) ? ok('posts you already judged sink') : fail('judged post did not sink');
+  } else fail('need two music posts for the taste check');
+    const top = forA[0].post_id, seen = await rec(U.a, `p_seen => array['${top}']::uuid[], p_limit => 100`);
+  rank(seen, top) > 0 ? ok(`posts you have seen sink (was #1, now #${rank(seen, top) + 1})`) : fail('seen post still first');
+  const s1 = (await rec(null, `p_seed => 1`)).map((r) => r.post_id).join(), s1b = (await rec(null, `p_seed => 1`)).map((r) => r.post_id).join();
+  s1 === s1b ? ok('the same seed gives the same order (paging is stable)') : fail('seed not stable');
+}
+
 // ---------------------------------------------------------------- account deletion
 await expectError('visitors cannot call delete_my_account', () => as(null, `select delete_my_account(false)`));
 await expectError('the last admin cannot delete their account', () => as(U.m, `select delete_my_account(false)`));

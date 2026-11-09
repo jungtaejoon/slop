@@ -101,15 +101,34 @@ export function createDemoApi() {
     if (o.tag) list = list.filter((p) => p.tags.includes(o.tag));
     if (o.q) { const t = o.q.toLowerCase(); list = list.filter((p) => [p.title, p.body, p.tool].join(' ').toLowerCase().includes(t)); }
     if (o.special === 'saved') { const s = db.saves[api.me?.id] || {}; list = list.filter((p) => s[p.id]); }
-    const sort = o.special === 'gems' ? 'top' : o.sort, t = (p) => Date.parse(p.created_at);
+    const sort = o.special === 'gems' ? 'top' : o.sort, t = (p) => Date.parse(p.created_at), why = new Map();
     if (o.special === 'gems') list = list.filter((p) => shape.isGemCounts(p.up_count, p.down_count));
     if (sort === 'new') list.sort((a, b) => t(b) - t(a));
     else if (sort === 'top') { const w = o.special === 'gems' ? Infinity : shape.WINDOWS[o.win || 'all']; list = list.filter((p) => Date.now() - t(p) <= w).sort((a, b) => (b.up_count - b.down_count) - (a.up_count - a.down_count) || t(b) - t(a)); }
     else if (sort === 'contro') list = list.filter((p) => shape.controScore(p.up_count, p.down_count) > 0).sort((a, b) => shape.controScore(b.up_count, b.down_count) - shape.controScore(a.up_count, a.down_count));
+    else if (sort === 'rec') {
+      const me = api.me?.id, votes = (me && db.votes[me]?.p) || {}, saves = (me && db.saves[me]) || {}, seen = new Set(o.seen || []);
+      const follows = new Set(db.members.filter((m) => m.user_id === me).map((m) => m.community_id));
+      const likes = [...Object.entries(votes).map(([id, v]) => [db.posts[id], v]), ...Object.keys(saves).map((id) => [db.posts[id], 1])].filter(([p]) => p);
+      const aff = (key) => { const m = {}; likes.forEach(([p, w]) => [].concat(key(p)).forEach((k) => { (m[k] ??= [0, 0])[0] += w; m[k][1]++; })); return (k) => (m[k] ? m[k][0] / (m[k][1] + 2) : 0); };
+      const comm = aff((p) => p.community_id), tag = aff((p) => p.tags), kind = aff((p) => p.kind);
+      const rnd = (id) => { let h = (o.seed || 0) >>> 0; for (const ch of id) h = Math.imul(h ^ ch.charCodeAt(0), 2654435761) >>> 0; return h / 4294967296; };
+      const score = (p) => {
+        const n = p.up_count + p.down_count, ageH = (Date.now() - t(p)) / 36e5, tags = p.tags || [];
+        const taste = comm(p.community_id) * 1.2 + (tags.length ? tags.reduce((a, x) => a + tag(x), 0) / tags.length : 0) * 0.8 + kind(p.kind) * 0.5;
+        let s = 0.9 * ((p.up_count + 2) / (n + 4) - 0.5) * 2 + 0.35 * Math.log(1 + p.comment_count * 3 + p.up_count) + 1.1 / Math.pow(1 + ageH / 36, 0.7)
+          + taste + 0.6 * rnd(p.id) / Math.sqrt(1 + n) + (follows.has(p.community_id) ? 0.3 : 0) - (p.is_example ? 0.15 : 0);
+        if (votes[p.id]) s = s * 0.3 - 1; else if (saves[p.id] || seen.has(p.id)) s = s * 0.4 - 0.6;
+        why.set(p.id, votes[p.id] ? 'judged' : taste >= 0.25 ? 'taste' : n < 3 && ageH < 72 ? 'new' : p.up_count >= 3 && shape.isGemCounts(p.up_count, p.down_count) ? 'gem' : follows.has(p.community_id) ? 'follow' : 'explore');
+        return s;
+      };
+      if (me) list = list.filter((p) => p.author_id !== me);
+      const sc = new Map(list.map((p) => [p.id, score(p)])); list.sort((a, b) => sc.get(b.id) - sc.get(a.id));
+    }
     else if (sort === 'pending') list = list.filter((p) => p.up_count + p.down_count < 5).sort((a, b) => (a.up_count + a.down_count) - (b.up_count + b.down_count) || t(b) - t(a));
     else list.sort((a, b) => shape.hotScore(b.up_count, b.down_count, t(b)) - shape.hotScore(a.up_count, a.down_count, t(a)));
     if (o.communityId && sort !== 'pending') list.sort((a, b) => b.pinned - a.pinned);
-    return { posts: list.slice(offset, offset + limit).map((p) => shape.post(withAuthor({ ...p, code: undefined }))), hasMore: list.length > offset + limit };
+    return { posts: list.slice(offset, offset + limit).map((p) => Object.assign(shape.post(withAuthor({ ...p, code: undefined })), why.has(p.id) ? { recReason: why.get(p.id) } : {})), hasMore: list.length > offset + limit };
   };
   api.getPost = async (id) => { const p = db.posts[id]; if (!visible(p)) return null; const r = shape.post(withAuthor(p)); if (p.remix_of) r.remixTitle = db.posts[p.remix_of]?.title || null; return r; };
   api.getPostCode = async (id) => (visible(db.posts[id]) ? db.posts[id].code : '');

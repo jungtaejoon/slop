@@ -6,7 +6,7 @@
 // that card into play mode: the app gets every touch and key, swiping is locked and
 // the side buttons step aside, until "Done". Only the card on screen keeps a live
 // app; apps scrolled away are removed, which also stops their sound and CPU use.
-import { api, S, $, app, KINDS, icon, gradFor, sandboxFrame, loadMyVotes, remember, voteBox, countView, go, toast } from '../core.js';
+import { api, S, $, app, KINDS, icon, gradFor, sandboxFrame, loadMyVotes, remember, voteBox, countView, go, toast, seenPosts, REC_SEED, REC_REASONS } from '../core.js';
 import { esc, safeImgs, safeUrl, domain, ago } from '../text.js';
 import { getCode } from './feed.js';
 
@@ -24,7 +24,8 @@ export async function renderShorts(v) {
   document.removeEventListener('keydown', onKey); document.addEventListener('keydown', onKey);
   const sh = (S.shorts ??= { queue: [], i: 0, offset: 0, done: false, clang: null });
   // the language filter changed since last time: start over
-  if (sh.clang !== S.prefs.clang) Object.assign(sh, { queue: [], i: 0, offset: 0, done: false, clang: S.prefs.clang });
+  if (sh.clang !== S.prefs.clang) Object.assign(sh, { queue: [], i: 0, offset: 0, done: false, clang: S.prefs.clang, seen: null });
+  sh.seen ??= seenPosts(); // a snapshot, so pages don't reshuffle while you swipe
   app.innerHTML = `<div class="sw-top"><button class="sw-icon" id="swBack" aria-label="나가기" title="나가기">←</button><b>넘겨보기</b></div>
     <div class="sw" id="sw" role="feed" aria-label="넘겨보기" aria-busy="true"><div class="sw-card"><div class="sw-frame"><div class="sw-load">불러오는 중…</div></div></div></div>`;
   $('#swBack').onclick = () => go(S.lastHash && !S.lastHash.startsWith('#/shorts') ? S.lastHash.slice(1) : '/');
@@ -45,7 +46,7 @@ export async function renderShorts(v) {
 async function loadMore() {
   const sh = S.shorts; if (sh.done || sh.loading) return; sh.loading = true;
   try {
-    const r = await api.listPosts({ sort: 'hot', clang: S.prefs.clang, offset: sh.offset, limit: PAGE });
+    const r = await api.listPosts({ sort: 'rec', clang: S.prefs.clang, offset: sh.offset, limit: PAGE, seen: sh.seen, seed: REC_SEED });
     sh.offset += r.posts.length; sh.done = !r.hasMore;
     const known = new Set(sh.queue.map((p) => p.id)), fresh = r.posts.filter((p) => !known.has(p.id));
     fresh.forEach((p) => { S.cache.set(p.id, Object.assign(S.cache.get(p.id) || {}, p)); if (p.community) remember(p.community); });
@@ -82,7 +83,7 @@ function card(p, i) {
   return `<article class="sw-card k-${esc(p.kind)}" data-i="${i}" data-id="${p.id}" aria-label="${esc(p.title)}"><div class="sw-frame">
     ${media}
     ${i === 0 && !hintSeen() ? '<div class="sw-hint" aria-hidden="true">↑ 위로 넘기면 다음 글</div>' : ''}
-    <div class="sw-cap"><div class="sw-meta">${p.community ? `<a class="sw-chip" href="#/c/${esc(p.community.slug)}">${esc(p.community.name)}</a>` : ''}<span class="sw-chip ghost">${esc(KINDS[p.kind]?.[0] || '')}</span>${p.tool ? `<span class="sw-chip ghost" data-ugc>${esc(p.tool)}</span>` : ''}<span class="sw-ago">${ago(p.createdAt)}</span></div>
+    <div class="sw-cap"><div class="sw-meta">${p.community ? `<a class="sw-chip" href="#/c/${esc(p.community.slug)}">${esc(p.community.name)}</a>` : ''}<span class="sw-chip ghost">${esc(KINDS[p.kind]?.[0] || '')}</span>${p.tool ? `<span class="sw-chip ghost" data-ugc>${esc(p.tool)}</span>` : ''}<span class="sw-ago">${ago(p.createdAt)}</span>${p.recReason && REC_REASONS[p.recReason] && p.recReason !== 'explore' ? `<span class="sw-why">${REC_REASONS[p.recReason]}</span>` : ''}</div>
       <h2 data-ugc><a href="#/p/${p.id}">${esc(p.title)}</a></h2>${(p.kind === 'html' || p.kind === 'image') && p.excerpt ? `<p data-ugc>${esc(p.excerpt.slice(0, 160))}</p>` : ''}</div>
     <div class="sw-rail">${voteBox('p', p.id)}
       <a class="sw-b" href="#/p/${p.id}" aria-label="의견 ${p.comments}">${icon('comment')}<small>${p.comments}</small></a>

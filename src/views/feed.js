@@ -1,4 +1,4 @@
-import { api, S, $, app, KINDS, voteBox, who, sandboxFrame, savePrefs, loadMyVotes, canWrite, isCommunityMod, followIds, remember, commBySlug, commLink, followBtn, icon, gradFor, cav, isStandalone } from '../core.js';
+import { api, S, $, app, KINDS, voteBox, who, sandboxFrame, savePrefs, loadMyVotes, canWrite, isCommunityMod, followIds, remember, commBySlug, commLink, followBtn, icon, gradFor, cav, isStandalone, seenPosts, REC_SEED, REC_REASONS } from '../core.js';
 import { md } from '../text.js';
 import { t as tr } from '../i18n.js';
 import { esc, safeUrl, safeImgs, domain, ago } from '../text.js';
@@ -22,7 +22,7 @@ export async function renderFeed() {
   const sub = c ? `c/${c.slug}` : v.special === 'home' ? (homeFallback ? (api.me ? '아직 팔로우한 커뮤니티가 없어서 전체 인기 글을 보여 드려요. 마음에 드는 커뮤니티를 팔로우해 보세요.' : '로그인하고 커뮤니티를 팔로우하면 여기에 내 피드가 모여요.') : '내가 팔로우한 커뮤니티의 글이에요.')
     : v.special === 'popular' ? '모든 커뮤니티의 글이에요. 새 커뮤니티를 발견하는 곳이에요.'
     : v.special === 'gems' ? '커뮤니티가 보석으로 판정한 글이에요. 보석 3표 이상, 보석 비율 75% 이상이면 여기에 모여요.' : '내가 저장한 글이에요. 나에게만 보여요.';
-  const sorts = [['hot', '인기'], ['new', '최신'], ['top', '최고'], ['contro', '논쟁 중'], ['pending', '판정 대기']];
+  const sorts = [['rec', '추천'], ['hot', '인기'], ['new', '최신'], ['top', '최고'], ['contro', '논쟁 중'], ['pending', '판정 대기']];
   const F = S.filters || {};
   let welcomeOff = false; try { welcomeOff = !!localStorage.getItem('slop-welcome-off'); } catch { /* */ }
   const welcome = !api.me && !welcomeOff && !c ? `<section class="welcome" id="welcome"><div><h2>AI가 만든 것, 그냥 넘기지 마세요</h2>
@@ -52,7 +52,7 @@ async function loadPage(my) {
   const v = S.view, F = S.filters || {};
   try {
     const special = S.feed.homeFallback ? null : v.special;
-    const r = await api.listPosts({ communityId: v.communityId, special, followIds: followIds(), clang: S.prefs.clang, sort: S.prefs.sort, win: S.prefs.win, q: S.q, tool: F.tool, tag: F.tag, offset: S.feed.posts.length, limit: PAGE });
+    const r = await api.listPosts({ communityId: v.communityId, special, followIds: followIds(), clang: S.prefs.clang, sort: S.prefs.sort, win: S.prefs.win, q: S.q, tool: F.tool, tag: F.tag, offset: S.feed.posts.length, limit: PAGE, seen: S.feed.seen ??= seenPosts(), seed: REC_SEED });
     if (my !== feedToken || S.view !== v) return;
     r.posts.forEach((p) => { S.cache.set(p.id, Object.assign(S.cache.get(p.id) || {}, p)); if (p.community) remember(p.community); });
     await loadMyVotes(r.posts.map((p) => p.id));
@@ -93,7 +93,7 @@ export function postRow(p) {
     <div class="pmeta">${p.pinned ? '<span class="pill pin">고정</span>' : ''}${p.hidden ? '<span class="pill warn">숨김</span>' : ''}${p.locked ? '<span class="pill">잠김</span>' : ''}
       ${commLink(p.community)}<span class="pill">${esc(KINDS[p.kind]?.[0] || '')}</span>
       ${p.tool ? `<button class="pill tool" data-act="tool" data-v="${esc(p.tool)}">${esc(p.tool)}</button>` : ''}
-      <span class="pill gem" data-gembadge="${p.id}"${p.isGem ? '' : ' hidden'}>보석</span>${p.isExample ? '<span class="pill ex">예시</span>' : ''}${fresh && !p.isExample ? '<span class="pill new">NEW</span>' : ''}${p.remixOf ? '<span class="pill">리믹스</span>' : ''}
+      <span class="pill gem" data-gembadge="${p.id}"${p.isGem ? '' : ' hidden'}>보석</span>${p.isExample ? '<span class="pill ex">예시</span>' : ''}${fresh && !p.isExample ? '<span class="pill new">NEW</span>' : ''}${S.prefs.sort === 'rec' && ['taste', 'gem', 'popular'].includes(p.recReason) ? `<span class="pill why">${REC_REASONS[p.recReason]}</span>` : ''}${p.remixOf ? '<span class="pill">리믹스</span>' : ''}
       ${who(p.author, p.isExample)}<span>${ago(p.createdAt)}</span>${p.version > 1 ? `<span>수정 v${p.version}</span>` : ''}</div>
     <a class="ptitle" href="#/p/${p.id}">${esc(p.title)}</a>
     ${compact ? '' : previewHtml(p) || coverHtml(p)}

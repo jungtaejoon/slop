@@ -15,7 +15,7 @@ export const REPORT_REASONS = ['스팸·광고', '악성 코드·위험한 실�
 export const MAX_CODE = 200 * 1024, MAX_BODY = 40000;
 
 export const S = {
-  prefs: { sort: 'hot', win: 'week', layout: 'card', csort: 'best', clang: lang === 'en' ? 'en' : 'all' }, // English visitors start on English posts
+  prefs: { sort: 'rec', win: 'week', layout: 'card', csort: 'best', clang: lang === 'en' ? 'en' : 'all' }, // English visitors start on English posts
   view: { name: 'boot' }, q: '',
   cache: new Map(),          // post id -> post object (counts are mutated in place on vote)
   votes: { p: {}, c: {} },   // my votes
@@ -85,8 +85,18 @@ export const errMsg = (e, fallback = '저장하지 못했어요. 다시 시도�
   e?.code === '42501' ? (api.me?.banned ? '작성이 제한된 계정이에요.' : '권한이 없어요.') : e?.code === '23505' ? '이미 쓰이고 있는 값이에요.' : e?.code === '54000' ? '커뮤니티는 하루에 두 개까지 만들 수 있어요.' : e?.code === 'SL429' ? '짧은 시간에 너무 많이 올렸어요. 잠시 후 다시 해 주세요.' : e?.code === 'too_large' ? e.message : e?.code === 'demo' ? e.message : fallback;
 
 // privacy-friendly visit counts: one count per page per browser session, nothing about the visitor
+// posts this browser has looked at (the post page, or a moment in Swipe); recommendations sink them
+const SEEN_KEY = 'slop-seen-posts';
+export function seenPosts() { try { return JSON.parse(localStorage.getItem(SEEN_KEY) || '[]'); } catch { return []; } }
+function markSeen(id) { try { const s = seenPosts().filter((x) => x !== id); s.push(id); localStorage.setItem(SEEN_KEY, JSON.stringify(s.slice(-200))); } catch { /* private mode */ } }
+// short "why am I seeing this" labels for recommended posts
+export const REC_REASONS = { taste: '좋아한 글과 비슷해요', new: '새 글 · 첫 판정을 기다려요', gem: '보석 판정을 받은 글', follow: '팔로우한 커뮤니티', popular: '반응이 많은 글', explore: '새로운 발견', judged: '이미 판정한 글' };
+// one shuffle per visit: the exploration part of recommendations stays stable while paging
+export const REC_SEED = Math.floor(Math.random() * 1e6);
+
 export function countView(key) {
   if (!key || navigator.webdriver || /bot|crawl|spider|slurp|headless|preview/i.test(navigator.userAgent)) return;
+  const pid = /^p\/([0-9a-f-]{36})$/.exec(key); if (pid) markSeen(pid[1]);
   try { const seen = JSON.parse(sessionStorage.getItem('slop-seen') || '[]'); if (seen.includes(key)) return; seen.push(key); sessionStorage.setItem('slop-seen', JSON.stringify(seen.slice(-300))); } catch { /* count anyway */ }
   api.trackView?.(key);
 }
