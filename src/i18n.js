@@ -213,7 +213,11 @@ const D = {
   '내가 쓴 글과 댓글도 모두 지우기': 'Also delete all my posts and comments', '고르지 않으면 글과 댓글은 "탈퇴한 사용자"가 쓴 것으로 남아요.': 'If you leave this unchecked, your posts and comments stay, shown as written by "Deleted user".',
   '확인을 위해 아이디를 입력해 주세요': 'Type your username to confirm', '지우는 중…': 'Deleting…', '계정을 삭제했어요': 'Account deleted',
   '사이트의 마지막 관리자는 계정을 지울 수 없어요.': "The site's last admin can't delete their account.", '계정을 삭제하지 못했어요. 잠시 후 다시 시도해 주세요.': "Couldn't delete the account. Please try again shortly.",
-  '데모에서는 계정을 지울 수 없어요': "You can't delete accounts in the demo", '방문 통계': 'Visits', '최근 14일': 'Last 14 days', '이번 주 많이 본 페이지': 'Top pages this week', '방문 기록이 아직 없어요.': 'No visits recorded yet.',
+  '데모에서는 계정을 지울 수 없어요': "You can't delete accounts in the demo",
+  // swipe mode
+  '넘겨보기': 'Swipe', '넘겨보며 구경하기': 'Swipe through', '나가기': 'Exit', '볼 글이 아직 없어요.': 'Nothing to show yet.', '플레이하기': 'Play', '탭해서 플레이': 'Tap to play',
+  '✕ 그만하기': '✕ Done', '↑ 위로 넘기면 다음 글': '↑ Swipe up for the next one', '불러오는 중이에요. 잠시 후 다시 눌러 주세요': 'Still loading. Tap again in a moment',
+  '어땠어요? 오른쪽 ▲보석 / ▼슬롭으로 판정해 주세요': 'How was it? Judge it with ▲ / ▼ on the right', '방문 통계': 'Visits', '최근 14일': 'Last 14 days', '이번 주 많이 본 페이지': 'Top pages this week', '방문 기록이 아직 없어요.': 'No visits recorded yet.',
   '첫 버전': 'first version', '예시 게시물': 'example post', '언어': 'Language', '글 언어': 'Post language', '콘텐츠 언어': 'Content language', '모든 언어': 'All languages',
 };
 

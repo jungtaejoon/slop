@@ -78,6 +78,13 @@ export function toast(m) { const t = $('#toast'); t.textContent = m; t.hidden = 
 export const errMsg = (e, fallback = '저장하지 못했어요. 다시 시도해 주세요.') =>
   e?.code === '42501' ? (api.me?.banned ? '작성이 제한된 계정이에요.' : '권한이 없어요.') : e?.code === '23505' ? '이미 쓰이고 있는 값이에요.' : e?.code === '54000' ? '커뮤니티는 하루에 두 개까지 만들 수 있어요.' : e?.code === 'SL429' ? '짧은 시간에 너무 많이 올렸어요. 잠시 후 다시 해 주세요.' : e?.code === 'too_large' ? e.message : e?.code === 'demo' ? e.message : fallback;
 
+// privacy-friendly visit counts: one count per page per browser session, nothing about the visitor
+export function countView(key) {
+  if (!key || navigator.webdriver || /bot|crawl|spider|slurp|headless|preview/i.test(navigator.userAgent)) return;
+  try { const seen = JSON.parse(sessionStorage.getItem('slop-seen') || '[]'); if (seen.includes(key)) return; seen.push(key); sessionStorage.setItem('slop-seen', JSON.stringify(seen.slice(-300))); } catch { /* count anyway */ }
+  api.trackView?.(key);
+}
+
 export function requireLogin(msg = '로그인이 필요해요') {
   if (api.me) { if (api.me.banned) { toast('작성이 제한된 계정이에요'); return false; } return true; }
   toast(msg); try { sessionStorage.setItem('slop-after-login', currentHash()); } catch { /* ignore */ }

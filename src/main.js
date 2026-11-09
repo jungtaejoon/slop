@@ -2,7 +2,7 @@ import './styles.css';
 import { startTranslator, lang, setLang } from './i18n.js';
 startTranslator();
 { const ls = document.getElementById('langSel'); ls.value = lang; ls.onchange = () => setLang(ls.value); }
-import { api, S, $, icon, isMod, anyCommunityMod, go, currentHash, toAppUrl, vote, toggleSave, toggleFollow, report, share, openShare, avatarHtml, toast, loadMyCommunities } from './core.js';
+import { api, S, $, icon, isMod, anyCommunityMod, go, currentHash, toAppUrl, countView, vote, toggleSave, toggleFollow, report, share, openShare, avatarHtml, toast, loadMyCommunities } from './core.js';
 import { esc } from './text.js';
 import { renderFeed } from './views/feed.js';
 import { renderPost, closePost } from './views/post.js';
@@ -11,6 +11,7 @@ import { renderLogin, renderSettings, renderProfile, renderInbox, renderLegal } 
 import { renderMod, modAction } from './views/mod.js';
 import { renderDirectory, renderCommunityForm } from './views/communities.js';
 import { renderJudge } from './views/judge.js';
+import { renderShorts, closeShorts } from './views/shorts.js';
 
 /* ---------- router
    #/ (home: followed)  #/popular  #/gems  #/saved  #/c/<slug>  #/c/<slug>/settings  #/communities  #/communities/new
@@ -30,11 +31,14 @@ function parse() {
   if (a === 'u' && b) return { name: 'profile', username: b };
   if (['login', 'settings', 'inbox', 'mod', 'judge'].includes(a)) return { name: a };
   if (a === 'terms' || a === 'privacy') return { name: 'legal', doc: a };
+  if (a === 'shorts') return { name: 'shorts', id: b || null };
   return { name: 'feed', special: 'home' };
 }
 
 async function route() {
   const v = parse(), prev = S.view;
+  S.lastHash = S.curHash; S.curHash = currentHash(); // swipe mode's back button returns here
+  if (prev.name === 'shorts' && v.name !== 'shorts') closeShorts();
   if (prev.name === 'post' && !(v.name === 'post' && v.id === prev.id)) closePost();
   if (prev.name === 'compose' && location.hash !== S.c?.hash) closeCompose();
   S.view = v; renderBoards(); trackView(v);
@@ -53,6 +57,7 @@ async function route() {
   if (v.name === 'judge') return renderJudge();
   if (v.name === 'cform') return renderCommunityForm(v);
   if (v.name === 'legal') return renderLegal(v.doc);
+  if (v.name === 'shorts') return renderShorts(v);
 }
 
 // privacy-friendly visit counts: one count per page per browser session, nothing about the visitor
@@ -60,16 +65,14 @@ function trackView(v) {
   const key = v.name === 'feed' ? (v.slug ? 'c/' + v.slug : v.special === 'home' ? 'home' : v.special)
     : v.name === 'post' ? 'p/' + v.id : v.name === 'profile' ? 'u/' + v.username
     : v.name === 'legal' ? v.doc : ['judge', 'communities'].includes(v.name) ? v.name : null;
-  if (!key || navigator.webdriver || /bot|crawl|spider|slurp|headless|preview/i.test(navigator.userAgent)) return;
-  try { const seen = JSON.parse(sessionStorage.getItem('slop-seen') || '[]'); if (seen.includes(key)) return; seen.push(key); sessionStorage.setItem('slop-seen', JSON.stringify(seen.slice(-300))); } catch { /* count anyway */ }
-  api.trackView?.(key);
+  countView(key);
 }
 
 export function renderBoards() {
   const v = S.view;
   const cur = v.name === 'feed' ? (v.slug ? 'c:' + v.slug : v.special) : v.name === 'post' ? 'c:' + (S.cache.get(v.id)?.community?.slug || '') : v.name === 'cform' && v.slug ? 'c:' + v.slug : v.name;
   const followed = [...S.my.keys()].map((id) => S.comms.get(id)).filter(Boolean).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
-  const items = [['home', '홈', '#/'], ['popular', '인기', '#/popular'], ['judge', '판정하기', '#/judge'], ['gems', '보석함', '#/gems'], ['communities', '커뮤니티 찾기', '#/communities'],
+  const items = [['home', '홈', '#/'], ['popular', '인기', '#/popular'], ['shorts', '넘겨보기', '#/shorts'], ['judge', '판정하기', '#/judge'], ['gems', '보석함', '#/gems'], ['communities', '커뮤니티 찾기', '#/communities'],
     ...followed.map((c) => ['c:' + c.slug, c.name, '#/c/' + c.slug]),
     ...(api.me ? [['saved', '저장함', '#/saved']] : []), ...(anyCommunityMod() ? [['mod', '운영', '#/mod']] : [])];
   $('#boards').innerHTML = items.map(([k, l, h]) => `<a href="${h}" aria-current="${cur === k}">${esc(l)}</a>`).join('');
