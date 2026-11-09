@@ -127,7 +127,7 @@ const D = {
   '팔로우한 커뮤니티에 아직 글이 없어요': 'No posts in your communities yet', '다른 커뮤니티도 둘러보세요.': 'Explore other communities too.', '인기 글 보기': 'See popular posts',
   '아직 글이 없어요': 'No posts yet', '첫 글을 올려 보세요. 사용한 도구와 프롬프트를 함께 적으면 다른 사람이 재현하고 판정하기 쉬워요.': 'Be the first to post. Include the tool and prompt so others can reproduce and judge it.',
   '첫 글 올리기': 'Write the first post', '더 보기': 'Load more', '불러오는 중…': 'Loading…', '고정': 'Pinned', '숨김': 'Hidden', '잠김': 'Locked', '예시': 'Example',
-  '공유': 'Share', '미리보기 준비 중…': 'Preparing preview…', '눌러서 실행': 'Tap to run', '실행': 'Run', '미리보기를 불러오지 못했어요': "Couldn't load preview",
+  '공유': 'Share', '미리보기 준비 중…': 'Preparing preview…', '눌러서 실행': 'Tap to run', '▶ 눌러서 실행': '▶ Tap to run', '실행': 'Run', '미리보기를 불러오지 못했어요': "Couldn't load preview",
   '팔로워': 'followers', '커뮤니티 설정': 'Community settings', '규칙': 'Rules',
   'AI가 만든 결과물을 그냥 넘기지 말고, 써 보고, 판정하고, 이유를 남기는 커뮤니티예요. 주제별 커뮤니티를 팔로우하고, 없으면 직접 만들어요.': "A community where you don't just scroll past AI-made work: try it, judge it, say why. Follow topic communities, or create your own.",
   '내 판정 점수': 'My karma', '판정하기: 한 장씩 넘기며 판정': 'Judge: one card at a time', '로그인하고 참여하기': 'Log in to join', '판정 기준': 'How to judge',
