@@ -1,7 +1,6 @@
-// Quick judge mode: one post at a time, ▲ gem / ▼ slop / skip, with an
-// optional one-line reason. The fastest way for a newcomer to take part,
-// and it keeps the "waiting for a verdict" queue short.
-import { api, S, $, app, KINDS, who, sandboxFrame, loadMyVotes, commLink, remember, toast, errMsg, vote, followIds } from '../core.js';
+// Quick judge mode: one post at a time, ▲ gem / ▼ slop / skip, one tap each.
+// The fastest way for a newcomer to take part, and it keeps the "waiting for a verdict" queue short.
+import { api, S, $, app, KINDS, who, sandboxFrame, loadMyVotes, commLink, remember, vote, followIds } from '../core.js';
 import { tt } from '../i18n.js';
 import { esc, md, safeUrl, safeImgs, domain } from '../text.js';
 import { getCode } from './feed.js';
@@ -53,38 +52,34 @@ function draw() {
       <button class="jbtn k" data-j="0" title="건너뛰기 (↓)">모르겠어요<small>↓</small></button>
       <button class="jbtn g" data-j="1" title="보석 (→)">▲ 보석이다<small>→</small></button>
     </div>
-    <form class="judge-why" id="why" hidden><label for="whyText" id="whyLabel"></label><div class="row" style="flex-wrap:nowrap"><input type="text" id="whyText" maxlength="300" placeholder="한 줄이면 충분해요 (선택)"><button class="btn sm pri" type="submit">남기기</button><button class="btn sm ghost" type="button" id="whySkip">다음 글</button></div></form>
   </div>`;
   if (p.kind === 'html') getCode(p.id).then((code) => { const el = $('#jRun'); if (el && J.queue[J.i] === p) el.replaceChildren(sandboxFrame(code || `<p>${tt('실행할 코드가 없어요')}</p>`, p.title)); });
   app.querySelectorAll('[data-scope]').forEach((b) => (b.onclick = () => { J.scope = b.dataset.scope; renderJudge(); }));
   app.querySelectorAll('[data-j]').forEach((b) => (b.onclick = () => judge(+b.dataset.j)));
-  $('#whySkip').onclick = next;
-  $('#why').onsubmit = async (e) => {
-    e.preventDefault(); const text = $('#whyText').value.trim(); if (!text) return next();
-    const sb = $('#why [type=submit]'); if (sb.disabled) return; sb.disabled = true;
-    try { await api.addComment({ postId: p.id, text, flair: J.last > 0 ? 'gem' : 'improve', version: p.version }); p.comments++; toast('이유를 남겼어요'); } catch (err) { toast(errMsg(err, '댓글을 남기지 못했어요')); }
-    next();
-  };
 }
 
+// Judging is meant to be quick: a verdict moves straight on to the next post while the
+// vote saves in the background (a failed save shows its own toast). Reasons are left
+// on the post page, where the full comment thread is.
 async function judge(d) {
   const p = J.queue[J.i]; if (!p || J.busy) return;
   if (d === 0) return next();
-  J.busy = true; app.querySelectorAll('[data-j]').forEach((b) => (b.disabled = true));
-  const saved = await vote('p', p.id, d, { toggle: false });
-  J.busy = false;
-  if (!saved) { app.querySelectorAll('[data-j]').forEach((b) => (b.disabled = false)); return; }
-  J.last = d; bump();
-  if (!api.me) return next(); // guests can't comment, so go straight to the next card
-  const w = $('#why'); w.hidden = false;
-  $('#whyLabel').textContent = d > 0 ? '어디가 보석인가요? 이유를 남기면 "가치 발견" 댓글이 돼요.' : '무엇이 아쉬웠나요? 이유를 남기면 "개선 제안" 댓글이 돼요.';
-  $('#whyText').focus();
+  // the very first vote may need a guest sign-in; wait for that one so it isn't lost
+  if (!api.uid()) {
+    J.busy = true; app.querySelectorAll('[data-j]').forEach((b) => (b.disabled = true));
+    const saved = await vote('p', p.id, d, { toggle: false });
+    J.busy = false;
+    if (!saved) { app.querySelectorAll('[data-j]').forEach((b) => (b.disabled = false)); return; }
+    bump(); return next();
+  }
+  bump(); next();
+  vote('p', p.id, d, { toggle: false });
 }
 function next() { J.i++; draw(); window.scrollTo(0, 0); }
 
 document.addEventListener('keydown', (e) => {
   if (S.view.name !== 'judge' || !J || /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName) || e.metaKey || e.ctrlKey || e.altKey) return;
   const k = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: 0 }[e.key];
-  if (k === undefined || !$('#why')?.hidden) return;
+  if (k === undefined) return;
   e.preventDefault(); judge(k);
 });

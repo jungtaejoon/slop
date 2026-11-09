@@ -305,8 +305,6 @@ footer .wrap{padding-block:18px;display:flex;gap:12px;flex-wrap:wrap}
 .jbtn.s{border-color:var(--slop);color:var(--slop)} .jbtn.s:hover{background:var(--slop-soft)}
 .jbtn.k{font-size:14px;color:var(--muted)}
 .jbtn[disabled]{opacity:.45;cursor:default}
-.judge-why{background:var(--surface);border:1px solid var(--gem);border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:8px}
-.judge-why label{font-size:13.5px;font-weight:700}
 @media (max-width:640px){.jbtn small{display:none}.judge-title{font-size:19px}}
 
 .langsel{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);border-radius:999px;padding:0 4px 0 10px;background:var(--surface);flex:none}
