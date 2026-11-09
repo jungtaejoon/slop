@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>회의 비용 계산기</title>
+<style>
+  :root{--bg:#0f1720;--fg:#e8eef4;--muted:#8a9bab;--accent:#ffb020;--card:#17222e}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;font-family:system-ui,-apple-system,"Apple SD Gothic Neo",sans-serif;background:var(--bg);color:var(--fg);display:grid;place-items:center;padding:20px}
+  .app{width:min(560px,100%);display:flex;flex-direction:column;gap:18px}
+  h1{margin:0;font-size:20px}
+  .money{font-size:clamp(40px,12vw,72px);font-weight:800;color:var(--accent);font-variant-numeric:tabular-nums;letter-spacing:-1px}
+  .sub{color:var(--muted);font-size:14px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)}
+  input{background:var(--card);border:1px solid #2b3a4a;border-radius:10px;padding:10px 12px;color:var(--fg);font-size:16px}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  button{border:0;border-radius:999px;padding:10px 18px;font-size:15px;font-weight:700;cursor:pointer}
+  .go{background:var(--accent);color:#111}.ghost{background:var(--card);color:var(--fg)}
+  .eq{background:var(--card);border-radius:12px;padding:12px 14px;font-size:14px;line-height:1.6}
+  .eq b{color:var(--accent)}
+</style></head><body>
+<div class="app">
+  <h1>이 회의, 지금까지 얼마짜리일까?</h1>
+  <div><div class="money" id="money">₩0</div><div class="sub" id="time">00:00:00 경과</div></div>
+  <div class="grid">
+    <label>참석자 수<input id="people" type="number" min="1" value="6"></label>
+    <label>1인당 연봉 (만원)<input id="salary" type="number" min="0" step="100" value="5500"></label>
+  </div>
+  <div class="row"><button class="go" id="toggle">회의 시작</button><button class="ghost" id="reset">초기화</button></div>
+  <div class="eq" id="eq"></div>
+</div>
+<script>
+  const $ = (id) => document.getElementById(id);
+  const HOURS_PER_YEAR = 2080; // 주 40시간 × 52주
+  let running = false, startedAt = 0, elapsedBefore = 0;
+  const perSecond = () => (+$('people').value || 0) * (+$('salary').value || 0) * 10000 / HOURS_PER_YEAR / 3600;
+  const fmt = (n) => '₩' + Math.floor(n).toLocaleString('ko-KR');
+  function elapsed() { return elapsedBefore + (running ? (Date.now() - startedAt) / 1000 : 0); }
+  function draw() {
+    const s = elapsed(), ps = perSecond();
+    $('money').textContent = fmt(s * ps);
+    const h = String(Math.floor(s / 3600)).padStart(2, '0'), m = String(Math.floor(s / 60) % 60).padStart(2, '0'), sec = String(Math.floor(s) % 60).padStart(2, '0');
+    $('time').textContent = `${h}:${m}:${sec} 경과`;
+    const coffee = Math.floor(s * ps / 4500);
+    $('eq').innerHTML = `1초에 <b>${fmt(ps)}</b>, 1시간이면 <b>${fmt(ps * 3600)}</b>이에요.<br>지금까지 쓴 돈이면 커피 <b>${coffee.toLocaleString('ko-KR')}잔</b>을 살 수 있어요.`;
+    requestAnimationFrame(draw);
+  }
+  $('toggle').onclick = () => {
+    if (running) { elapsedBefore = elapsed(); running = false; $('toggle').textContent = '이어서 진행'; }
+    else { startedAt = Date.now(); running = true; $('toggle').textContent = '잠깐 멈춤'; }
+  };
+  $('reset').onclick = () => { running = false; elapsedBefore = 0; $('toggle').textContent = '회의 시작'; };
+  draw();
+</script>
+</body></html>

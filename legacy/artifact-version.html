@@ -1,0 +1,974 @@
+<title>Slop Lab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: sticky header with board strip; 3-column community layout (boards · threads · sidebar) collapsing to one column. */
+:root{
+  --bg:#EDEEEA; --surface:#FFFFFF; --sunk:#E3E5DF; --ink:#1A1C19; --muted:#5D645B; --line:#D3D7CD;
+  --gem:#0B7F73; --gem-soft:#D5EFEA; --slop:#B4581F; --slop-soft:#F6E2D4; --warn:#B3261E; --warn-soft:#F9DEDC; --ok:#1E7F4A; --ok-soft:#DBF0E2;
+  --f-display:"Black Han Sans","IBM Plex Sans KR",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121412; --surface:#1B1E1B; --sunk:#242823; --ink:#ECEEE7; --muted:#9AA297; --line:#2F342E;
+  --gem:#3FD0BE; --gem-soft:#123430; --slop:#F09A5E; --slop-soft:#3A2617; --warn:#F2867E; --warn-soft:#3B1C1A; --ok:#5CCB8A; --ok-soft:#183324; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121412; --surface:#1B1E1B; --sunk:#242823; --ink:#ECEEE7; --muted:#9AA297; --line:#2F342E;
+  --gem:#3FD0BE; --gem-soft:#123430; --slop:#F09A5E; --slop-soft:#3A2617; --warn:#F2867E; --warn-soft:#3B1C1A; --ok:#5CCB8A; --ok-soft:#183324; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+a{color:inherit}
+button,input,textarea,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--gem);outline-offset:2px}
+.wrap{max-width:1280px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+.top .bar{display:flex;align-items:center;gap:14px;padding-block:10px}
+.logo{display:flex;flex-direction:column;text-decoration:none;line-height:1}
+.logo b{font-family:var(--f-display);font-weight:400;font-size:24px;letter-spacing:.5px}
+.logo b i{font-style:normal;color:var(--gem)}
+.logo span{font-size:11px;color:var(--muted);margin-top:3px}
+.gsearch{flex:1;min-width:0;max-width:520px;border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:7px 14px}
+.top .sp{flex:1}
+.me{width:30px;height:30px;border-radius:50%;border:1px solid var(--line)}
+.boards{display:flex;gap:4px;overflow-x:auto;padding-block:0 8px;scrollbar-width:none}
+.boards a{flex:none;font-size:13px;padding:4px 10px;border-radius:999px;text-decoration:none;color:var(--muted);border:1px solid transparent}
+.boards a:hover{color:var(--ink);border-color:var(--line)}
+.boards a[aria-current="true"]{background:var(--ink);color:var(--bg)}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 14px;cursor:pointer;text-decoration:none;font-size:14px;white-space:nowrap}
+.btn:hover{border-color:var(--ink)}
+.btn.pri{background:var(--ink);border-color:var(--ink);color:var(--bg);font-weight:700}
+.btn.gem{background:var(--gem);border-color:var(--gem);color:var(--surface);font-weight:700}
+.btn.sm{padding:4px 10px;font-size:13px}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--muted)}
+.btn.ghost:hover{color:var(--ink);border-color:var(--line)}
+.btn.danger{color:var(--warn)}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+main{padding-block:20px 64px}
+h1,h2,h3,h4{text-wrap:balance;margin:0}
+h1{font-family:var(--f-display);font-weight:400;font-size:clamp(24px,3.4vw,32px);line-height:1.2}
+h2{font-size:15px;font-weight:700}
+.label{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.banner{border:1px dashed var(--line);border-radius:var(--r);padding:12px 14px;color:var(--muted);background:var(--surface);margin-bottom:14px}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:20px;align-items:start}
+@media (max-width:980px){.layout{grid-template-columns:minmax(0,1fr)}}
+.side{display:flex;flex-direction:column;gap:14px;min-width:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.panel h2{margin-bottom:8px}
+.panel p{margin:0 0 8px;font-size:13.5px;color:var(--muted)}
+.panel ul{margin:0;padding-left:18px;font-size:13.5px;color:var(--muted)}
+.statrow{display:flex;gap:18px;margin:6px 0 10px}
+.statrow div{display:flex;flex-direction:column}
+.statrow b{font-family:var(--f-mono);font-size:18px}
+.statrow span{font-size:12px;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chip{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:2px 9px;color:var(--muted);background:none;cursor:pointer;text-decoration:none}
+.chip:hover,.chip[aria-pressed="true"]{color:var(--ink);border-color:var(--ink)}
+.chip .mono{font-size:11px;margin-left:3px}
+
+/* feed */
+.fhead{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:flex-end;justify-content:space-between;margin-bottom:12px}
+.fhead p{margin:4px 0 0;color:var(--muted);font-size:14px;max-width:62ch}
+.sortbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:6px 8px}
+.sortbar .sp{flex:1}
+.seg{display:inline-flex;flex-wrap:wrap;gap:2px}
+.seg button{border:0;background:none;padding:5px 11px;cursor:pointer;font-size:13px;border-radius:999px;color:var(--muted)}
+.seg button:hover{color:var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--sunk);color:var(--ink);font-weight:700}
+.filters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.fchip{display:inline-flex;gap:6px;align-items:center;font-size:12.5px;background:var(--gem-soft);color:var(--gem);border-radius:999px;padding:3px 6px 3px 10px;border:0;cursor:pointer}
+.list{display:flex;flex-direction:column;gap:10px}
+.list.compact{gap:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.post{display:grid;grid-template-columns:44px minmax(0,1fr);gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px 10px 6px}
+.post:hover{border-color:var(--muted)}
+.compact .post{border:0;border-radius:0;border-top:1px solid var(--line);grid-template-columns:44px minmax(0,1fr) 72px}
+.compact .post:first-child{border-top:0}
+.vote{display:flex;flex-direction:column;align-items:center;gap:0}
+.vote button{border:0;background:none;cursor:pointer;width:30px;height:24px;border-radius:6px;color:var(--muted);font-size:13px;line-height:1}
+.vote button.up:hover,.vote button.up[aria-pressed="true"]{color:var(--gem);background:var(--gem-soft)}
+.vote button.dn:hover,.vote button.dn[aria-pressed="true"]{color:var(--slop);background:var(--slop-soft)}
+.vote .sc{font-size:13px;font-weight:600;min-height:20px}
+.vote.h{flex-direction:row;gap:2px;background:var(--bg);border-radius:999px;padding:1px}
+.vote.h .sc{min-width:26px;text-align:center;min-height:0}
+.pmeta{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;font-size:12px;color:var(--muted)}
+.pmeta a{text-decoration:none}
+.pmeta a:hover{text-decoration:underline}
+.pmeta .cat{color:var(--ink);font-weight:700}
+.pill{font-family:var(--f-mono);font-size:10.5px;border-radius:4px;padding:1px 6px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.pill.gem{border-color:var(--gem);background:var(--gem-soft);color:var(--gem)}
+.pill.new{border-color:var(--slop);color:var(--slop)}
+.pill.tool{border-style:dashed}
+.ptitle{display:block;font-size:17px;font-weight:700;line-height:1.35;text-decoration:none;margin:3px 0 6px;overflow-wrap:anywhere}
+.ptitle:hover{text-decoration:underline}
+.compact .ptitle{font-size:15px;margin-bottom:3px}
+.excerpt{color:var(--muted);font-size:14px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:8px;overflow-wrap:anywhere}
+.prev{border-radius:8px;overflow:hidden;border:1px solid var(--line);margin-bottom:8px;background:var(--sunk);position:relative;max-width:640px}
+.prev img{display:block;width:100%;max-height:420px;object-fit:contain;background:var(--sunk)}
+.prev.frame{aspect-ratio:16/9}
+.prev.frame iframe{position:absolute;left:0;top:0;width:400%;height:400%;transform:scale(.25);transform-origin:0 0;border:0;pointer-events:none;background:#fff}
+.prev .ph{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-family:var(--f-mono);font-size:12px}
+.prev.linkp{display:flex;gap:10px;align-items:center;padding:10px 12px;text-decoration:none;font-size:13px}
+.prev.linkp .d{font-family:var(--f-mono);font-size:12px;color:var(--gem)}
+.prev.codep pre{margin:0;padding:10px 12px;font-family:var(--f-mono);font-size:12px;max-height:120px;overflow:hidden;white-space:pre}
+.thumb{width:72px;height:56px;border-radius:6px;overflow:hidden;background:var(--sunk);border:1px solid var(--line);display:grid;place-items:center;font-family:var(--f-mono);font-size:11px;color:var(--muted);align-self:center;position:relative}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.pact{display:flex;flex-wrap:wrap;gap:2px;align-items:center}
+.pact .btn{padding:3px 9px;font-size:12.5px}
+.empty{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:22px}
+.empty h2{font-size:18px;margin-bottom:8px}
+.empty ol{margin:8px 0 16px;padding-left:20px;color:var(--muted)}
+
+/* post detail */
+.crumb{display:inline-block;margin-bottom:10px;font-size:13px;color:var(--muted);text-decoration:none}
+.crumb:hover{color:var(--ink)}
+.article{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;display:grid;grid-template-columns:44px minmax(0,1fr);gap:12px}
+.article h1{margin:4px 0 10px;overflow-wrap:anywhere}
+.content{display:flex;flex-direction:column;gap:12px;min-width:0}
+.md{overflow-wrap:anywhere;max-width:72ch}
+.md p{margin:0 0 10px}
+.md h4{font-size:16px;margin:14px 0 6px}
+.md blockquote{margin:0 0 10px;padding-left:12px;border-left:3px solid var(--line);color:var(--muted)}
+.md ul,.md ol{margin:0 0 10px;padding-left:22px}
+.md code{font-family:var(--f-mono);font-size:.9em;background:var(--sunk);padding:1px 5px;border-radius:4px}
+.md a{color:var(--gem)}
+pre.code{margin:0;max-height:560px;overflow:auto;padding:12px 14px;font-family:var(--f-mono);font-size:12.5px;line-height:1.6;background:var(--sunk);border-radius:8px;tab-size:2}
+.linkcard{display:flex;flex-direction:column;gap:2px;border:1px solid var(--line);border-radius:8px;padding:12px 14px;text-decoration:none;background:var(--bg);overflow-wrap:anywhere}
+.linkcard:hover{border-color:var(--gem)}
+.linkcard .d{font-family:var(--f-mono);font-size:12px;color:var(--gem)}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+.gallery.one{grid-template-columns:minmax(0,1fr)}
+.gallery img{width:100%;border-radius:8px;border:1px solid var(--line);background:var(--sunk);display:block;max-height:640px;object-fit:contain}
+details.prompt{border:1px dashed var(--line);border-radius:8px;padding:8px 12px;background:var(--bg)}
+details.prompt summary{cursor:pointer;font-size:13px;font-weight:700}
+details.prompt pre{white-space:pre-wrap;overflow-wrap:anywhere;font-family:var(--f-mono);font-size:12.5px;margin:8px 0 0}
+.stage{border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.stage-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px 8px;border-bottom:1px solid var(--line)}
+.stage-bar .sp{flex:1}
+.runner{height:min(66vh,580px);background:#fff}
+.runner iframe{width:100%;height:100%;border:0;display:block;background:#fff}
+.stage:fullscreen .runner{height:calc(100% - 46px)}
+.diff{max-height:560px;overflow:auto;font-family:var(--f-mono);font-size:12.5px;line-height:1.55;background:var(--sunk);border-radius:8px}
+.diff div{white-space:pre;padding:0 12px}
+.diff .a{background:var(--ok-soft);color:var(--ok)}
+.diff .d{background:var(--warn-soft);color:var(--warn)}
+.diff .gap{color:var(--muted);background:var(--bg);padding:2px 12px;font-style:italic}
+.verdict{display:flex;flex-direction:column;gap:6px}
+.vbar{height:8px;border-radius:999px;background:var(--slop-soft);overflow:hidden}
+.vbar i{display:block;height:100%;background:var(--gem)}
+.vnums{display:flex;justify-content:space-between;font-size:12.5px}
+.vnums .g{color:var(--gem)} .vnums .s{color:var(--slop)}
+.verbtns{display:flex;gap:8px}
+.verbtns button{flex:1;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:8px;cursor:pointer;font-weight:700;font-size:14px}
+.verbtns .g[aria-pressed="true"],.verbtns .g:hover{border-color:var(--gem);color:var(--gem);background:var(--gem-soft)}
+.verbtns .s[aria-pressed="true"],.verbtns .s:hover{border-color:var(--slop);color:var(--slop);background:var(--slop-soft)}
+.oldver{background:var(--slop-soft);color:var(--slop);border-radius:8px;padding:8px 12px;font-size:13px}
+.hist a{display:grid;grid-template-columns:36px minmax(0,1fr);gap:8px;padding:7px 0;border-top:1px solid var(--line);text-decoration:none;font-size:13px}
+.hist a:first-child{border-top:0}
+.hist a[aria-current="true"] b{color:var(--gem)}
+.hist .m{font-size:11.5px;color:var(--muted)}
+.ai-sum{border:1px solid var(--gem);background:var(--gem-soft);border-radius:var(--r);padding:12px 14px}
+.ai-sum .md{max-width:none;font-size:14px}
+
+/* comments */
+.thread{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;margin-top:14px}
+.thread-head{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.thread-head .sp{flex:1}
+.cbox{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+textarea,input[type=text],input[type=url],select{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:8px 10px;width:100%}
+textarea{resize:vertical}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row .sp{flex:1}
+.flairs{display:flex;flex-wrap:wrap;gap:4px}
+.flairs button{font-size:12px;border:1px solid var(--line);background:none;border-radius:999px;padding:2px 9px;cursor:pointer;color:var(--muted)}
+.flairs button[aria-pressed="true"]{border-color:var(--ink);color:var(--ink);font-weight:700}
+.cmt{display:grid;grid-template-columns:22px minmax(0,1fr);gap:6px;margin-top:10px}
+.cmt > .rail{display:flex;justify-content:center;cursor:pointer;padding-top:26px}
+.cmt > .rail i{width:2px;background:var(--line);border-radius:2px}
+.cmt > .rail:hover i{background:var(--muted)}
+.cmt .av{width:22px;height:22px;border-radius:50%;background:var(--sunk)}
+.ch{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;font-size:12px;color:var(--muted);min-height:22px}
+.ch .nm{color:var(--ink);font-weight:600}
+.ctext{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14.5px;margin:3px 0 4px}
+.cmt.gemc > div > .ctext{border-left:3px solid var(--gem);padding-left:10px}
+.cact{display:flex;flex-wrap:wrap;gap:2px;align-items:center}
+.linkbtn{border:0;background:none;padding:3px 7px;color:var(--muted);cursor:pointer;font-size:12px;border-radius:6px}
+.linkbtn:hover{background:var(--sunk);color:var(--ink)}
+.flair{font-size:11px;border-radius:4px;padding:0 6px;border:1px solid var(--line)}
+.flair.gem{border-color:var(--gem);color:var(--gem);background:var(--gem-soft)}
+.flair.improve{border-color:var(--slop);color:var(--slop)}
+.flair.question{border-style:dashed}
+.collapsed{font-size:12px;color:var(--muted);cursor:pointer;margin-top:8px}
+.who{display:inline-flex;align-items:center;gap:5px}
+.who .av{width:16px;height:16px;border-radius:50%;background:var(--sunk)}
+.authbtn{border:0;background:none;padding:0;cursor:pointer;font-size:inherit;color:inherit}
+.authbtn:hover{text-decoration:underline}
+
+/* compose */
+.compose{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:20px;align-items:start}
+@media (max-width:980px){.compose{grid-template-columns:minmax(0,1fr)}}
+.form{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:14px}
+.field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.field > label,.field > .flabel{font-size:13px;font-weight:700}
+.hint{font-size:12px;color:var(--muted)}
+.kinds{display:flex;flex-wrap:wrap;gap:6px}
+.kinds button{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:8px 12px;cursor:pointer;font-size:13.5px;display:flex;flex-direction:column;align-items:flex-start;min-width:92px}
+.kinds button small{font-size:11px;color:var(--muted)}
+.kinds button[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+textarea.codeed{font-family:var(--f-mono);font-size:12.5px;line-height:1.55;min-height:300px;tab-size:2;white-space:pre;overflow:auto}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+@media (max-width:600px){.grid2{grid-template-columns:minmax(0,1fr)}}
+.drop{border:1.5px dashed var(--line);border-radius:8px;padding:16px;text-align:center;color:var(--muted);font-size:13px;cursor:pointer;background:var(--bg)}
+.drop.over{border-color:var(--gem);color:var(--gem)}
+.upl{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.upl div{position:relative;width:96px;height:96px;border-radius:8px;overflow:hidden;border:1px solid var(--line);background:var(--sunk)}
+.upl img{width:100%;height:100%;object-fit:cover}
+.upl button{position:absolute;top:4px;right:4px;border:0;border-radius:999px;background:var(--ink);color:var(--bg);width:22px;height:22px;cursor:pointer;font-size:12px}
+.mdprev{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--bg);min-height:80px}
+/* moderation */
+.pill.pin{border-color:var(--ink);color:var(--ink)}
+.pill.warn{border-color:var(--warn);color:var(--warn);background:var(--warn-soft)}
+.banner.warnb{border-style:solid;border-color:var(--warn);color:var(--warn);background:var(--warn-soft);margin:14px 0 0}
+.modbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;border-top:1px dashed var(--line);padding-top:10px}
+.mq{border-top:1px solid var(--line);padding:12px 0;display:flex;flex-direction:column;gap:6px;min-width:0}
+.mq:first-of-type{border-top:0;padding-top:4px}
+.mq-h{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.mq .ptitle{font-size:15px;margin:0}
+.logrow{border-top:1px solid var(--line);padding:7px 0;font-size:13px;overflow-wrap:anywhere}
+.logrow:first-child{border-top:0}
+.logrow .m{font-size:11.5px;color:var(--muted)}
+.dlg-back{position:fixed;inset:0;z-index:30;background:rgb(0 0 0 / .45);display:grid;place-items:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.dlg{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;width:min(440px,100%);display:flex;flex-direction:column;gap:12px;max-height:100%;overflow:auto}
+.reasons{display:flex;flex-direction:column;gap:6px;font-size:14px}
+.reasons label{display:flex;gap:8px;align-items:center;cursor:pointer}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:999px;font-size:14px;z-index:20;max-width:calc(100% - 32px)}
+@media (max-width:640px){.logo span{display:none}.top .bar{flex-wrap:wrap}.gsearch{order:5;flex-basis:100%;max-width:none}.post{grid-template-columns:38px minmax(0,1fr)}.compact .post{grid-template-columns:38px minmax(0,1fr)}.compact .thumb{display:none}.article{grid-template-columns:minmax(0,1fr);padding:14px}.article > .vote{display:none}}
+@media (prefers-reduced-motion:no-preference){.post,.btn,.chip{transition:border-color .15s,color .15s}}
+</style>
+
+<header class="top"><div class="wrap">
+  <div class="bar">
+    <a class="logo" href="#all"><b>SLOP<i>.</i>LAB</b><span>AI가 만든 것들 속에서 보석을 캐는 곳</span></a>
+    <input class="gsearch" id="gq" type="text" placeholder="제목·내용·태그 검색  ( / )" aria-label="검색">
+    <div class="sp"></div>
+    <a class="btn pri" href="#submit" id="newBtn">글쓰기</a>
+    <img class="me" id="meAv" alt="" hidden>
+  </div>
+  <nav class="boards" id="boards" aria-label="게시판"></nav>
+</div></header>
+<div class="wrap" id="banNote" hidden><div class="banner warnb"></div></div>
+<main class="wrap" id="app"></main>
+<div class="dlg-back" id="dlg" hidden><form class="dlg" id="dlgForm" role="dialog" aria-modal="true"></form></div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+/* ---------- taxonomy ---------- */
+const CATS = [
+  ['web','웹·앱','AI로 만든 웹페이지, 앱, 도구. 실행물로 올리면 바로 돌려볼 수 있어요.','html'],
+  ['game','게임','AI가 만든 게임과 장난감. 플레이해 보고 판정해 주세요.','html'],
+  ['art','이미지·아트','생성 이미지, 일러스트, 디자인 시안.','image'],
+  ['writing','글·이야기','시, 소설, 에세이, 가사 같은 AI 글.','text'],
+  ['music','음악·오디오','생성 음악과 사운드. 링크로 공유해요.','link'],
+  ['video','영상','생성 영상과 애니메이션. 링크로 공유해요.','link'],
+  ['code','코드·자동화','스크립트, 함수, 자동화 레시피.','code'],
+  ['prompt','프롬프트·대화','쓸 만한 프롬프트와 인상적인 대화 기록.','text'],
+  ['idea','아이디어·기획','AI가 낸 사업·기획·연구 아이디어.','text'],
+  ['etc','기타','어디에도 안 맞는 것들.','text'],
+];
+const CAT = Object.fromEntries(CATS.map(([k,l,d,dk])=>[k,{k,l,d,dk}]));
+const KINDS = { text:['글','본문 중심'], link:['링크','외부 주소'], image:['이미지','사진 업로드'], html:['실행물','HTML 바로 실행'], code:['코드','복사해서 쓰기'] };
+const FLAIRS = { opinion:'의견', gem:'가치 발견', improve:'개선 제안', question:'질문', info:'출처·정보' };
+const TOOLS = ['Claude','ChatGPT','Gemini','Midjourney','Stable Diffusion','DALL·E','Flux','Suno','Udio','Sora','Runway','Cursor','Copilot','v0','Lovable'];
+const MAX_CODE = 200*1024, MAX_BODY = 40000;
+const isGem = v => v.up>=3 && v.up/(v.up+v.down) >= .75;
+
+/* ---------- state ---------- */
+const S = { db:null, user:null, sample:null, assets:null, uid:null, me:null, canWrite:null,
+  posts:new Map(), postsLoaded:false, slow:false, comments:new Map(), votes:new Map(), myVotes:{p:{},c:{}}, saved:{},
+  pv:{}, cv:{}, view:{name:'feed'}, q:'', tool:null, author:null, d:null, c:null,
+  isMod:false, mod:{}, cfg:{banned:{},pinned:{}}, myReports:{items:{}}, reports:new Map(), modlog:[], modArm:null,
+  prefs:{sort:'hot',win:'week',layout:'card',csort:'best'} };
+try{ Object.assign(S.prefs, JSON.parse(localStorage.getItem('slop-prefs')||'{}')); }catch{}
+const savePrefs = ()=>{ try{ localStorage.setItem('slop-prefs',JSON.stringify(S.prefs)); }catch{} };
+const $ = (s,r=document)=>r.querySelector(s);
+const app = $('#app');
+const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const safeUrl = u => /^https?:\/\/[^\s]+$/i.test(u||'') ? u : '';
+const domain = u => { try{ return new URL(u).hostname.replace(/^www\./,''); }catch{ return ''; } };
+function ago(ts){ if(!ts) return ''; const s=(Date.now()-ts)/1000;
+  if(s<60) return '방금'; if(s<3600) return Math.floor(s/60)+'분 전'; if(s<86400) return Math.floor(s/3600)+'시간 전';
+  if(s<86400*30) return Math.floor(s/86400)+'일 전'; const d=new Date(ts); return `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()}`; }
+let toastT; function toast(m){ const t=$('#toast'); t.textContent=m; t.hidden=false; clearTimeout(toastT); toastT=setTimeout(()=>t.hidden=true,2600); }
+const banned = () => !!(S.uid && S.cfg.banned?.[S.uid]);
+const canW = () => !!(S.db && S.uid && S.canWrite!==false && !banned());
+const hiddenP = id => !!S.mod['p-'+id]?.hidden, hiddenC = id => !!S.mod['c-'+id]?.hidden, lockedP = id => !!S.mod['p-'+id]?.locked;
+const who = uid => `<span class="who"><img class="av" data-av="${esc(uid)}" alt=""><button class="authbtn" data-author="${esc(uid)}" data-uid="${esc(uid)}">…</button></span>`;
+async function fillPeople(root=document){
+  const els=[...root.querySelectorAll('[data-uid],[data-av]')]; if(!els.length) return;
+  const ids=[...new Set(els.map(e=>e.dataset.uid||e.dataset.av).filter(Boolean))];
+  let ps={}; if(S.user){ try{ ps=await S.user.profiles(ids); }catch{} }
+  for(const e of els){ const id=e.dataset.uid||e.dataset.av, p=ps[id];
+    if(e.dataset.uid!==undefined) e.textContent = p?.isMe ? (p.name||'나') : (p?.name||'익명');
+    else if(p?.avatarUrl) e.src=p.avatarUrl; else e.hidden=true; }
+}
+function sandboxFrame(code,title='실행물'){ const f=document.createElement('iframe'); f.setAttribute('sandbox','allow-scripts allow-pointer-lock'); f.title=title; f.srcdoc=code; return f; }
+
+/* ---------- markdown-lite (author text only, always escaped first) ---------- */
+function md(src){
+  const blocks=[]; let s=String(src||'').replace(/\r/g,'');
+  s=s.replace(/```[^\n]*\n([\s\S]*?)```/g,(m,c)=>{ blocks.push(`<pre class="code">${esc(c.replace(/\n$/,''))}</pre>`); return `\n\u0000${blocks.length-1}\u0000\n`; });
+  const L='target="_blank" rel="noopener noreferrer"';
+  const inl=t=>esc(t).replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>')
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,`<a href="$2" ${L}>$1</a>`)
+    .replace(/(^|[\s(])(https?:\/\/[^\s<]+)/g,`$1<a href="$2" ${L}>$2</a>`);
+  const out=[]; let para=[], list=null;
+  const fp=()=>{ if(para.length){ out.push('<p>'+para.map(inl).join('<br>')+'</p>'); para=[]; } };
+  const fl=()=>{ if(list){ out.push(`<${list.t}>${list.items.map(i=>'<li>'+inl(i)+'</li>').join('')}</${list.t}>`); list=null; } };
+  for(const line of s.split('\n')){ let m; const tr=line.trim();
+    if((m=tr.match(/^\u0000(\d+)\u0000$/))){ fp(); fl(); out.push(blocks[+m[1]]); continue; }
+    if(!tr){ fp(); fl(); continue; }
+    if((m=line.match(/^#{1,3}\s+(.*)/))){ fp(); fl(); out.push(`<h4>${inl(m[1])}</h4>`); continue; }
+    if((m=line.match(/^>\s?(.*)/))){ fp(); fl(); out.push(`<blockquote>${inl(m[1])}</blockquote>`); continue; }
+    if((m=line.match(/^\s*([-*]|\d+\.)\s+(.*)/))){ const t=/\d/.test(m[1])?'ol':'ul'; fp(); if(list&&list.t!==t) fl(); list??={t,items:[]}; list.items.push(m[2]); continue; }
+    fl(); para.push(line); }
+  fp(); fl(); return out.join('');
+}
+
+/* ---------- votes ---------- */
+function computeVotes(){ const pv={}, cv={};
+  for(const doc of S.votes.values()){
+    for(const [id,d] of Object.entries(doc?.p||{})){ const v=pv[id]??={up:0,down:0}; d>0?v.up++:v.down++; }
+    for(const [id,d] of Object.entries(doc?.c||{})){ const v=cv[id]??={up:0,down:0}; d>0?v.up++:v.down++; } }
+  S.pv=pv; S.cv=cv; }
+const pS = id => { const v=S.pv[id]||{up:0,down:0}; return {...v,score:v.up-v.down,mine:S.myVotes.p?.[id]||0}; };
+const cS = id => { const v=S.cv[id]||{up:0,down:0}; return {...v,score:v.up-v.down,mine:S.myVotes.c?.[id]||0}; };
+function voteInner(t,id){ const s=t==='p'?pS(id):cS(id);
+  return `<button class="up" data-vote="${t}" data-id="${id}" data-d="1" aria-pressed="${s.mine===1}" aria-label="보석: 가치 있음" title="보석: 가치 있음">▲</button><span class="sc mono">${s.score}</span><button class="dn" data-vote="${t}" data-id="${id}" data-d="-1" aria-pressed="${s.mine===-1}" aria-label="슬롭: 가치 없음" title="슬롭: 가치 없음">▼</button>`; }
+const voteBox = (t,id,h) => `<div class="vote${h?' h':''}" data-vs="${t}:${id}">${voteInner(t,id)}</div>`;
+function verdictInner(id){ const s=pS(id), tot=s.up+s.down, pct=tot?Math.round(s.up/tot*100):0;
+  return `<div class="vbar" aria-hidden="true"><i style="width:${tot?pct:0}%"></i></div>
+    <div class="vnums"><span class="g">보석 <b class="mono">${s.up}</b></span><span class="muted">${tot?`${pct}% 보석 판정 · ${tot}표`:'아직 판정 없음'}</span><span class="s">슬롭 <b class="mono">${s.down}</b></span></div>
+    <div class="verbtns"><button class="g" data-vote="p" data-id="${id}" data-d="1" aria-pressed="${s.mine===1}">▲ 보석이다</button><button class="s" data-vote="p" data-id="${id}" data-d="-1" aria-pressed="${s.mine===-1}">▼ 슬롭이다</button></div>`; }
+function refreshVotes(){
+  document.querySelectorAll('[data-vs]').forEach(el=>{ const [t,id]=el.dataset.vs.split(':'); el.innerHTML=voteInner(t,id); });
+  document.querySelectorAll('[data-verdict]').forEach(el=>el.innerHTML=verdictInner(el.dataset.verdict));
+  document.querySelectorAll('[data-gembadge]').forEach(el=>el.hidden=!isGem(pS(el.dataset.gembadge)));
+}
+let voteChain=Promise.resolve();
+function vote(t,id,d){
+  if(!canW()){ toast(S.uid?'이 공유 권한으로는 판정할 수 없어요':'판정하려면 claude.ai에 로그인해 주세요'); return; }
+  const mine=structuredClone(S.myVotes); mine.p??={}; mine.c??={};
+  const m=mine[t]; if(m[id]===d) delete m[id]; else m[id]=d;
+  S.myVotes=mine; S.votes.set(S.uid,mine); computeVotes(); refreshVotes(); if(S.view.name==='feed') renderSideOnly();
+  voteChain=voteChain.then(()=>S.db.doc('votes/'+S.uid).set(S.myVotes)).catch(e=>toast(e?.code==='invalid_argument'?'이 공유 권한으로는 판정할 수 없어요':'판정을 저장하지 못했어요'));
+}
+let saveChain=Promise.resolve();
+function toggleSave(id){
+  if(!S.db||!S.uid){ toast('저장하려면 claude.ai에 로그인해 주세요'); return; }
+  const s={...S.saved}; if(s[id]) delete s[id]; else s[id]=Date.now(); S.saved=s;
+  document.querySelectorAll(`[data-save="${id}"]`).forEach(b=>b.textContent=s[id]?'저장됨':'저장');
+  toast(s[id]?'저장함에 넣었어요':'저장함에서 뺐어요');
+  saveChain=saveChain.then(()=>S.db.doc(`data/users/${S.uid}/saved`).set({ids:S.saved})).catch(()=>toast('저장하지 못했어요'));
+}
+
+/* ---------- boot ---------- */
+async function boot(){
+  renderBoards(); window.addEventListener('hashchange',route); route();
+  const use = n => window.claude?.use ? window.claude.use(n).catch(()=>null) : Promise.resolve(null);
+  const [db,user,sample,assets] = await Promise.all([use('db'),use('user'),use('sample'),use('assets')]);
+  Object.assign(S,{db,user,sample,assets});
+  if(user){ S.me=await user.me(); S.uid=S.me.id; S.canWrite=await user.can('data.write'); S.isMod=await user.canEdit();
+    if(S.me.avatarUrl){ const m=$('#meAv'); m.src=S.me.avatarUrl; m.alt=S.me.name||'나'; m.hidden=false; } }
+  $('#newBtn').hidden = !canW();
+  if(S.d){ S.d.unsubs?.forEach(u=>u()); S.d=null; } S.c=null; S.view={name:'boot'};
+  if(!db){ S.postsLoaded=true; S.offline=true; route(); return; }
+  const slowT=setTimeout(()=>{ S.slow=true; onData(); },10000);
+  db.collection('posts').orderBy('createdAt','desc').limit(1000).onSnapshot(snap=>{
+    S.posts=new Map(snap.docs.map(d=>[d.id,{id:d.id,...d.data()}]));
+    if(!snap.metadata.fromCache||snap.size){ S.postsLoaded=true; S.slow=false; clearTimeout(slowT); }
+    onData(); }, ()=>{ clearTimeout(slowT); S.postsLoaded=true; S.loadErr=true; onData(); });
+  db.collection('comments').orderBy('createdAt','desc').limit(1000).onSnapshot(snap=>{
+    S.comments=new Map(snap.docs.map(d=>[d.id,{id:d.id,...d.data()}])); onData('comments'); }, ()=>{});
+  db.collection('votes').onSnapshot(snap=>{
+    S.votes=new Map(snap.docs.map(d=>[d.id,d.data()]));
+    if(S.uid&&S.votes.has(S.uid)) S.myVotes=structuredClone(S.votes.get(S.uid));
+    computeVotes(); refreshVotes(); onData('votes'); }, ()=>{});
+  if(S.uid) db.doc(`data/users/${S.uid}/saved`).onSnapshot(s=>{ S.saved={...(s.data()?.ids||{})}; if(S.view.special==='saved') onData(); }, ()=>{});
+  db.collection('modactions').onSnapshot(s=>{ S.mod=Object.fromEntries(s.docs.map(d=>[d.id,d.data()])); refreshAll(); },()=>{});
+  db.doc('modconfig/main').onSnapshot(s=>{ S.cfg={banned:{},pinned:{},...(s.data()||{})}; $('#newBtn').hidden=!canW(); renderBanNote(); refreshAll(); },()=>{});
+  if(S.uid) db.doc('reports/'+S.uid).onSnapshot(s=>{ S.myReports={items:{},...(s.data()||{})}; },()=>{});
+  if(S.isMod){
+    db.collection('reports').onSnapshot(s=>{ S.reports=new Map(s.docs.map(d=>[d.id,d.data()])); renderBoards(); if(S.view.name==='mod') renderMod(); },()=>{});
+    db.collection('modlog').orderBy('at','desc').limit(200).onSnapshot(s=>{ S.modlog=s.docs.map(d=>({id:d.id,...d.data()})); if(S.view.name==='mod') renderMod(); },()=>{}); }
+  route();
+}
+function onData(kind){ const v=S.view;
+  if(v.name==='feed') renderFeed(kind);
+  else if(v.name==='post' && S.d) renderPost(kind);
+  else if(v.name==='mod' && kind!=='votes') renderMod();
+}
+function refreshAll(){ feedSig=null;
+  if(S.d){ S.d.contentKey=null; S.d.threadSig=null; const ps=$('#pSide'); if(ps) delete ps.dataset.k; }
+  renderBoards(); if(S.view.name==='mod') renderMod(); else onData(); }
+function renderBanNote(){ const el=$('#banNote'), b=S.uid&&S.cfg.banned?.[S.uid]; el.hidden=!b;
+  if(b) el.firstElementChild.textContent=`운영자가 이 계정의 글쓰기·댓글·판정을 제한했어요${b.reason?` (사유: ${b.reason})`:''}. 읽기는 계속할 수 있어요.`; }
+
+/* ---------- router ---------- */
+function parseHash(){ const h=location.hash.slice(1); let m;
+  if(!h||h==='all') return {name:'feed',cat:null};
+  if(h==='gems'||h==='saved') return {name:'feed',cat:null,special:h};
+  if((m=h.match(/^c-([a-z]+)$/))&&CAT[m[1]]) return {name:'feed',cat:m[1]};
+  if((m=h.match(/^p-([a-z0-9]+)(?:-v(\d+))?$/))) return {name:'post',id:m[1],n:m[2]?+m[2]:null};
+  if(h==='mod') return {name:'mod'};
+  if(h==='submit') return {name:'compose',mode:'new'};
+  if((m=h.match(/^submit-([a-z]+)$/))) return {name:'compose',mode:'new',cat:CAT[m[1]]?m[1]:null};
+  if((m=h.match(/^edit-([a-z0-9]+)$/))) return {name:'compose',mode:'edit',id:m[1]};
+  if((m=h.match(/^remix-([a-z0-9]+)-v(\d+)$/))) return {name:'compose',mode:'remix',id:m[1],n:+m[2]};
+  return {name:'feed',cat:null};
+}
+function route(){ const v=parseHash(), prev=S.view;
+  const samePost = v.name==='post' && prev.name==='post' && S.d && prev.id===v.id;
+  if(!samePost && S.d){ S.d.unsubs?.forEach(u=>u()); S.d=null; }
+  const sameCompose = v.name==='compose' && prev.name==='compose' && S.c && location.hash===S.c.hash;
+  if(!sameCompose && S.c){ S.c.abort?.abort(); S.c=null; }
+  S.view=v; renderBoards();
+  if(v.name==='feed'){ feedSig=null; renderFeed(); if(prev.name!=='feed'||prev.cat!==v.cat||prev.special!==v.special) scrollTo(0,0); }
+  else if(v.name==='post'){ if(samePost){ S.d.sel=v.n; S.d.contentKey=null; renderPost(); } else { openPost(v); scrollTo(0,0); } }
+  else if(v.name==='mod'){ S.modArm=null; renderMod(); scrollTo(0,0); }
+  else if(!sameCompose){ openCompose(v); scrollTo(0,0); }
+}
+function renderBoards(){ const v=S.view, cur = v.name==='mod' ? 'mod' : v.special ? v.special : v.name==='feed' ? (v.cat||'all') : v.name==='post' ? S.posts.get(v.id)?.cat : null;
+  $('#boards').innerHTML = [['all','전체'],['gems','보석함'],...CATS.map(([k,l])=>[k,l]),...(S.uid?[['saved','저장함']]:[]),...(S.isMod?[['mod','운영'+(reportGroups().size?` · 신고 ${reportGroups().size}`:'')]]:[])]
+    .map(([k,l])=>`<a href="#${['all','gems','saved','mod'].includes(k)?k:'c-'+k}" aria-current="${cur===k}">${esc(l)}</a>`).join(''); }
+
+/* ---------- feed ---------- */
+let feedSig=null;
+const hot = p => { const s=pS(p.id).score; return Math.sign(s)*Math.log10(Math.max(Math.abs(s),1)) + p.createdAt/1000/45000; };
+const contro = p => { const s=pS(p.id), t=s.up+s.down; return t && Math.min(s.up,s.down) ? t*Math.min(s.up,s.down)/Math.max(s.up,s.down) : 0; };
+const WIN = {day:864e5,week:6048e5,month:2592e6,all:Infinity};
+function feedList(){ const v=S.view; let list=[...S.posts.values()];
+  if(v.cat) list=list.filter(p=>p.cat===v.cat);
+  if(v.special==='saved') list=list.filter(p=>S.saved[p.id]);
+  if(v.special==='gems') list=list.filter(p=>isGem(pS(p.id)));
+  if(S.tool) list=list.filter(p=>(p.tool||'').toLowerCase()===S.tool.toLowerCase());
+  if(S.author) list=list.filter(p=>p.authorId===S.author);
+  const q=S.q.trim().toLowerCase();
+  if(q){ const tag=q.startsWith('#')?q.slice(1):null;
+    list=list.filter(p=>tag?(p.tags||[]).includes(tag):[p.title,p.body,p.tool,(p.tags||[]).join(' '),p.url].join(' ').toLowerCase().includes(q)); }
+  const sort = v.special==='gems' ? 'top' : S.prefs.sort;
+  if(sort==='new') list.sort((a,b)=>b.createdAt-a.createdAt);
+  else if(sort==='top'){ const w=v.special==='gems'?Infinity:WIN[S.prefs.win]; list=list.filter(p=>Date.now()-p.createdAt<=w).sort((a,b)=>pS(b.id).score-pS(a.id).score||b.createdAt-a.createdAt); }
+  else if(sort==='contro') list=list.filter(p=>contro(p)>0).sort((a,b)=>contro(b)-contro(a));
+  else if(sort==='pending') list=list.filter(p=>{ const s=pS(p.id); return s.up+s.down<5; }).sort((a,b)=>(pS(a.id).up+pS(a.id).down)-(pS(b.id).up+pS(b.id).down)||b.createdAt-a.createdAt);
+  else list.sort((a,b)=>hot(b)-hot(a));
+  if(!S.isMod) list=list.filter(p=>!hiddenP(p.id));
+  if(!v.special && S.prefs.sort!=='pending'){ const pin=p=>!!S.cfg.pinned?.[p.id]; list=[...list.filter(pin),...list.filter(p=>!pin(p))]; }
+  return list;
+}
+function ccount(pid){ let n=0; for(const c of S.comments.values()) if(c.postId===pid&&!c.deleted) n++; return n; }
+function renderFeed(kind){
+  // votes never reorder an open list (no jumping under the cursor); scores update in place
+  if(kind==='votes' && $('#feedList')){ renderSideOnly(); return; }
+  const v=S.view, list=feedList();
+  const sig=[S.offline,S.postsLoaded,S.slow,v.cat,v.special,S.prefs.sort,S.prefs.win,S.prefs.layout,S.q,S.tool,S.author,list.map(p=>p.id+':'+(p.version||1)+':'+(p.updatedAt||0)).join(',')].join('|');
+  if(sig===feedSig && $('#feedList')){ if(kind==='comments') list.forEach(p=>{ const e=app.querySelector(`[data-cc="${p.id}"]`); if(e) e.textContent=`의견 ${ccount(p.id)}`; }); renderSideOnly(); return; }
+  feedSig=sig;
+  const c = v.cat ? CAT[v.cat] : null;
+  const title = v.special==='gems' ? '보석함' : v.special==='saved' ? '저장함' : c ? c.l : '전체 게시판';
+  const sub = v.special==='gems' ? '커뮤니티가 보석으로 판정한 글만 모았어요. 보석 3표 이상, 보석 비율 75% 이상인 글이에요.'
+    : v.special==='saved' ? '내가 저장한 글이에요. 나에게만 보여요.' : c ? c.d : 'AI가 만든 모든 것. 직접 보고 ▲보석 / ▼슬롭으로 판정해 주세요.';
+  const banner = S.offline ? '이 화면에서는 공유 저장소에 연결할 수 없어요. claude.ai에 로그인한 상태로 열어 주세요.' : S.loadErr ? '글 목록을 불러오지 못했어요. 페이지를 다시 열어 주세요.' : S.slow ? '저장소 응답이 늦어지고 있어요. 목록이 최신이 아닐 수 있어요.' : '';
+  const sorts=[['hot','인기'],['new','최신'],['top','최고'],['contro','논쟁 중'],['pending','판정 대기']];
+  let body;
+  if(!S.postsLoaded) body='<div class="banner">불러오는 중…</div>';
+  else if(!list.length) body = (!S.posts.size && !v.special) ? emptyState() : `<div class="banner">${S.q||S.tool||S.author?'조건에 맞는 글이 없어요.':v.special==='gems'?'아직 보석으로 판정된 글이 없어요. "판정 대기" 탭에서 글을 판정해 주세요.':v.special==='saved'?'저장한 글이 없어요.':S.prefs.sort==='contro'?'의견이 갈리는 글이 아직 없어요.':'아직 글이 없어요. 첫 글을 올려 보세요.'}</div>`;
+  else body=`<div class="list ${S.prefs.layout==='compact'?'compact':''}" id="feedList">${list.map(postRow).join('')}</div>`;
+  app.innerHTML=`${banner?`<div class="banner">${esc(banner)}</div>`:''}<div class="layout"><div style="min-width:0">
+    <div class="fhead"><div><h1>${esc(title)}</h1><p>${esc(sub)}</p></div>${canW()&&v.special!=='saved'?`<a class="btn pri" href="#submit${v.cat?'-'+v.cat:''}">${c?esc(c.l)+'에 ':''}글쓰기</a>`:''}</div>
+    ${v.special==='gems'?'':`<div class="sortbar"><div class="seg" role="group" aria-label="정렬">${sorts.map(([k,l])=>`<button data-sort="${k}" aria-pressed="${S.prefs.sort===k}">${l}</button>`).join('')}</div>
+      ${S.prefs.sort==='top'?`<select id="win" style="width:auto;padding:4px 8px" aria-label="기간">${[['day','오늘'],['week','이번 주'],['month','이번 달'],['all','전체 기간']].map(([k,l])=>`<option value="${k}"${S.prefs.win===k?' selected':''}>${l}</option>`).join('')}</select>`:''}
+      <span class="sp"></span><div class="seg" role="group" aria-label="보기">${[['card','카드'],['compact','목록']].map(([k,l])=>`<button data-layout="${k}" aria-pressed="${S.prefs.layout===k}">${l}</button>`).join('')}</div></div>`}
+    ${S.tool||S.author||S.q?`<div class="filters">${S.q?`<button class="fchip" data-clear="q">검색: ${esc(S.q)} ✕</button>`:''}${S.tool?`<button class="fchip" data-clear="tool">도구: ${esc(S.tool)} ✕</button>`:''}${S.author?`<button class="fchip" data-clear="author">작성자: <span data-uid="${esc(S.author)}">…</span> ✕</button>`:''}</div>`:''}
+    ${body}</div><aside class="side" id="side"></aside></div>`;
+  const w=$('#win'); if(w) w.onchange=()=>{ S.prefs.win=w.value; savePrefs(); renderFeed(); };
+  renderSideOnly(); setupPreviews(); fillPeople(app);
+}
+function emptyState(){ return `<div class="empty"><h2>아직 아무도 캐지 않은 광산이에요</h2>
+  <p class="muted" style="margin:0">사람들은 AI가 만든 걸 쉽게 "슬롭"이라고 넘기지만, 그 안에도 쓸모 있고 재미있고 영감을 주는 게 있어요. 여기서 같이 찾아봐요.</p>
+  <ol><li>AI로 만든 글, 이미지, 실행물, 코드, 링크를 게시판에 맞춰 올려요. 사용한 도구와 프롬프트를 함께 적으면 더 좋아요.</li>
+  <li>다른 사람이 보고 ▲보석 / ▼슬롭으로 판정하고, 댓글로 어디가 좋은지("가치 발견"), 무엇을 고치면 좋을지("개선 제안") 이야기해요.</li>
+  <li>판정이 쌓이면 "보석함"에 모이고, 작성자는 의견을 반영해 수정판을 올리거나 다른 사람이 리믹스할 수 있어요.</li></ol>
+  ${canW()?'<a class="btn pri" href="#submit">첫 글 올리기</a>':''}</div>`; }
+function previewHtml(p){
+  if(p.kind==='image'&&p.assetIds?.length) return `<a class="prev" href="#p-${p.id}"><img src="/_blob/${esc(p.assetIds[0])}" alt="" loading="lazy" onerror="this.parentNode.hidden=true"></a>`;
+  if(p.kind==='html') return `<a class="prev frame" href="#p-${p.id}" data-frame="${p.id}" data-n="${p.version||1}"><span class="ph">실행 준비 중…</span></a>`;
+  if(p.kind==='link'&&safeUrl(p.url)) return `<a class="prev linkp" href="${esc(p.url)}" target="_blank" rel="noopener noreferrer"><span class="d">${esc(domain(p.url))}</span><span class="muted" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.url)}</span><span>↗</span></a>`;
+  if(p.kind==='code'&&p.codeHead) return `<a class="prev codep" href="#p-${p.id}" style="text-decoration:none"><pre>${esc(p.codeHead)}</pre></a>`;
+  return '';
+}
+function thumbHtml(p){
+  if(p.kind==='image'&&p.assetIds?.length) return `<a class="thumb" href="#p-${p.id}"><img src="/_blob/${esc(p.assetIds[0])}" alt="" loading="lazy"></a>`;
+  return `<a class="thumb" href="#p-${p.id}" style="text-decoration:none">${{text:'글',link:domain(p.url).slice(0,10)||'링크',html:'실행',code:'</>'}[p.kind]||''}</a>`;
+}
+function postRow(p){ const compact=S.prefs.layout==='compact', c=CAT[p.cat];
+  const fresh = Date.now()-p.createdAt<864e5;
+  return `<article class="post" data-post="${p.id}">${voteBox('p',p.id)}<div style="min-width:0">
+    <div class="pmeta">${S.cfg.pinned?.[p.id]?'<span class="pill pin">고정</span>':''}${hiddenP(p.id)?'<span class="pill warn">숨김</span>':''}${lockedP(p.id)?'<span class="pill">잠김</span>':''}<a class="cat" href="#c-${p.cat}">${esc(c?.l||'기타')}</a><span class="pill">${esc(KINDS[p.kind]?.[0]||'')}</span>${p.tool?`<button class="pill tool authbtn" data-tool="${esc(p.tool)}">${esc(p.tool)}</button>`:''}
+      <span class="pill gem" data-gembadge="${p.id}"${isGem(pS(p.id))?'':' hidden'}>보석</span>${fresh?'<span class="pill new">NEW</span>':''}${p.remixOf?'<span class="pill">리믹스</span>':''}
+      <span>${who(p.authorId)}</span><span>${ago(p.createdAt)}</span>${(p.version||1)>1?`<span>수정 v${p.version}</span>`:''}</div>
+    <a class="ptitle" href="#p-${p.id}">${esc(p.title)}</a>
+    ${compact?'':previewHtml(p)}${!compact&&p.body&&(p.kind==='text'||!previewHtml(p))?`<div class="excerpt">${esc(p.body.slice(0,400))}</div>`:''}
+    <div class="pact"><a class="btn ghost" href="#p-${p.id}" data-cc="${p.id}">의견 ${ccount(p.id)}</a><button class="btn ghost" data-save="${p.id}">${S.saved[p.id]?'저장됨':'저장'}</button>
+      ${(p.tags||[]).slice(0,4).map(t=>`<button class="btn ghost" data-tag="${esc(t)}">#${esc(t)}</button>`).join('')}</div></div>
+    ${compact?thumbHtml(p):''}</article>`;
+}
+function renderSideOnly(){ const el=$('#side'); if(!el) return; const v=S.view, c=v.cat?CAT[v.cat]:null;
+  const inScope=[...S.posts.values()].filter(p=>!v.cat||p.cat===v.cat);
+  const tools={}; inScope.forEach(p=>{ if(p.tool) tools[p.tool]=(tools[p.tool]||0)+1; });
+  const topTools=Object.entries(tools).sort((a,b)=>b[1]-a[1]).slice(0,12);
+  const gems=inScope.filter(p=>isGem(pS(p.id))).length;
+  const tags={}; inScope.forEach(p=>(p.tags||[]).forEach(t=>tags[t]=(tags[t]||0)+1));
+  const topTags=Object.entries(tags).sort((a,b)=>b[1]-a[1]).slice(0,14);
+  let karma=null; if(S.uid){ karma=0; for(const p of S.posts.values()) if(p.authorId===S.uid) karma+=pS(p.id).score; for(const cm of S.comments.values()) if(cm.authorId===S.uid) karma+=cS(cm.id).score; }
+  el.innerHTML=`<section class="panel"><h2>${esc(c?c.l:'Slop Lab')}</h2><p>${esc(c?c.d:'AI가 만든 결과물을 그냥 넘기지 말고, 써 보고, 판정하고, 이유를 남기는 커뮤니티예요.')}</p>
+    <div class="statrow"><div><b>${inScope.length}</b><span>글</span></div><div><b>${gems}</b><span>보석</span></div>${karma!==null?`<div><b>${karma}</b><span>내 판정 점수</span></div>`:''}</div>
+    ${canW()?`<a class="btn pri" style="width:100%;justify-content:center" href="#submit${v.cat?'-'+v.cat:''}">글쓰기</a>`:''}</section>
+  <section class="panel"><h2>판정 기준</h2><ul><li><b style="color:var(--gem)">▲ 보석</b>: 쓸모 있거나, 재미있거나, 영감을 줘요.</li><li><b style="color:var(--slop)">▼ 슬롭</b>: 시간이 아까웠어요.</li>
+    <li>"가치 발견" 댓글로 어디가 좋은지 짚어 주면, 다른 사람이 찾는 데 큰 도움이 돼요.</li><li>AI가 만들었다는 이유만으로 내리지 말아 주세요.</li><li>스팸, 악성 코드, 괴롭힘, 개인정보 노출은 "신고"해 주세요. 운영자가 확인해요.</li></ul></section>
+  ${topTools.length?`<section class="panel"><h2>만든 도구</h2><div class="chips">${topTools.map(([t,n])=>`<button class="chip" data-tool="${esc(t)}" aria-pressed="${S.tool===t}">${esc(t)}<span class="mono">${n}</span></button>`).join('')}</div></section>`:''}
+  ${topTags.length?`<section class="panel"><h2>많이 쓰인 태그</h2><div class="chips">${topTags.map(([t,n])=>`<button class="chip" data-tag="${esc(t)}">#${esc(t)}<span class="mono">${n}</span></button>`).join('')}</div></section>`:''}`;
+}
+const codeCache=new Map();
+async function getVersion(pid,n){ const k=pid+':'+n; if(codeCache.has(k)) return codeCache.get(k);
+  const pr=S.db.doc(`posts/${pid}/versions/v${n}`).get().then(d=>d.exists?d.data():null).catch(()=>null); codeCache.set(k,pr);
+  const r=await pr; if(!r) codeCache.delete(k); return r; }
+let io;
+function setupPreviews(){ if(!S.db) return; io?.disconnect();
+  io=new IntersectionObserver(es=>es.forEach(e=>{ if(e.isIntersecting){ io.unobserve(e.target); loadPreview(e.target); } }),{rootMargin:'200px'});
+  app.querySelectorAll('[data-frame]').forEach(el=>io.observe(el)); }
+async function loadPreview(el){ const v=await getVersion(el.dataset.frame,+el.dataset.n); const ph=el.querySelector('.ph');
+  if(!v?.code){ if(ph) ph.textContent='미리보기를 불러오지 못했어요'; return; }
+  const f=sandboxFrame(v.code,'미리보기'); f.tabIndex=-1; f.setAttribute('aria-hidden','true'); el.prepend(f); ph?.remove(); }
+
+/* ---------- global events ---------- */
+document.addEventListener('click',e=>{
+  const r=e.target.closest('[data-report],[data-mod]');
+  if(r){ e.preventDefault(); if(r.dataset.report) report(r.dataset.report); else modAction(r.dataset.mod,r.dataset.t,r.dataset.uid2); return; }
+  const t=e.target.closest('[data-vote],[data-save],[data-tool],[data-tag],[data-author],[data-sort],[data-layout],[data-clear]'); if(!t) return;
+  if(t.dataset.vote){ e.preventDefault(); vote(t.dataset.vote,t.dataset.id,+t.dataset.d); return; }
+  if(t.dataset.save){ e.preventDefault(); toggleSave(t.dataset.save); return; }
+  if(t.dataset.sort){ S.prefs.sort=t.dataset.sort; savePrefs(); renderFeed(); return; }
+  if(t.dataset.layout){ S.prefs.layout=t.dataset.layout; savePrefs(); renderFeed(); return; }
+  if(t.dataset.clear){ if(t.dataset.clear==='q'){ S.q=''; $('#gq').value=''; } else S[t.dataset.clear]=null; renderFeed(); return; }
+  e.preventDefault();
+  if(t.dataset.tool) S.tool = S.tool===t.dataset.tool ? null : t.dataset.tool;
+  else if(t.dataset.tag){ S.q='#'+t.dataset.tag; $('#gq').value=S.q; }
+  else if(t.dataset.author) S.author=t.dataset.author;
+  if(S.view.name!=='feed') location.hash = S.view.name==='post' ? 'all' : 'all'; else renderFeed();
+});
+const gq=$('#gq'); let gqT;
+gq.addEventListener('input',()=>{ clearTimeout(gqT); gqT=setTimeout(()=>{ S.q=gq.value; if(S.view.name!=='feed') location.hash='all'; else renderFeed(); },180); });
+document.addEventListener('keydown',e=>{ if(e.key==='/'&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName)){ e.preventDefault(); gq.focus(); } });
+
+/* ---------- post detail ---------- */
+function openPost(v){
+  S.d={id:v.id,sel:v.n,versions:[],vLoaded:false,comments:[],cLoaded:false,contentKey:null,threadSig:null,collapsed:new Set(),expanded:new Set(),replyTo:null,editing:null,drafts:{},flair:'opinion',delArm:false,unsubs:[]};
+  app.innerHTML=`<a class="crumb" href="#all" id="crumb">← 게시판으로</a><div class="layout"><div style="min-width:0"><div id="pArticle"></div><div id="pThread"></div></div><aside class="side" id="pSide"></aside></div>`;
+  if(!S.db){ $('#pArticle').innerHTML='<div class="banner">공유 저장소에 연결할 수 없어 글을 열 수 없어요.</div>'; return; }
+  const ref=S.db.doc('posts/'+v.id);
+  S.d.unsubs.push(ref.collection('versions').orderBy('n','asc').onSnapshot(s=>{ if(!S.d) return; S.d.versions=s.docs.map(d=>d.data()); S.d.vLoaded=true; renderPost(); },()=>{ if(S.d){ S.d.vLoaded=true; renderPost(); } }));
+  S.d.unsubs.push(S.db.collection('comments').where('postId','==',v.id).onSnapshot(s=>{ if(!S.d) return; S.d.comments=s.docs.map(d=>({id:d.id,...d.data()})); S.d.cLoaded=true; renderPost('thread'); },()=>{ if(S.d){ S.d.cLoaded=true; renderPost('thread'); } }));
+  renderPost();
+}
+const curVer = () => { const vs=S.d.versions; if(!vs.length) return null; return vs.find(x=>x.n===S.d.sel) || vs[vs.length-1]; };
+function renderPost(kind){ if(!S.d) return; const p=S.posts.get(S.d.id);
+  if(!p){ $('#pArticle').innerHTML = S.postsLoaded ? '<div class="banner">글을 찾을 수 없어요. 삭제되었을 수 있어요.</div>' : '<div class="banner">불러오는 중…</div>'; return; }
+  $('#crumb').href='#c-'+p.cat; $('#crumb').textContent='← '+(CAT[p.cat]?.l||'게시판');
+  if(kind!=='votes'&&kind!=='thread') renderArticle(p);
+  if(kind!=='votes') renderThread(p);
+  renderPostSide(p);
+}
+function renderArticle(p){ const v=curVer(); const el=$('#pArticle');
+  const key=[p.updatedAt,p.version,p.cat,v?.n,S.d.vLoaded,S.d.delArm,S.d.tab,JSON.stringify(S.mod['p-'+p.id]||{}),!!S.cfg.pinned?.[p.id],!!S.myReports.items?.['p:'+p.id],reportCount('p:'+p.id)].join('|'); if(S.d.contentKey===key) return; S.d.contentKey=key;
+  if(!v){ el.innerHTML=`<div class="banner">${S.d.vLoaded?'내용을 찾을 수 없어요.':'불러오는 중…'}</div>`; return; }
+  if(hiddenP(p.id)&&!S.isMod){ el.innerHTML=`<div class="banner">운영자가 숨긴 글이에요.${S.mod['p-'+p.id].reason?' 사유: '+esc(S.mod['p-'+p.id].reason):''}</div>`; return; }
+  const latest=S.d.versions[S.d.versions.length-1].n, old=v.n!==latest, prev=S.d.versions.find(x=>x.n===v.n-1);
+  const mine = S.uid && (p.authorId===S.uid || S.me?.isOwner);
+  S.d.tab ??= 'run';
+  let main='';
+  if(p.kind==='link'&&safeUrl(v.url)) main+=`<a class="linkcard" href="${esc(v.url)}" target="_blank" rel="noopener noreferrer"><span class="d">${esc(domain(v.url))} ↗</span><span>${esc(v.url)}</span></a>`;
+  if(p.kind==='image'&&v.assetIds?.length) main+=`<div class="gallery${v.assetIds.length===1?' one':''}">${v.assetIds.map(id=>`<a href="/_blob/${esc(id)}" target="_blank" rel="noopener"><img src="/_blob/${esc(id)}" alt="" loading="lazy" onerror="this.alt='이미지를 볼 수 없어요'"></a>`).join('')}</div>`;
+  if(p.kind==='html'||p.kind==='code'){ const tabs = p.kind==='html'?[['run','실행'],['code','코드']]:[['code','코드']]; if(prev) tabs.push(['diff',`v${prev.n} 대비 변경점`]);
+    const tab = tabs.some(t=>t[0]===S.d.tab) ? S.d.tab : tabs[0][0];
+    main+=`<div class="stage" id="pStage"><div class="stage-bar"><div class="seg">${tabs.map(([k,l])=>`<button data-ptab="${k}" aria-pressed="${tab===k}">${l}</button>`).join('')}</div><span class="sp"></span>
+      ${p.codeLang?`<span class="pill">${esc(p.codeLang)}</span>`:''}${tab==='run'?'<button class="btn sm" id="rerun">다시 실행</button><button class="btn sm" id="fs">전체화면</button>':''}${tab==='code'?'<button class="btn sm" id="copy">복사</button>':''}</div>
+      <div id="stageBody"></div></div>`; S.d.tabNow=tab; }
+  if(v.body) main+=`<div class="md">${md(v.body)}</div>`;
+  if((p.kind==='text'||p.kind==='link'||p.kind==='image')&&prev&&(prev.body||'')!==(v.body||'')) main+=`<details class="prompt"><summary>v${prev.n} 대비 본문 변경점</summary>${diffHtml(prev.body||'',v.body||'')}</details>`;
+  if(v.prompt) main+=`<details class="prompt"><summary>사용한 프롬프트</summary><pre>${esc(v.prompt)}</pre></details>`;
+  el.innerHTML=`<article class="article">${voteBox('p',p.id)}<div class="content">
+    <div><div class="pmeta"><a class="cat" href="#c-${p.cat}">${esc(CAT[p.cat]?.l||'기타')}</a><span class="pill">${esc(KINDS[p.kind]?.[0]||'')}</span>${p.tool?`<button class="pill tool authbtn" data-tool="${esc(p.tool)}">${esc(p.tool)}</button>`:''}<span class="pill gem" data-gembadge="${p.id}"${isGem(pS(p.id))?'':' hidden'}>보석</span>
+      <span>${who(p.authorId)}</span><span>${ago(p.createdAt)}</span>${p.version>1?`<span>· 수정 ${ago(p.updatedAt)}</span>`:''}</div>
+    <h1>${esc(v.title||p.title)}</h1>
+    ${p.remixOf?`<div class="muted" style="font-size:13px;margin:-4px 0 8px">↳ 리믹스 원본: <a href="#p-${esc(p.remixOf.id)}-v${p.remixOf.n}">${esc(p.remixOf.title||'원본')} v${p.remixOf.n}</a></div>`:''}
+    ${old?`<div class="oldver">지금 v${v.n}을 보고 있어요. 최신은 v${latest}이에요. <a href="#p-${p.id}">최신 보기</a></div>`:''}</div>
+    ${main}
+    ${(p.tags||[]).length?`<div class="chips">${p.tags.map(t=>`<button class="chip" data-tag="${esc(t)}">#${esc(t)}</button>`).join('')}</div>`:''}
+    <div class="pact"><button class="btn ghost" data-save="${p.id}">${S.saved[p.id]?'저장됨':'저장'}</button>
+      ${canW()?`<a class="btn ghost" href="#remix-${p.id}-v${v.n}">리믹스</a>`:''}${mine&&canW()?`<a class="btn ghost" href="#edit-${p.id}">수정판 올리기</a>`:''}${(mine&&canW())||S.isMod?`<button class="btn ghost danger" id="delPost">${S.d.delArm?'정말 삭제할까요? 한 번 더 누르세요':'삭제'}</button>`:''}
+      ${S.uid&&p.authorId!==S.uid?`<button class="btn ghost" data-report="p:${p.id}">${S.myReports.items?.['p:'+p.id]?'신고함':'신고'}</button>`:''}</div>
+    ${S.isMod?modBar(p):''}
+  </div></article>`;
+  const sb=$('#stageBody'); if(sb){ const tab=S.d.tabNow;
+    if(tab==='run'){ const r=document.createElement('div'); r.className='runner'; r.append(sandboxFrame(v.code||'')); sb.append(r); }
+    else if(tab==='code') sb.innerHTML=`<pre class="code" style="border-radius:0">${esc(v.code||'')}</pre>`;
+    else sb.innerHTML=diffHtml(prev.code||'',v.code||'');
+    el.querySelectorAll('[data-ptab]').forEach(b=>b.onclick=()=>{ S.d.tab=b.dataset.ptab; S.d.contentKey=null; renderArticle(p); });
+    const rr=$('#rerun'); if(rr) rr.onclick=()=>{ S.d.contentKey=null; renderArticle(p); };
+    const fs=$('#fs'); if(fs) fs.onclick=()=>$('#pStage').requestFullscreen?.().catch(()=>toast('이 화면에서는 전체화면을 쓸 수 없어요'));
+    const cp=$('#copy'); if(cp) cp.onclick=()=>navigator.clipboard?.writeText(v.code||'').then(()=>toast('복사했어요'),()=>{ getSelection().selectAllChildren(sb.querySelector('pre')); toast('선택해 두었어요. 직접 복사해 주세요'); }); }
+  const del=$('#delPost'); if(del) del.onclick=async()=>{ if(!S.d.delArm){ S.d.delArm=true; S.d.contentKey=null; renderArticle(p); return; }
+    del.disabled=true; try{ const ref=S.db.doc('posts/'+p.id);
+      for(const x of S.d.versions) await ref.collection('versions').doc('v'+x.n).delete();
+      for(const c of S.d.comments) await S.db.doc('comments/'+c.id).delete();
+      await ref.delete(); if(S.isMod&&p.authorId!==S.uid){ await clearReports('p:'+p.id); await modlog('delete','p:'+p.id,p.title); }
+      toast('삭제했어요'); location.hash='c-'+p.cat; }catch{ toast('삭제하지 못했어요'); del.disabled=false; } };
+  fillPeople(el);
+}
+function lineDiff(a,b){
+  const A=a.split('\n'),B=b.split('\n'); let s=0; while(s<A.length&&s<B.length&&A[s]===B[s]) s++;
+  let e=0; while(e<A.length-s&&e<B.length-s&&A[A.length-1-e]===B[B.length-1-e]) e++;
+  const a2=A.slice(s,A.length-e), b2=B.slice(s,B.length-e), N=a2.length, M=b2.length; if(N*M>6e6) return null;
+  const dp=[]; for(let i=0;i<=N;i++) dp.push(new Uint32Array(M+1));
+  for(let i=N-1;i>=0;i--) for(let j=M-1;j>=0;j--) dp[i][j]=a2[i]===b2[j]?dp[i+1][j+1]+1:Math.max(dp[i+1][j],dp[i][j+1]);
+  const out=[]; for(let k=0;k<s;k++) out.push([' ',A[k]]);
+  let i=0,j=0; while(i<N&&j<M){ if(a2[i]===b2[j]){ out.push([' ',a2[i]]); i++; j++; } else if(dp[i+1][j]>=dp[i][j+1]) out.push(['-',a2[i++]]); else out.push(['+',b2[j++]]); }
+  while(i<N) out.push(['-',a2[i++]]); while(j<M) out.push(['+',b2[j++]]); for(let k=A.length-e;k<A.length;k++) out.push([' ',A[k]]); return out; }
+function diffHtml(a,b){ const d=lineDiff(a,b); if(!d) return '<div class="banner" style="margin:10px">너무 커서 변경점을 계산하지 않았어요.</div>';
+  const add=d.filter(x=>x[0]==='+').length, del=d.filter(x=>x[0]==='-').length;
+  const show=new Uint8Array(d.length); d.forEach((x,i)=>{ if(x[0]!==' ') for(let k=Math.max(0,i-3);k<=Math.min(d.length-1,i+3);k++) show[k]=1; });
+  let h='',skip=0; d.forEach((x,i)=>{ if(!show[i]){ skip++; return; } if(skip){ h+=`<div class="gap">… ${skip}줄 동일 …</div>`; skip=0; } h+=`<div class="${x[0]==='+'?'a':x[0]==='-'?'d':''}">${x[0]} ${esc(x[1])}</div>`; });
+  if(skip) h+=`<div class="gap">… ${skip}줄 동일 …</div>`;
+  return `<div class="diff" style="margin-top:8px"><div class="gap"><span style="color:var(--ok)">+${add}</span> / <span style="color:var(--warn)">−${del}</span></div>${add+del?h:'<div class="gap">변경 없음</div>'}</div>`; }
+
+/* comments */
+function renderThread(p){ const el=$('#pThread'); if(!el) return;
+  const all=S.d.comments, sortK=S.prefs.csort;
+  const sig=[S.d.cLoaded,sortK,S.d.replyTo,S.d.editing,[...S.d.collapsed].join(','),all.map(c=>c.id+':'+(c.editedAt||0)+':'+(c.deleted?1:0)+':'+(c.resolved||'')).join(',')].join('|');
+  if(sig===S.d.threadSig) return; S.d.threadSig=sig;
+  const focusId=document.activeElement?.dataset?.draft, caret=document.activeElement?.selectionStart;
+  const kids={}; all.forEach(c=>(kids[c.parentId||'root']??=[]).push(c));
+  const order = arr => arr.slice().sort(sortK==='new' ? (a,b)=>b.createdAt-a.createdAt : sortK==='old' ? (a,b)=>a.createdAt-b.createdAt
+    : (a,b)=>((b.flair==='gem')-(a.flair==='gem'))*0.5 + (cS(b.id).score-cS(a.id).score) || b.createdAt-a.createdAt);
+  const box = (key,ph) => `<div class="cbox">${key==='root'?`<div class="flairs" role="group" aria-label="댓글 종류">${Object.entries(FLAIRS).map(([k,l])=>`<button data-flair="${k}" aria-pressed="${S.d.flair===k}">${l}</button>`).join('')}</div>`:''}
+    <textarea data-draft="${key}" rows="${key==='root'?3:2}" maxlength="4000" placeholder="${ph}"></textarea>
+    <div class="row"><span class="hint">${key==='root'?'좋은 점을 짚을 땐 "가치 발견"을 골라 주세요.':''}</span><span class="sp"></span>${key!=='root'?`<button class="btn sm ghost" data-cancel>취소</button>`:''}<button class="btn sm pri" data-send="${key}">${key.startsWith('edit:')?'수정 저장':'댓글 달기'}</button></div></div>`;
+  const locked=lockedP(p.id);
+  const node = (c,depth) => { const ch=order(kids[c.id]||[]), mine=S.uid&&c.authorId===S.uid, mod=mine||S.me?.isOwner||S.isMod, hid=hiddenC(c.id), gone=c.deleted||(hid&&!S.isMod), sc=cS(c.id).score;
+    const low=!gone&&sc<=-4&&!S.d.expanded.has(c.id), col=S.d.collapsed.has(c.id)||low;
+    if(col) return `<div class="collapsed" data-expand="${c.id}">[+] ${c.deleted?'삭제된 댓글':low?`점수가 낮아 접힌 댓글 (${sc}점)`:'접힌 댓글'} · 답글 ${countDesc(c.id,kids)}개</div>`;
+    return `<div class="cmt${c.flair==='gem'&&!c.deleted?' gemc':''}" id="c-${c.id}"><div class="rail" data-collapse="${c.id}" title="접기"><i></i></div><div style="min-width:0">
+      <div class="ch">${gone?`<span>${c.deleted?'삭제됨':'숨김'}</span>`:`<img class="av" data-av="${esc(c.authorId)}" alt=""><button class="authbtn nm" data-author="${esc(c.authorId)}" data-uid="${esc(c.authorId)}">…</button>${c.authorId===p.authorId?'<span class="pill">작성자</span>':''}
+        ${c.flair&&c.flair!=='opinion'?`<span class="flair ${esc(c.flair)}">${esc(FLAIRS[c.flair]||'')}</span>`:''}`}<span class="pill">v${c.version||1}</span>${hid&&S.isMod?'<span class="pill warn">숨김</span>':''}${S.isMod&&reportCount('c:'+c.id)?`<span class="pill warn">신고 ${reportCount('c:'+c.id)}</span>`:''}${c.resolved?`<span class="pill gem">v${c.resolved}에서 반영</span>`:''}<span>${ago(c.createdAt)}${c.editedAt?' · 수정됨':''}</span></div>
+      ${S.d.editing===c.id?box('edit:'+c.id,''):`<div class="ctext">${gone?`<span class="muted">${c.deleted?'[삭제된 댓글]':'[운영자가 숨긴 댓글]'}</span>`:esc(c.text)}</div>`}
+      ${gone?'':`<div class="cact">${voteBox('c',c.id,true)}${canW()&&!locked&&depth<8?`<button class="linkbtn" data-reply="${c.id}">답글</button>`:''}
+        ${mod&&(canW()||S.isMod)?`${mine?`<button class="linkbtn" data-edit="${c.id}">수정</button>`:''}<button class="linkbtn" data-delc="${c.id}">삭제</button>`:''}
+        ${S.uid&&!mine?`<button class="linkbtn" data-report="c:${c.id}">${S.myReports.items?.['c:'+c.id]?'신고함':'신고'}</button>`:''}
+        ${S.isMod?`<button class="linkbtn" data-mod="${hid?'unhide':'hide'}" data-t="c:${c.id}">${hid?'숨김 해제':'숨기기'}</button>${c.authorId!==S.uid?`<button class="linkbtn" data-mod="ban" data-uid2="${esc(c.authorId)}">${S.cfg.banned?.[c.authorId]?'제한 해제':'작성자 제한'}</button>`:''}`:''}
+        ${S.uid&&p.authorId===S.uid&&(c.flair==='improve'||c.flair==='question')&&!c.resolved&&p.version>=1?`<button class="linkbtn" data-resolve="${c.id}">반영함 (v${p.version})</button>`:''}</div>`}
+      ${S.d.replyTo===c.id?box(c.id,'답글을 남겨 주세요'):''}
+      ${ch.map(x=>node(x,depth+1)).join('')}</div></div>`; };
+  const roots=order(kids.root||[]); const total=all.filter(c=>!c.deleted).length;
+  el.innerHTML=`<section class="thread"><div class="thread-head"><h2>의견 ${total}개</h2><span class="sp"></span>
+    <div class="seg" role="group" aria-label="댓글 정렬">${[['best','베스트'],['new','최신'],['old','오래된 순']].map(([k,l])=>`<button data-csort="${k}" aria-pressed="${sortK===k}">${l}</button>`).join('')}</div></div>
+    ${locked?'<p class="muted" style="font-size:13px">운영자가 이 글의 댓글을 잠갔어요. 기존 의견은 읽을 수 있어요.</p>':canW()?box('root','이 결과물에서 가치 있는 점, 아쉬운 점, 고칠 점을 남겨 주세요'):`<p class="muted" style="font-size:13px">${banned()?'작성이 제한된 계정이에요.':S.uid?'이 공유 권한으로는 댓글을 달 수 없어요.':'댓글을 달려면 claude.ai에 로그인해 주세요.'}</p>`}
+    ${!S.d.cLoaded?'<p class="muted">불러오는 중…</p>':roots.length?roots.map(c=>node(c,0)).join(''):'<p class="muted" style="font-size:13px">아직 의견이 없어요. 첫 판정 이유를 남겨 주세요.</p>'}</section>`;
+  el.querySelectorAll('textarea[data-draft]').forEach(t=>{ const k=t.dataset.draft; t.value=S.d.drafts[k] ?? (k.startsWith('edit:')?(S.d.comments.find(c=>c.id===k.slice(5))?.text||''):''); t.oninput=()=>S.d.drafts[k]=t.value;
+    if(k===focusId){ t.focus(); try{ t.setSelectionRange(caret,caret); }catch{} } });
+  el.onclick=threadClick; fillPeople(el);
+}
+function countDesc(id,kids){ let n=0; for(const c of kids[id]||[]) n+=1+countDesc(c.id,kids); return n; }
+async function threadClick(e){ const t=e.target.closest('button,[data-expand],[data-collapse]'); if(!t||!S.d) return; const p=S.posts.get(S.d.id); const D=t.dataset;
+  const rer=()=>{ S.d.threadSig=null; renderThread(p); };
+  if(D.flair){ S.d.flair=D.flair; rer(); }
+  else if(D.csort){ S.prefs.csort=D.csort; savePrefs(); rer(); }
+  else if(D.collapse){ S.d.collapsed.add(D.collapse); rer(); }
+  else if(D.expand){ S.d.collapsed.delete(D.expand); S.d.expanded.add(D.expand); rer(); }
+  else if(D.reply){ S.d.replyTo=D.reply; S.d.editing=null; rer(); $(`textarea[data-draft="${D.reply}"]`)?.focus(); }
+  else if(D.edit){ S.d.editing=D.edit; S.d.replyTo=null; rer(); $(`textarea[data-draft="edit:${D.edit}"]`)?.focus(); }
+  else if(D.cancel!==undefined){ S.d.replyTo=null; S.d.editing=null; rer(); }
+  else if(D.send){ const k=D.send, text=(S.d.drafts[k]||'').trim(); if(!text) return; t.disabled=true;
+    try{ if(k.startsWith('edit:')){ await S.db.doc('comments/'+k.slice(5)).update({text,editedAt:Date.now()}); S.d.editing=null; }
+      else { const v=curVer(); await S.db.doc('comments/'+newId()).set({postId:S.d.id,parentId:k==='root'?null:k,text,flair:k==='root'?S.d.flair:'opinion',version:v?.n||p.version||1,authorId:S.uid,createdAt:Date.now()});
+        if(k!=='root') S.d.replyTo=null; else S.d.flair='opinion'; }
+      delete S.d.drafts[k]; rer(); }
+    catch(err){ t.disabled=false; toast(err?.code==='invalid_argument'?'이 공유 권한으로는 댓글을 달 수 없어요':'저장하지 못했어요. 다시 시도해 주세요'); } }
+  else if(D.delc){ const hasKids=S.d.comments.some(c=>c.parentId===D.delc); t.disabled=true;
+    try{ hasKids ? await S.db.doc('comments/'+D.delc).update({deleted:true,text:''}) : await S.db.doc('comments/'+D.delc).delete(); }catch{ toast('삭제하지 못했어요'); t.disabled=false; } }
+  else if(D.resolve){ t.disabled=true; try{ await S.db.doc('comments/'+D.resolve).update({resolved:p.version}); }catch{ toast('표시하지 못했어요'); } }
+}
+function renderPostSide(p){ const el=$('#pSide'); if(!el) return;
+  const vs=S.d.versions, v=curVer();
+  const sumKey=p.id+':'+S.d.comments.length;
+  const html=`<section class="panel"><h2>커뮤니티 판정</h2><div class="verdict" data-verdict="${p.id}">${verdictInner(p.id)}</div></section>
+    ${S.sample?`<section class="panel"><h2>토론 요약</h2><p>댓글과 판정을 Claude가 정리해 줘요. 어디가 보석이고 어디가 슬롭인지 한눈에 봐요.</p>
+      <div id="sumOut">${S.d.sum?.key===sumKey?`<div class="ai-sum"><div class="md">${md(S.d.sum.text)}</div></div>`:''}</div>
+      <button class="btn sm" id="sumGo" ${S.d.comments.length?'':'disabled'}>${S.d.sum?'다시 요약':'요약하기'}</button></section>`:''}
+    ${vs.length>1?`<section class="panel"><h2>수정 이력</h2><div class="hist">${vs.slice().reverse().map(x=>`<a href="#p-${p.id}-v${x.n}" aria-current="${x.n===v?.n}"><b class="mono">v${x.n}</b><div><div>${esc(x.note||'메모 없음')}</div><div class="m">${ago(x.createdAt)} · 의견 ${S.d.comments.filter(c=>c.version===x.n).length}</div></div></a>`).join('')}</div></section>`:''}
+    ${relatedHtml(p)}`;
+  if(el.dataset.k===html) return; el.dataset.k=html; el.innerHTML=html;
+  const sg=$('#sumGo'); if(sg) sg.onclick=()=>summarize(p,sumKey);
+}
+function relatedHtml(p){ const rel=[...S.posts.values()].filter(x=>x.id!==p.id&&(S.isMod||!hiddenP(x.id))&&(x.remixOf?.id===p.id||p.remixOf?.id===x.id||(x.cat===p.cat))).sort((a,b)=>pS(b.id).score-pS(a.id).score).slice(0,5);
+  return rel.length?`<section class="panel"><h2>같은 게시판의 인기 글</h2><div class="hist">${rel.map(x=>`<a href="#p-${x.id}"><b class="mono">${pS(x.id).score}</b><div>${esc(x.title)}${x.remixOf?.id===p.id?' <span class="pill">이 글의 리믹스</span>':''}</div></a>`).join('')}</div></section>`:''; }
+async function summarize(p,key){ const btn=$('#sumGo'); btn.disabled=true; const d=S.d;
+  const put=h=>{ const o=$('#sumOut'); if(o&&S.d===d) o.innerHTML=h; }; put('<p class="muted">정리하는 중…</p>');
+  const s=pS(p.id), v=curVer();
+  const cs=S.d.comments.filter(c=>!c.deleted).sort((a,b)=>cS(b.id).score-cS(a.id).score).slice(0,80).map(c=>`- [${FLAIRS[c.flair]||'의견'}|점수 ${cS(c.id).score}] ${c.text.slice(0,600)}`).join('\n');
+  const prompt=`AI가 만든 결과물을 커뮤니티가 평가한 토론을 한국어로 짧게 정리해 줘.
+게시판: ${CAT[p.cat]?.l} / 형식: ${KINDS[p.kind]?.[0]} / 만든 도구: ${p.tool||'미상'}
+제목: ${p.title}
+본문 일부: ${(v?.body||'').slice(0,1500)}
+판정: 보석 ${s.up}표, 슬롭 ${s.down}표
+댓글(점수 높은 순):
+${cs}
+
+형식(마크다운, 전체 12줄 이내):
+**한 줄 판정**: ...
+**가치 있다는 점**
+- ...
+**아쉽다는 점**
+- ...
+**다음 버전에 반영하면 좋을 것**
+- ...
+댓글에 없는 내용은 지어내지 마.`;
+  const show=t=>{ d.sum={key,text:t}; put(`<div class="ai-sum"><div class="md">${md(t)}</div></div>`); };
+  try{ const r=await S.sample(prompt,{modelTier:'default',cache:false,onText:({text})=>show(text)}); show(r.text); }
+  catch(e){ put(`<p class="muted">${e?.code==='not_granted'?'Claude 사용이 허용되지 않았어요.':e?.code==='rate_limited'?'요청이 많아요. 잠시 후 다시 시도해 주세요.':'요약하지 못했어요.'}</p>`); }
+  const b=$('#sumGo'); if(b) b.disabled=false; }
+
+/* ---------- moderation ---------- */
+const REPORT_REASONS=['스팸·광고','악성 코드·위험한 실행물','혐오·괴롭힘','개인정보 노출','저작권 침해','잘못된 게시판','기타'];
+function openDialog({title,desc,reasons,submit,onSubmit}){ const d=$('#dlg'), f=$('#dlgForm'), back=document.activeElement;
+  f.innerHTML=`<h2>${esc(title)}</h2>${desc?`<p class="muted" style="margin:0;font-size:13px">${esc(desc)}</p>`:''}
+    <div class="reasons" role="radiogroup">${reasons.map((r,i)=>`<label><input type="radio" name="rsn" value="${esc(r)}"${i?'':' checked'}> ${esc(r)}</label>`).join('')}</div>
+    <textarea id="dlgNote" rows="3" maxlength="500" placeholder="자세한 내용 (선택)"></textarea>
+    <div class="row"><span class="hint" id="dlgSt"></span><span class="sp"></span><button type="button" class="btn sm" id="dlgCancel">취소</button><button type="submit" class="btn sm pri">${esc(submit)}</button></div>`;
+  d.hidden=false; f.querySelector('input')?.focus();
+  const close=()=>{ d.hidden=true; f.innerHTML=''; back?.focus?.(); };
+  $('#dlgCancel').onclick=close; d.onclick=e=>{ if(e.target===d) close(); }; f.onkeydown=e=>{ if(e.key==='Escape') close(); };
+  f.onsubmit=async e=>{ e.preventDefault(); const reason=f.querySelector('input[name=rsn]:checked')?.value||'', note=$('#dlgNote').value.trim(), b=f.querySelector('[type=submit]'); b.disabled=true;
+    try{ await onSubmit(reason,note); close(); }catch{ b.disabled=false; $('#dlgSt').textContent='저장하지 못했어요. 다시 시도해 주세요.'; } };
+}
+function reportGroups(){ const g=new Map(); for(const [uid,doc] of S.reports) for(const [t,r] of Object.entries(doc?.items||{})){ if(!g.has(t)) g.set(t,[]); g.get(t).push({uid,...r}); } return g; }
+const reportCount = t => reportGroups().get(t)?.length||0;
+function report(key){
+  if(!S.db||!S.uid){ toast('신고하려면 claude.ai에 로그인해 주세요'); return; }
+  if(S.myReports.items?.[key]){ toast('이미 신고했어요. 운영자가 확인할 거예요'); return; }
+  openDialog({title:key.startsWith('p:')?'글 신고':'댓글 신고',desc:'신고 내용은 운영자만 볼 수 있어요. 그냥 별로라면 신고 대신 ▼슬롭으로 판정해 주세요.',reasons:REPORT_REASONS,submit:'신고하기',
+    onSubmit:async(reason,note)=>{ const items={...(S.myReports.items||{}),[key]:{reason,note,at:Date.now()}}; await S.db.doc('reports/'+S.uid).set({items}); S.myReports={items}; toast('신고했어요. 운영자가 확인할 거예요'); refreshAll(); }});
+}
+async function modlog(action,target,reason){ try{ await S.db.doc('modlog/'+newId()).set({action,target,reason:reason||'',by:S.uid,at:Date.now()}); }catch{} }
+async function setMod(t,patch){ const id=t.replace(':','-'); await S.db.doc('modactions/'+id).set({...(S.mod[id]||{}),...patch,by:S.uid,at:Date.now()}); }
+async function setCfg(patch){ await S.db.doc('modconfig/main').set({banned:S.cfg.banned||{},pinned:S.cfg.pinned||{},...patch}); }
+async function clearReports(t){ for(const [uid,doc] of S.reports){ if(doc?.items?.[t]){ const items={...doc.items}; delete items[t]; await S.db.doc('reports/'+uid).set({items}); } } }
+async function hardDelete(t){ const [ty,id]=t.split(':');
+  if(ty==='p'){ const vs=await S.db.collection(`posts/${id}/versions`).get(); for(const d of vs.docs) await S.db.doc(`posts/${id}/versions/${d.id}`).delete();
+    const cs=await S.db.collection('comments').where('postId','==',id).get(); for(const d of cs.docs) await S.db.doc('comments/'+d.id).delete();
+    await S.db.doc('posts/'+id).delete(); }
+  else await S.db.doc('comments/'+id).update({deleted:true,text:''}); }
+function modBar(p){ const m=S.mod['p-'+p.id]||{}, pinned=!!S.cfg.pinned?.[p.id], rc=reportCount('p:'+p.id);
+  return `<div class="modbar"><span class="label">운영</span>${rc?`<a class="pill warn" href="#mod" style="text-decoration:none">신고 ${rc}</a>`:''}
+    <button class="btn sm" data-mod="pin" data-t="p:${p.id}">${pinned?'고정 해제':'게시판 상단 고정'}</button>
+    <button class="btn sm" data-mod="${m.hidden?'unhide':'hide'}" data-t="p:${p.id}">${m.hidden?'숨김 해제':'숨기기'}</button>
+    <button class="btn sm" data-mod="${m.locked?'unlock':'lock'}" data-t="p:${p.id}">${m.locked?'댓글 잠금 해제':'댓글 잠금'}</button>
+    <select data-move="${p.id}" aria-label="게시판 이동" style="width:auto;padding:4px 8px">${CATS.map(([k,l])=>`<option value="${k}"${k===p.cat?' selected':''}>${k===p.cat?'게시판: ':''}${esc(l)}${k===p.cat?'':'로 이동'}</option>`).join('')}</select>
+    ${p.authorId!==S.uid?`<button class="btn sm danger" data-mod="ban" data-uid2="${esc(p.authorId)}">${S.cfg.banned?.[p.authorId]?'작성 제한 해제':'작성자 제한'}</button>`:''}
+    ${m.hidden?`<span class="hint">숨긴 사유: ${esc(m.reason||'없음')}</span>`:''}</div>`; }
+async function modAction(act,t,uid2){ if(!S.isMod||!S.db) return;
+  try{
+    if(act==='hide') openDialog({title:t.startsWith('p:')?'글 숨기기':'댓글 숨기기',desc:'숨긴 항목은 운영자에게만 보여요. 언제든 되돌릴 수 있어요. 숨기면 이 항목의 신고는 처리된 것으로 정리돼요.',reasons:REPORT_REASONS,submit:'숨기기',
+      onSubmit:async(r,n)=>{ await setMod(t,{hidden:true,reason:n?`${r} · ${n}`:r}); await clearReports(t); await modlog('hide',t,r); toast('숨겼어요'); }});
+    else if(act==='unhide'){ await setMod(t,{hidden:false,reason:''}); await modlog('unhide',t); toast('숨김을 풀었어요'); }
+    else if(act==='lock'||act==='unlock'){ await setMod(t,{locked:act==='lock'}); await modlog(act,t); toast(act==='lock'?'댓글을 잠갔어요':'댓글 잠금을 풀었어요'); }
+    else if(act==='pin'){ const id=t.slice(2), pinned={...(S.cfg.pinned||{})}, on=!pinned[id]; if(on) pinned[id]=Date.now(); else delete pinned[id];
+      await setCfg({pinned}); await modlog(on?'pin':'unpin',t); toast(on?'상단에 고정했어요':'고정을 풀었어요'); }
+    else if(act==='ban'){ if(S.cfg.banned?.[uid2]){ const b={...S.cfg.banned}; delete b[uid2]; await setCfg({banned:b}); await modlog('unban','u:'+uid2); toast('작성 제한을 풀었어요'); }
+      else openDialog({title:'작성자 제한',desc:'제한된 사람은 글, 댓글, 판정을 남길 수 없어요. 읽기는 계속할 수 있고, 이미 쓴 글은 그대로 남아요.',reasons:['스팸·광고','반복적인 규칙 위반','혐오·괴롭힘','악성 코드 유포','기타'],submit:'제한하기',
+        onSubmit:async(r,n)=>{ await setCfg({banned:{...(S.cfg.banned||{}),[uid2]:{reason:n?`${r} · ${n}`:r,at:Date.now(),by:S.uid}}}); await modlog('ban','u:'+uid2,r); toast('작성을 제한했어요'); }}); }
+    else if(act==='dismiss'){ await clearReports(t); await modlog('dismiss',t); toast('신고를 기각했어요'); }
+    else if(act==='delete'){ if(S.modArm!==t){ S.modArm=t; renderMod(); return; } S.modArm=null;
+      const title=t.startsWith('p:')?S.posts.get(t.slice(2))?.title:''; await hardDelete(t); await clearReports(t); await modlog('delete',t,title); toast('삭제했어요'); }
+  }catch{ toast('운영 작업을 저장하지 못했어요. 다시 시도해 주세요'); }
+}
+document.addEventListener('change',e=>{ const s=e.target.closest('[data-move]'); if(!s||!S.isMod) return; const id=s.dataset.move;
+  S.db.doc('posts/'+id).update({cat:s.value}).then(()=>{ toast(`${CAT[s.value].l} 게시판으로 옮겼어요`); modlog('move','p:'+id,CAT[s.value].l); },()=>toast('옮기지 못했어요')); });
+function modTarget(t){ const [ty,id]=t.split(':');
+  if(ty==='u') return {html:who(id)};
+  if(ty==='p'){ const p=S.posts.get(id); return p?{author:p.authorId,html:`<a class="ptitle" href="#p-${id}">${esc(p.title)}</a><div class="pmeta"><span>${esc(CAT[p.cat]?.l||'')}</span><span class="pill">${esc(KINDS[p.kind]?.[0]||'')}</span>${who(p.authorId)}<span>${ago(p.createdAt)}</span>${hiddenP(id)?'<span class="pill warn">숨김</span>':''}</div>`}:{html:'<span class="muted">삭제된 글</span>'}; }
+  const c=S.comments.get(id); return c?{author:c.authorId,html:`<div class="ctext" style="margin:0">${c.deleted?'<span class="muted">[삭제된 댓글]</span>':esc(c.text.slice(0,400))}</div><div class="pmeta"><span class="pill">댓글</span>${who(c.authorId)}<span>${ago(c.createdAt)}</span><a href="#p-${esc(c.postId)}">글로 가기</a>${hiddenC(id)?'<span class="pill warn">숨김</span>':''}</div>`}
+    :{html:'<span class="muted">댓글을 찾을 수 없어요. 삭제되었거나 오래된 댓글이에요.</span>'}; }
+function renderMod(){
+  if(!S.isMod){ app.innerHTML=`<a class="crumb" href="#all">← 게시판으로</a><div class="banner">${S.user?'운영자만 볼 수 있는 화면이에요.':'불러오는 중…'}</div>`; return; }
+  const focusSel=document.activeElement?.closest?.('#app [data-mod]'); const keep=focusSel?focusSel.dataset.mod+'|'+(focusSel.dataset.t||focusSel.dataset.uid2):null;
+  const q=[...reportGroups().entries()].sort((a,b)=>b[1].length-a[1].length||Math.max(...b[1].map(x=>x.at))-Math.max(...a[1].map(x=>x.at)));
+  const hidden=Object.entries(S.mod).filter(([,m])=>m.hidden), bans=Object.entries(S.cfg.banned||{});
+  const ACT={hide:'숨김',unhide:'숨김 해제',lock:'댓글 잠금',unlock:'잠금 해제',pin:'고정',unpin:'고정 해제',ban:'작성 제한',unban:'제한 해제',dismiss:'신고 기각',delete:'삭제',move:'게시판 이동'};
+  const item=([t,rs])=>{ const x=modTarget(t), byR={}; rs.forEach(r=>byR[r.reason]=(byR[r.reason]||0)+1); const h=t.startsWith('p:')?hiddenP(t.slice(2)):hiddenC(t.slice(2));
+    return `<div class="mq"><div class="mq-h"><span class="pill warn">신고 ${rs.length}</span>${Object.entries(byR).map(([r,n])=>`<span class="pill">${esc(r)}${n>1?' '+n:''}</span>`).join('')}<span class="hint">최근 ${ago(Math.max(...rs.map(r=>r.at)))}</span></div>
+      ${x.html}${rs.filter(r=>r.note).map(r=>`<div class="hint">“${esc(r.note)}”</div>`).join('')}
+      <div class="row"><button class="btn sm" data-mod="${h?'unhide':'hide'}" data-t="${t}">${h?'숨김 해제':'숨기기'}</button>
+      <button class="btn sm danger" data-mod="delete" data-t="${t}">${S.modArm===t?'정말 삭제할까요? 한 번 더 누르세요':'삭제'}</button>
+      <button class="btn sm" data-mod="dismiss" data-t="${t}">문제없음 (기각)</button>
+      ${x.author&&x.author!==S.uid?`<button class="btn sm danger" data-mod="ban" data-uid2="${esc(x.author)}">${S.cfg.banned?.[x.author]?'작성 제한 해제':'작성자 제한'}</button>`:''}</div></div>`; };
+  app.innerHTML=`<a class="crumb" href="#all">← 게시판으로</a><div class="layout"><div style="min-width:0;display:flex;flex-direction:column;gap:14px">
+    <div><h1>운영</h1><p class="muted" style="margin:4px 0 0;max-width:62ch">신고를 처리하고, 숨긴 항목과 작성 제한을 관리해요. 이 화면과 신고 내용, 운영 기록은 운영자에게만 보여요.</p></div>
+    <section class="panel"><h2>신고 대기 <span class="mono muted">${q.length}</span></h2>${q.length?q.map(item).join(''):'<p>처리할 신고가 없어요.</p>'}</section>
+    <section class="panel"><h2>숨긴 항목 <span class="mono muted">${hidden.length}</span></h2>${hidden.length?hidden.map(([k,m])=>{ const t=k.replace('-',':');
+      return `<div class="mq">${modTarget(t).html}<div class="hint">사유: ${esc(m.reason||'없음')} · ${ago(m.at)} · ${who(m.by)}</div><div class="row"><button class="btn sm" data-mod="unhide" data-t="${t}">숨김 해제</button><button class="btn sm danger" data-mod="delete" data-t="${t}">${S.modArm===t?'정말 삭제할까요? 한 번 더 누르세요':'삭제'}</button></div></div>`; }).join(''):'<p>숨긴 항목이 없어요.</p>'}</section>
+  </div><aside class="side">
+    <section class="panel"><h2>작성 제한 <span class="mono muted">${bans.length}</span></h2>${bans.length?bans.map(([u,b])=>`<div class="mq">${who(u)}<div class="hint">${esc(b.reason||'')} · ${ago(b.at)}</div><div class="row"><button class="btn sm" data-mod="ban" data-uid2="${esc(u)}">제한 해제</button></div></div>`).join(''):'<p>제한된 사람이 없어요.</p>'}</section>
+    <section class="panel"><h2>운영 기록</h2>${S.modlog.length?`<div>${S.modlog.slice(0,40).map(l=>`<div class="logrow"><b>${esc(ACT[l.action]||l.action)}</b> ${l.target?.startsWith('u:')?who(l.target.slice(2)):l.target?.startsWith('p:')?`<a href="#p-${esc(l.target.slice(2))}">${esc(S.posts.get(l.target.slice(2))?.title||l.reason||'글')}</a>`:'<span class="muted">댓글</span>'}${l.reason&&l.action!=='delete'?` <span class="muted">· ${esc(l.reason)}</span>`:''}<div class="m">${who(l.by)} · ${ago(l.at)}</div></div>`).join('')}</div>`:'<p>아직 기록이 없어요.</p>'}</section>
+    <section class="panel"><h2>운영자 추가</h2><p>Share 메뉴에서 Editor로 초대한 사람이 운영자가 돼요. 운영자는 숨기기, 삭제, 고정, 댓글 잠금, 게시판 이동, 작성 제한을 할 수 있어요.</p></section>
+  </aside></div>`;
+  if(keep){ const [a,b]=keep.split('|'); app.querySelector(`[data-mod="${a}"][data-t="${b}"],[data-mod="${a}"][data-uid2="${b}"]`)?.focus(); }
+  fillPeople(app);
+}
+
+/* ---------- compose ---------- */
+async function openCompose(v){
+  const mine={hash:location.hash,mode:v.mode,id:v.id,assets:[],abort:null,kindTouched:v.mode!=='new'}; S.c=mine;
+  if(!canW()){ app.innerHTML=`<a class="crumb" href="#all">← 게시판으로</a><div class="banner">${S.uid?'이 공유 권한으로는 글을 쓸 수 없어요.':'글을 쓰려면 claude.ai에 로그인한 상태로 열어 주세요.'}</div>`; return; }
+  let f={cat:v.cat||S.lastCat||'web',kind:null,title:'',body:'',url:'',code:'',codeLang:'',tool:'',prompt:'',tags:'',assetIds:[]}, src=null, ver=null;
+  if(v.mode==='new'){ try{ const d=JSON.parse(localStorage.getItem('slop-draft')||'null'); if(d&&(d.title||d.body||d.code)){ Object.assign(f,d); if(v.cat) f.cat=v.cat; S.c.restored=true; } }catch{} }
+  else { app.innerHTML='<div class="banner">원본을 불러오는 중…</div>';
+    try{ const sd=await S.db.doc('posts/'+v.id).get(); src=sd.exists?{id:sd.id,...sd.data()}:null; if(src) ver=await getVersion(v.id, v.mode==='edit'?src.version:v.n); }catch{}
+    if(S.c!==mine) return;
+    if(!src||!ver){ app.innerHTML='<a class="crumb" href="#all">← 게시판으로</a><div class="banner">원본 글을 찾을 수 없어요.</div>'; return; }
+    if(v.mode==='edit'&&src.authorId!==S.uid&&!S.me?.isOwner){ app.innerHTML='<div class="banner">작성자만 수정판을 올릴 수 있어요. 대신 리믹스해 보세요.</div>'; return; }
+    f={cat:src.cat,kind:src.kind,title:v.mode==='remix'?src.title+' (리믹스)':(ver.title||src.title),body:ver.body||'',url:ver.url||'',code:ver.code||'',codeLang:src.codeLang||'',tool:src.tool||'',prompt:ver.prompt||'',tags:(src.tags||[]).join(', '),assetIds:v.mode==='edit'?[...(ver.assetIds||[])]:[]};
+    S.c.src=src; S.c.ver=ver; }
+  f.kind ??= CAT[f.cat]?.dk||'text'; S.c.assets=[...f.assetIds];
+  const head = v.mode==='new'?'새 글':v.mode==='edit'?`수정판 올리기 · v${src.version+1}`:`리믹스: ${esc(src.title)}`;
+  const openImp = v.mode==='edit' ? [...S.comments.values()].filter(c=>c.postId===v.id&&!c.deleted&&!c.resolved&&(c.flair==='improve'||c.flair==='question')) : [];
+  app.innerHTML=`<a class="crumb" href="${v.mode==='new'?'#'+(f.cat?'c-'+f.cat:'all'):'#p-'+v.id}">← 돌아가기</a><div class="compose"><form class="form" id="cmp" novalidate>
+    <h1>${head}</h1>${S.c.restored?'<div class="banner" style="margin:0">작성하던 초안을 불러왔어요. <button type="button" class="linkbtn" id="clearDraft">비우기</button></div>':''}
+    <div class="grid2"><div class="field"><label for="fCat">게시판</label><select id="fCat">${CATS.map(([k,l])=>`<option value="${k}"${f.cat===k?' selected':''}>${esc(l)}</option>`).join('')}</select></div>
+      <div class="field"><label for="fTool">만든 도구</label><input type="text" id="fTool" list="toolList" maxlength="40" value="${esc(f.tool)}" placeholder="예: Claude, Midjourney, Suno"><datalist id="toolList">${TOOLS.map(t=>`<option value="${esc(t)}">`).join('')}</datalist></div></div>
+    <div class="field"><span class="flabel">형식</span><div class="kinds" role="group">${Object.entries(KINDS).map(([k,[l,d]])=>`<button type="button" data-kind="${k}" aria-pressed="${f.kind===k}"${k==='image'&&!S.assets?' disabled title="이 화면에서는 이미지를 올릴 수 없어요"':''}>${l}<small>${d}</small></button>`).join('')}</div></div>
+    <div class="field"><label for="fTitle">제목</label><input type="text" id="fTitle" maxlength="120" value="${esc(f.title)}" placeholder="무엇을 만들었고, 어디가 볼 만한가요?"></div>
+    <div class="field" data-for="link"><label for="fUrl">링크 주소</label><input type="url" id="fUrl" value="${esc(f.url)}" placeholder="https://"></div>
+    <div class="field" data-for="image"><span class="flabel">이미지</span><div class="drop" id="drop" tabindex="0" role="button">여기로 끌어 놓거나, 붙여 넣거나, 눌러서 고르세요 (최대 8장)</div><input type="file" id="fFile" accept="image/png,image/jpeg,image/gif,image/webp" multiple hidden><div class="upl" id="upl"></div></div>
+    <div class="field" data-for="html code"><label for="fCode" id="codeLabel">코드</label><textarea id="fCode" class="codeed" spellcheck="false">${esc(f.code)}</textarea>
+      <div class="row"><span class="hint" id="codeSize"></span><span class="sp"></span><input type="text" id="fLang" data-for="code" style="width:140px" maxlength="20" value="${esc(f.codeLang)}" placeholder="언어 (예: python)"><button type="button" class="btn sm" id="pvBtn" data-for="html">미리 실행</button></div>
+      <div class="stage" id="pvWrap" data-for="html" hidden><div class="runner" id="pv"></div></div></div>
+    <div class="field"><label for="fBody" id="bodyLabel">본문</label><textarea id="fBody" rows="7" maxlength="${MAX_BODY}">${esc(f.body)}</textarea>
+      <div class="row"><span class="hint">**굵게**, \`코드\`, - 목록, &gt; 인용, 링크 자동 연결</span><span class="sp"></span><button type="button" class="linkbtn" id="mdToggle">미리보기</button></div><div class="mdprev md" id="mdPrev" hidden></div></div>
+    <details class="prompt"${f.prompt?' open':''}><summary>사용한 프롬프트 (선택, 강력 추천)</summary><textarea id="fPrompt" rows="4" maxlength="8000" style="margin-top:8px" placeholder="어떤 프롬프트로 만들었나요? 다른 사람이 재현하고 개선하는 데 도움이 돼요.">${esc(f.prompt)}</textarea></details>
+    <div class="field"><label for="fTags">태그</label><input type="text" id="fTags" value="${esc(f.tags)}" placeholder="쉼표로 구분, 최대 5개"></div>
+    ${v.mode==='edit'?`<div class="field"><label for="fNote">무엇이 바뀌었나요?</label><input type="text" id="fNote" maxlength="200" placeholder="예: 댓글 의견대로 색 대비를 높였어요">
+      ${openImp.length?`<span class="hint">아래 개선 제안·질문 중 이번에 반영한 것을 고르면 "v${src.version+1}에서 반영"으로 표시돼요.</span><div class="chips" style="flex-direction:column;align-items:stretch">${openImp.map(c=>`<label style="display:flex;gap:8px;font-size:13px;align-items:flex-start"><input type="checkbox" data-addr="${c.id}"><span style="overflow-wrap:anywhere">${esc(c.text.slice(0,200))}</span></label>`).join('')}</div>`:''}</div>`:''}
+    <div class="row"><button class="btn pri" type="submit" id="submitBtn">${v.mode==='edit'?'수정판 올리기':'올리기'}</button><span class="hint" id="subStatus" role="status"></span></div>
+  </form>
+  <aside class="side"><section class="panel"><h2>좋은 글의 조건</h2><ul><li>어떤 도구로, 어떤 프롬프트로 만들었는지 적어요.</li><li>어디가 볼 만한지 한두 줄로 설명해요.</li><li>맞는 게시판과 형식을 골라요. 웹·게임은 실행물로 올리면 바로 돌려볼 수 있어요.</li></ul></section>
+    ${S.sample?`<section class="panel"><h2>Claude 도우미</h2><p>내용을 보고 게시판, 제목, 태그를 추천해 줘요. 받은 추천은 바로 고칠 수 있어요.</p><button type="button" class="btn sm" id="aiGo">분류·제목 추천받기</button><p class="hint" id="aiStatus" style="margin:8px 0 0"></p></section>`:''}</aside></div>`;
+  bindCompose(v,f);
+}
+function bindCompose(v,f){
+  const kindSet=k=>{ S.c.kind=k; app.querySelectorAll('[data-kind]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.kind===k));
+    app.querySelectorAll('[data-for]').forEach(el=>el.hidden=!el.dataset.for.split(' ').includes(k));
+    if(k==='html'||k==='code'){ $('[data-for="html code"]').hidden=false; }
+    $('#pvWrap').hidden = k!=='html' || !$('#pv').firstChild;
+    $('#codeLabel').textContent = k==='html'?'HTML 코드 (한 파일)':'코드';
+    $('#fCode').placeholder = k==='html'?'<!doctype html> … AI가 만들어 준 HTML 파일 전체를 붙여 넣으세요':'코드를 붙여 넣으세요';
+    $('#bodyLabel').textContent = k==='text'?'본문':'설명 (선택)'; };
+  kindSet(f.kind);
+  app.querySelectorAll('[data-kind]').forEach(b=>b.onclick=()=>{ S.c.kindTouched=true; kindSet(b.dataset.kind); draft(); });
+  $('#fCat').onchange=()=>{ S.lastCat=$('#fCat').value; if(!S.c.kindTouched) kindSet(CAT[$('#fCat').value].dk); draft(); };
+  const code=$('#fCode'), sz=()=>{ const b=new Blob([code.value]).size; $('#codeSize').textContent=`${(b/1024).toFixed(1)} KB / 200 KB`; $('#codeSize').style.color=b>MAX_CODE?'var(--warn)':''; };
+  const runPv=()=>{ if(!code.value.trim()) return; $('#pv').replaceChildren(sandboxFrame(code.value,'미리보기')); $('#pvWrap').hidden=false; };
+  code.oninput=()=>{ sz(); draft(); }; sz();
+  code.onkeydown=e=>{ if(e.key==='Tab'&&!e.shiftKey){ e.preventDefault(); code.setRangeText('  ',code.selectionStart,code.selectionEnd,'end'); } };
+  $('#pvBtn').onclick=runPv;
+  $('#fUrl').onchange=()=>{ const u=$('#fUrl').value.trim(); if(u&&!$('#fTitle').value) $('#fTitle').placeholder=domain(u)+'에서 찾은 …'; };
+  const mdT=$('#mdToggle'), mdP=$('#mdPrev'); mdT.onclick=()=>{ mdP.hidden=!mdP.hidden; mdT.textContent=mdP.hidden?'미리보기':'미리보기 닫기'; mdP.innerHTML=md($('#fBody').value)||'<span class="muted">내용이 없어요</span>'; };
+  $('#fBody').oninput=()=>{ if(!mdP.hidden) mdP.innerHTML=md($('#fBody').value); draft(); };
+  ['fTitle','fTool','fTags','fPrompt','fUrl','fLang'].forEach(id=>$('#'+id).addEventListener('input',draft));
+  const cd=$('#clearDraft'); if(cd) cd.onclick=()=>{ try{ localStorage.removeItem('slop-draft'); }catch{} S.c=null; openCompose(v); };
+  // images
+  const upl=$('#upl'), drop=$('#drop'), fi=$('#fFile');
+  const drawUpl=()=>{ upl.innerHTML=S.c.assets.map((id,i)=>`<div><img src="/_blob/${esc(id)}" alt=""><button type="button" data-rm="${i}" aria-label="빼기">✕</button></div>`).join(''); upl.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{ S.c.assets.splice(+b.dataset.rm,1); drawUpl(); draft(); }); };
+  const addFiles=async files=>{ if(!S.assets){ toast('이 화면에서는 이미지를 올릴 수 없어요'); return; }
+    for(const file of [...files].filter(x=>/^image\/(png|jpeg|gif|webp)$/.test(x.type))){ if(S.c.assets.length>=8){ toast('이미지는 8장까지예요'); break; }
+      drop.textContent='올리는 중…';
+      try{ const r=await S.assets.upload(file); S.c.assets.push(r.id); drawUpl(); draft(); }
+      catch(e){ toast(e?.code==='too_large'?'20MB보다 큰 이미지는 올릴 수 없어요':e?.code==='quota_or_state'?'저장 공간이 가득 찼어요':e?.code==='unsupported_type'?'PNG, JPG, GIF, WEBP만 올릴 수 있어요':'이미지를 올리지 못했어요'); } }
+    drop.textContent='여기로 끌어 놓거나, 붙여 넣거나, 눌러서 고르세요 (최대 8장)'; };
+  drop.onclick=()=>fi.click(); drop.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); fi.click(); } };
+  fi.onchange=()=>{ addFiles(fi.files); fi.value=''; };
+  drop.ondragover=e=>{ e.preventDefault(); drop.classList.add('over'); }; drop.ondragleave=()=>drop.classList.remove('over');
+  drop.ondrop=e=>{ e.preventDefault(); drop.classList.remove('over'); addFiles(e.dataTransfer.files); };
+  $('#cmp').addEventListener('paste',e=>{ const fs=[...(e.clipboardData?.files||[])]; if(fs.length&&S.c.kind==='image'){ e.preventDefault(); addFiles(fs); } });
+  drawUpl();
+  if(S.sample) $('#aiGo').onclick=()=>suggest();
+  $('#cmp').onsubmit=e=>{ e.preventDefault(); submit(v); };
+}
+function readForm(){ return { cat:$('#fCat').value, kind:S.c.kind, title:$('#fTitle').value.trim(), body:$('#fBody').value.trim(), url:$('#fUrl').value.trim(),
+  code:$('#fCode').value, codeLang:$('#fLang').value.trim(), tool:$('#fTool').value.trim(), prompt:$('#fPrompt').value.trim(),
+  tags:[...new Set($('#fTags').value.split(',').map(t=>t.trim().toLowerCase().replace(/^#/,'')).filter(Boolean))].slice(0,5), assetIds:[...S.c.assets] }; }
+let draftT; function draft(){ if(S.c?.mode!=='new') return; clearTimeout(draftT); draftT=setTimeout(()=>{ try{ const f=readForm(); localStorage.setItem('slop-draft',JSON.stringify({...f,tags:f.tags.join(', ')})); }catch{} },500); }
+async function suggest(){ const st=$('#aiStatus'), btn=$('#aiGo'); const f=readForm();
+  if(!f.body&&!f.code&&!f.url&&!f.title&&!f.prompt){ st.textContent='먼저 내용을 조금 넣어 주세요.'; return; }
+  btn.disabled=true; st.textContent='보는 중…';
+  const prompt=`다음은 AI로 만든 결과물을 커뮤니티에 올리려는 글이야. 알맞은 분류를 JSON으로만 답해.
+게시판 키 목록: ${CATS.map(c=>c[0]+'('+c[1]+')').join(', ')}
+형식 키 목록: text, link, image, html, code
+현재 제목: ${f.title||'(없음)'}
+도구: ${f.tool||'(없음)'}
+링크: ${f.url||'(없음)'}
+본문: ${f.body.slice(0,2000)}
+프롬프트: ${f.prompt.slice(0,1000)}
+코드 앞부분: ${f.code.slice(0,1500)}
+답 형식: {"cat":"게시판 키","kind":"형식 키","title":"40자 이내의 구체적인 한국어 제목","tags":["태그","최대5개"],"tool":"추정되는 도구 또는 빈 문자열"}`;
+  try{ let r; try{ r=await S.sample.json(prompt,{modelTier:'quick'}); }catch(e){ if(e?.code) throw e; const t=await S.sample(prompt,{modelTier:'quick'}); r=JSON.parse(t.text.match(/\{[\s\S]*\}/)[0]); }
+    if(r.cat&&CAT[r.cat]) $('#fCat').value=r.cat;
+    if(r.kind&&KINDS[r.kind]&&!(r.kind==='image'&&!S.assets)) app.querySelector(`[data-kind="${r.kind}"]`)?.click();
+    if(r.title&&!$('#fTitle').value.trim()) $('#fTitle').value=String(r.title).slice(0,120);
+    if(Array.isArray(r.tags)&&!$('#fTags').value.trim()) $('#fTags').value=r.tags.slice(0,5).join(', ');
+    if(r.tool&&!$('#fTool').value.trim()) $('#fTool').value=String(r.tool).slice(0,40);
+    st.textContent='추천을 넣었어요. 이미 쓴 칸은 건드리지 않았어요.'; draft(); }
+  catch(e){ st.textContent=e?.code==='not_granted'?'Claude 사용이 허용되지 않았어요.':e?.code==='rate_limited'?'요청이 많아요. 잠시 후 다시 시도해 주세요.':'추천을 받지 못했어요.'; }
+  btn.disabled=false; }
+async function submit(v){ const st=$('#subStatus'), btn=$('#submitBtn'), f=readForm();
+  const err = !f.title ? '제목을 적어 주세요.' : f.kind==='link'&&!safeUrl(f.url) ? 'http:// 또는 https://로 시작하는 링크 주소를 넣어 주세요.'
+    : f.kind==='image'&&!f.assetIds.length ? '이미지를 한 장 이상 올려 주세요.' : (f.kind==='html'||f.kind==='code')&&!f.code.trim() ? '코드를 넣어 주세요.'
+    : new Blob([f.code]).size>MAX_CODE ? '코드가 200KB를 넘어요.' : f.kind==='text'&&!f.body ? '본문을 적어 주세요.' : '';
+  if(err){ st.textContent=err; return; }
+  const hasCode = f.kind==='html'||f.kind==='code';
+  const snap={title:f.title,body:f.body,url:f.kind==='link'?f.url:'',assetIds:f.kind==='image'?f.assetIds:[],prompt:f.prompt,code:hasCode?f.code:'',authorId:S.uid};
+  const meta={title:f.title,cat:f.cat,kind:f.kind,body:f.body,url:snap.url,assetIds:snap.assetIds,tool:f.tool,prompt:f.prompt,tags:f.tags,codeLang:f.kind==='code'?f.codeLang:'',codeHead:f.kind==='code'?f.code.split('\n').slice(0,8).join('\n').slice(0,600):''};
+  btn.disabled=true; st.textContent='올리는 중…'; const now=Date.now();
+  try{
+    if(v.mode!=='edit'){ const id=newId();
+      await S.db.doc(`posts/${id}/versions/v1`).set({...snap,n:1,note:v.mode==='remix'?`${S.c.src.title} v${S.c.ver.n} 리믹스`:'첫 버전',createdAt:now});
+      await S.db.doc('posts/'+id).set({...meta,authorId:S.uid,createdAt:now,updatedAt:now,version:1,...(v.mode==='remix'?{remixOf:{id:S.c.src.id,n:S.c.ver.n,title:S.c.src.title}}:{})});
+      if(v.mode==='new') try{ localStorage.removeItem('slop-draft'); }catch{}
+      S.c=null; toast('올렸어요'); location.hash='p-'+id; return; }
+    const ref=S.db.doc('posts/'+v.id);
+    let l=await ref.acquire({holder:S.uid,ttlMs:10000}); if(!l.acquired){ await sleep(2500); l=await ref.acquire({holder:S.uid,ttlMs:10000}); }
+    if(!l.acquired) throw {code:'busy'};
+    const cur=(await ref.get()).data(); const n=(cur.version||1)+1;
+    await ref.collection('versions').doc('v'+n).set({...snap,authorId:S.uid,n,note:$('#fNote').value.trim()||'수정',createdAt:now});
+    await ref.update({...meta,version:n,updatedAt:now});
+    for(const b of app.querySelectorAll('[data-addr]:checked')){ try{ await S.db.doc('comments/'+b.dataset.addr).update({resolved:n}); }catch{} }
+    S.c=null; toast(`v${n}을 올렸어요`); location.hash='p-'+v.id;
+  }catch(e){ btn.disabled=false; st.textContent = e?.code==='busy'?'다른 곳에서 동시에 저장 중이에요. 잠시 후 다시 눌러 주세요.':e?.code==='invalid_argument'?'이 공유 권한으로는 올릴 수 없어요.':e?.code==='quota_exceeded'?'저장 공간이 가득 찼어요.':'올리지 못했어요. 다시 시도해 주세요.'; }
+}
+boot();
+</script>

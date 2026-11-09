@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>심해 해파리</title>
+<style>
+  html,body{margin:0;height:100%;background:#020617;overflow:hidden;font-family:system-ui,-apple-system,"Apple SD Gothic Neo",sans-serif}
+  canvas{display:block;width:100%;height:100%}
+  .ui{position:fixed;left:12px;bottom:12px;display:flex;gap:8px}
+  button{border:1px solid #1e3a5f;background:rgb(15 23 42 / .7);color:#bae6fd;border-radius:999px;padding:8px 14px;font-size:13px;cursor:pointer}
+  .cap{position:fixed;right:14px;bottom:14px;color:#64748b;font-size:12px}
+</style></head><body>
+<canvas id="c"></canvas>
+<div class="ui"><button id="pp">일시정지</button><button id="more">해파리 추가</button></div>
+<div class="cap">클릭하면 그 자리에 먹이가 떨어져요</div>
+<script>
+  const c = document.getElementById('c'), g = c.getContext('2d');
+  let W, H, dpr, t = 0, paused = false, food = [];
+  function size() { dpr = Math.min(2, devicePixelRatio || 1); W = c.width = innerWidth * dpr; H = c.height = innerHeight * dpr; }
+  addEventListener('resize', size); size();
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  function jelly() { return { x: rnd(0.15, 0.85) * W, y: rnd(0.3, 1.1) * H, r: rnd(24, 56) * dpr, hue: rnd(170, 320), ph: rnd(0, 6.28), vx: 0, vy: 0, tent: Array.from({ length: 7 }, () => rnd(0.6, 1.3)) }; }
+  let jellies = Array.from({ length: 6 }, jelly);
+  const motes = Array.from({ length: 140 }, () => ({ x: Math.random(), y: Math.random(), s: rnd(0.4, 1.6), v: rnd(0.002, 0.01) }));
+  c.addEventListener('click', (e) => food.push({ x: e.clientX * dpr, y: e.clientY * dpr, life: 1 }));
+  document.getElementById('pp').onclick = (e) => { paused = !paused; e.target.textContent = paused ? '재생' : '일시정지'; };
+  document.getElementById('more').onclick = () => { if (jellies.length < 16) jellies.push({ ...jelly(), y: H + 80 }); };
+  function draw() {
+    if (!paused) t += 1 / 60;
+    g.fillStyle = 'rgba(2,6,23,0.35)'; g.fillRect(0, 0, W, H);
+    for (const m of motes) { if (!paused) { m.y -= m.v * 0.2; if (m.y < 0) m.y = 1; } g.fillStyle = 'rgba(148,163,184,0.25)'; g.fillRect(m.x * W, m.y * H, m.s * dpr, m.s * dpr); }
+    food = food.filter((f) => (f.life -= paused ? 0 : 0.004) > 0);
+    for (const f of food) { if (!paused) f.y += 0.6 * dpr; g.fillStyle = `rgba(253,224,71,${f.life})`; g.beginPath(); g.arc(f.x, f.y, 3 * dpr, 0, 7); g.fill(); }
+    for (const j of jellies) {
+      const pulse = (Math.sin(t * 2.2 + j.ph) + 1) / 2;
+      if (!paused) {
+        const target = food[0];
+        if (target) { j.vx += Math.sign(target.x - j.x) * 0.02 * dpr; }
+        j.vy = -(0.25 + pulse * 0.9) * dpr; j.vx *= 0.98; j.x += j.vx + Math.sin(t * 0.5 + j.ph) * 0.3 * dpr; j.y += j.vy;
+        if (j.y < -j.r * 4) { j.y = H + j.r * 2; j.x = rnd(0.1, 0.9) * W; }
+        for (const f of food) if (Math.hypot(f.x - j.x, f.y - j.y) < j.r) { f.life = 0; j.r = Math.min(80 * dpr, j.r * 1.05); }
+      }
+      const bw = j.r * (1 + pulse * 0.15), bh = j.r * (0.8 - pulse * 0.12);
+      const grad = g.createRadialGradient(j.x, j.y, 2, j.x, j.y, bw * 1.6);
+      grad.addColorStop(0, `hsla(${j.hue},90%,75%,0.35)`); grad.addColorStop(1, `hsla(${j.hue},90%,60%,0)`);
+      g.fillStyle = grad; g.beginPath(); g.arc(j.x, j.y, bw * 1.6, 0, 7); g.fill();
+      g.strokeStyle = `hsla(${j.hue},90%,80%,0.55)`; g.lineWidth = 1.2 * dpr;
+      j.tent.forEach((k, i) => {
+        const sx = j.x - bw * 0.8 + (i / (j.tent.length - 1)) * bw * 1.6;
+        g.beginPath(); g.moveTo(sx, j.y);
+        for (let s = 1; s <= 12; s++) { const yy = j.y + s * j.r * 0.22 * k; g.lineTo(sx + Math.sin(t * 3 + s * 0.6 + i + j.ph) * s * 0.9 * dpr, yy); }
+        g.stroke();
+      });
+      g.fillStyle = `hsla(${j.hue},90%,85%,0.6)`; g.beginPath(); g.ellipse(j.x, j.y, bw, bh, 0, Math.PI, 0); g.fill();
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+</script>
+</body></html>

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>타자 소나기</title>
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:#101828;color:#f2f4f7;font-family:system-ui,-apple-system,"Apple SD Gothic Neo",sans-serif;overflow:hidden}
+  #field{position:absolute;inset:0 0 64px 0}
+  .w{position:absolute;padding:4px 10px;border-radius:8px;background:#1d2939;border:1px solid #344054;font-size:18px;white-space:nowrap;transform:translateX(-50%)}
+  .w.hit{background:#12b76a;border-color:#12b76a;transition:opacity .3s, transform .3s;opacity:0;transform:translateX(-50%) scale(1.4)}
+  .bar{position:absolute;left:0;right:0;bottom:0;height:64px;display:flex;gap:10px;align-items:center;padding:0 14px;background:#0c111d;border-top:1px solid #344054}
+  input{flex:1;min-width:0;font-size:18px;padding:10px 12px;border-radius:10px;border:1px solid #475467;background:#1d2939;color:#fff}
+  .stat{font-variant-numeric:tabular-nums;font-size:14px;color:#98a2b3;white-space:nowrap}
+  .over{position:absolute;inset:0;display:grid;place-items:center;background:rgb(16 24 40 / .85);text-align:center}
+  .over h1{margin:0 0 8px;font-size:28px} .over p{margin:0 0 18px;color:#98a2b3}
+  button{border:0;border-radius:999px;padding:12px 22px;font-size:16px;font-weight:700;background:#f79009;color:#111;cursor:pointer}
+  .lives{color:#f04438;letter-spacing:2px}
+</style></head><body>
+<div id="field"></div>
+<div class="bar"><input id="inp" placeholder="떨어지는 단어를 입력하고 Enter" autocomplete="off" disabled>
+  <span class="stat">점수 <b id="score">0</b></span><span class="stat lives" id="lives">♥♥♥</span></div>
+<div class="over" id="over"><div><h1>타자 소나기</h1><p>단어가 바닥에 닿기 전에 입력하세요. 놓치면 하트가 줄어요.</p><button id="start">시작하기</button></div></div>
+<script>
+  const WORDS = '프롬프트 토큰 환각 임베딩 파인튜닝 벡터 에이전트 컨텍스트 추론 샘플링 온도 슬롭 보석 판정 리믹스 버전 데이터셋 그래디언트 파라미터 어텐션 디코더 인코더 배치 레이턴시 캐시 확률 정규화 과적합 학습률 체크포인트'.split(' ');
+  const field = document.getElementById('field'), inp = document.getElementById('inp');
+  let words = [], score = 0, lives = 3, speed = 40, spawnEvery = 1800, lastSpawn = 0, last = 0, playing = false;
+  function spawn() {
+    const el = document.createElement('div'); el.className = 'w';
+    const text = WORDS[Math.floor(Math.random() * WORDS.length)];
+    el.textContent = text; el.style.left = (10 + Math.random() * 80) + '%'; el.style.top = '-40px';
+    field.appendChild(el); words.push({ el, text, y: -40 });
+  }
+  function setLives() { document.getElementById('lives').textContent = '♥'.repeat(lives) + '♡'.repeat(3 - lives); }
+  function loop(t) {
+    if (!playing) return;
+    const dt = Math.min(0.05, (t - last) / 1000); last = t;
+    if (t - lastSpawn > spawnEvery) { spawn(); lastSpawn = t; spawnEvery = Math.max(650, spawnEvery * 0.97); speed = Math.min(160, speed + 1.2); }
+    const floor = field.clientHeight - 30;
+    for (const w of [...words]) {
+      w.y += speed * dt; w.el.style.top = w.y + 'px';
+      if (w.y > floor) { w.el.remove(); words = words.filter((x) => x !== w); lives--; setLives(); if (lives <= 0) return end(); }
+    }
+    requestAnimationFrame(loop);
+  }
+  inp.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' || e.isComposing) return;
+    const v = inp.value.trim(); inp.value = '';
+    const target = words.filter((w) => w.text === v).sort((a, b) => b.y - a.y)[0];
+    if (!target) return;
+    words = words.filter((w) => w !== target); target.el.classList.add('hit'); setTimeout(() => target.el.remove(), 300);
+    score += target.text.length * 10; document.getElementById('score').textContent = score;
+  });
+  function start() {
+    words.forEach((w) => w.el.remove()); words = []; score = 0; lives = 3; speed = 40; spawnEvery = 1800;
+    document.getElementById('score').textContent = 0; setLives();
+    document.getElementById('over').hidden = true; inp.disabled = false; inp.focus();
+    playing = true; last = lastSpawn = performance.now(); requestAnimationFrame(loop);
+  }
+  function end() {
+    playing = false; inp.disabled = true;
+    const o = document.getElementById('over'); o.hidden = false;
+    o.querySelector('h1').textContent = `게임 끝! ${score}점`; o.querySelector('p').textContent = '한 번 더 해볼까요?';
+    o.querySelector('button').textContent = '다시 하기';
+  }
+  document.getElementById('start').onclick = start;
+</script>
+</body></html>

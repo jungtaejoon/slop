@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Slop Lab</title>
+  <meta name="description" content="AI가 만든 글·이미지·실행물·코드를 올리고, 보석/슬롭으로 판정하고, 토론하며 가치 있는 것을 가려내는 커뮤니티">
+  <meta property="og:title" content="Slop Lab">
+  <meta property="og:description" content="AI가 만든 것들 속에서 보석을 캐는 곳">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230B7F73'/%3E%3Cpath d='M16 6l8 8-8 12-8-12z' fill='%23fff'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap">
+      <div class="bar">
+        <a class="logo" href="#/"><b>SLOP<i>.</i>LAB</b><span>AI가 만든 것들 속에서 보석을 캐는 곳</span></a>
+        <input class="gsearch" id="gq" type="search" placeholder="제목·내용·도구 검색  ( / )" aria-label="검색">
+        <div class="sp"></div>
+        <a class="btn pri" href="#/submit" id="newBtn">글쓰기</a>
+        <div id="authArea" class="row" style="position:relative;flex-wrap:nowrap"></div>
+      </div>
+      <nav class="boards" id="boards" aria-label="게시판"></nav>
+    </div>
+  </header>
+  <div class="modebar" id="modeBar" hidden><div class="wrap" id="modeBarText"></div></div>
+  <div class="wrap" id="banNote" hidden><div class="banner warnb" style="margin:14px 0 0"></div></div>
+  <main class="wrap" id="app"></main>
+  <footer><div class="wrap"><span>Slop Lab · AI가 만든 것을 그냥 넘기지 말고, 써 보고, 판정하고, 이유를 남기는 곳</span></div></footer>
+  <div class="dlg-back" id="dlg" hidden><form class="dlg" id="dlgForm" role="dialog" aria-modal="true"></form></div>
+  <div class="toast" id="toast" role="status" hidden></div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
