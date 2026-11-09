@@ -35,7 +35,7 @@ export const anyCommunityMod = () => isMod() || [...S.my.values()].includes('mod
 export const followIds = () => [...S.my.keys()];
 export const remember = (c) => { if (c) S.comms.set(c.id, Object.assign(S.comms.get(c.id) || {}, c)); return c && S.comms.get(c.id); };
 export const commBySlug = (slug) => [...S.comms.values()].find((c) => c.slug === slug) || null;
-export const commLink = (c) => (c ? `<a class="cat" href="#/c/${esc(c.slug)}">${esc(c.name)}</a>` : '<span class="cat">알 수 없는 커뮤니티</span>');
+export const commLink = (c) => (c ? `<a class="cat" href="#/c/${esc(c.slug)}">${cav(c)}${esc(c.name)}</a>` : '<span class="cat">알 수 없는 커뮤니티</span>');
 
 export async function loadMyCommunities() {
   S.my = new Map();
@@ -138,7 +138,7 @@ export async function loadMyVotes(postIds = [], commentIds = []) {
 export async function toggleSave(id) {
   if (!requireLogin('저장하려면 로그인해 주세요')) return;
   const on = !S.saves.has(id); on ? S.saves.add(id) : S.saves.delete(id);
-  document.querySelectorAll(`[data-act="save"][data-id="${id}"]`).forEach((b) => (b.textContent = on ? '저장됨' : '저장'));
+  document.querySelectorAll(`[data-act="save"][data-id="${id}"]`).forEach((b) => { const l = b.querySelector('[data-save-label]'); if (l) { l.textContent = on ? '저장됨' : '저장'; b.querySelector('svg').outerHTML = icon(on ? 'bookmarked' : 'bookmark'); } else b.textContent = on ? '저장됨' : '저장'; });
   try { await api.toggleSave(id, on); toast(on ? '저장함에 넣었어요' : '저장함에서 뺐어요'); }
   catch (e) { on ? S.saves.delete(id) : S.saves.add(id); toast(errMsg(e)); }
 }
@@ -171,3 +171,20 @@ export function openShare(path, title, lead = '') {
   $('#shCopy').onclick = () => navigator.clipboard?.writeText(url).then(() => toast('링크를 복사했어요'), () => { $('#shUrl').select(); toast('선택해 두었어요. ⌘C로 복사해 주세요'); });
 }
 export const share = (id, title) => openShare(`p/${id}/`, title);
+
+/* ---------- icons (lucide-style, stroke) ---------- */
+const P = {
+  comment: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/>',
+  bookmark: '<path d="M6 3h12v18l-6-4-6 4Z"/>', bookmarked: '<path d="M6 3h12v18l-6-4-6 4Z" fill="currentColor"/>',
+  share: '<path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M12 3v12"/><path d="m7 8 5-5 5 5"/>',
+  bell: '<path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10 21a2 2 0 0 0 4 0"/>',
+  play: '<path d="M7 4v16l13-8Z" fill="currentColor"/>', text: '<path d="M4 6h16M4 12h16M4 18h10"/>',
+  link: '<path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/>',
+  code: '<path d="m8 8-5 4 5 4M16 8l5 4-5 4"/>', image: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 17-5-5-9 8"/>',
+  flag: '<path d="M5 21V4h11l-1 4 4 0v9H9l1-4H5"/>',
+};
+export const icon = (n) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n] || ''}</svg>`;
+const GRADS = ['linear-gradient(135deg,#0E9F96,#3B82C4)', 'linear-gradient(135deg,#6D5BD0,#C2418F)', 'linear-gradient(135deg,#E2702A,#D9466F)', 'linear-gradient(135deg,#1F9D55,#0E9F96)',
+  'linear-gradient(135deg,#3B5BDB,#6D5BD0)', 'linear-gradient(135deg,#D97706,#E2702A)', 'linear-gradient(135deg,#0F766E,#155E75)', 'linear-gradient(135deg,#BE185D,#7C3AED)'];
+export const gradFor = (key = '') => GRADS[[...String(key)].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7) % GRADS.length];
+export const cav = (c, lg) => (c ? `<span class="cav${lg ? ' lg' : ''}" style="--cv:${gradFor(c.slug)}" aria-hidden="true">${esc([...(c.slug || c.name || '?')][0].toUpperCase())}</span>` : '');

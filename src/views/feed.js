@@ -1,4 +1,4 @@
-import { api, S, $, app, KINDS, voteBox, who, sandboxFrame, savePrefs, loadMyVotes, canWrite, isCommunityMod, followIds, remember, commBySlug, commLink, followBtn } from '../core.js';
+import { api, S, $, app, KINDS, voteBox, who, sandboxFrame, savePrefs, loadMyVotes, canWrite, isCommunityMod, followIds, remember, commBySlug, commLink, followBtn, icon, gradFor, cav } from '../core.js';
 import { md } from '../text.js';
 import { esc, safeUrl, domain, ago } from '../text.js';
 
@@ -29,7 +29,7 @@ export async function renderFeed() {
       <ol><li><b>둘러보고 써 봐요.</b> 실행물은 그 자리에서 바로 돌아가요.</li><li><b>▲보석 / ▼슬롭으로 판정해요.</b> 이유를 댓글로 남기면 더 좋아요.</li><li><b>내가 만든 것도 올려요.</b> 판정과 의견을 받아 다음 버전으로 키워요.</li></ol>
       <div class="row"><a class="btn pri" href="#/judge">지금 하나 판정해 보기</a><a class="btn" href="#/login">가입하기</a><a class="btn" href="#/communities">커뮤니티 둘러보기</a><button class="btn ghost" id="welcomeOff">닫기</button></div></div></section>` : '';
   app.innerHTML = `${welcome}<div class="layout"><div style="min-width:0">
-    <div class="fhead"><div><h1>${esc(title)}</h1><p${c ? ' class="mono"' : ''}>${esc(sub)}</p>${c?.description ? `<p>${esc(c.description)}</p>` : ''}</div>
+    <div class="fhead"><div class="chead">${c ? cav(c, true) : ''}<div><h1>${esc(title)}</h1><p${c ? ' class="mono"' : ''}>${esc(sub)}</p>${c?.description ? `<p>${esc(c.description)}</p>` : ''}</div></div>
       <div class="row">${c ? followBtn(c) : ''}${v.special === 'gems' ? '<button class="btn" data-act="sharebest">이번 주 보석 공유</button>' : ''}${v.special !== 'saved' ? `<a class="btn${c ? '' : ' pri'}" href="#/submit${c ? '/' + esc(c.slug) : ''}">글쓰기</a>` : ''}</div></div>
     ${v.special === 'gems' ? '' : `<div class="sortbar"><div class="seg" role="group" aria-label="정렬">${sorts.map(([k, l]) => `<button data-sort="${k}" aria-pressed="${S.prefs.sort === k}">${l}</button>`).join('')}</div>
       ${S.prefs.sort === 'top' ? `<select class="inline" id="win" aria-label="기간">${[['day', '오늘'], ['week', '이번 주'], ['month', '이번 달'], ['all', '전체 기간']].map(([k, l]) => `<option value="${k}"${S.prefs.win === k ? ' selected' : ''}>${l}</option>`).join('')}</select>` : ''}
@@ -91,9 +91,9 @@ export function postRow(p) {
       <span class="pill gem" data-gembadge="${p.id}"${p.isGem ? '' : ' hidden'}>보석</span>${p.isExample ? '<span class="pill ex">예시</span>' : ''}${fresh && !p.isExample ? '<span class="pill new">NEW</span>' : ''}${p.remixOf ? '<span class="pill">리믹스</span>' : ''}
       ${who(p.author, p.isExample)}<span>${ago(p.createdAt)}</span>${p.version > 1 ? `<span>수정 v${p.version}</span>` : ''}</div>
     <a class="ptitle" href="#/p/${p.id}">${esc(p.title)}</a>
-    ${compact ? '' : previewHtml(p)}${showExcerpt ? `<div class="excerpt">${esc(p.excerpt)}</div>` : ''}
-    <div class="pact"><a class="btn ghost" href="#/p/${p.id}">의견 ${p.comments}</a><button class="btn ghost" data-act="save" data-id="${p.id}">${S.saves.has(p.id) ? '저장됨' : '저장'}</button>
-      <button class="btn ghost" data-act="share" data-id="${p.id}" data-title="${esc(p.title)}">공유</button>
+    ${compact ? '' : previewHtml(p) || coverHtml(p)}
+    <div class="pact"><a class="btn ghost" href="#/p/${p.id}">${icon('comment')}<span>의견 ${p.comments}</span></a><button class="btn ghost" data-act="save" data-id="${p.id}">${icon(S.saves.has(p.id) ? 'bookmarked' : 'bookmark')}<span data-save-label="${p.id}">${S.saves.has(p.id) ? '저장됨' : '저장'}</span></button>
+      <button class="btn ghost" data-act="share" data-id="${p.id}" data-title="${esc(p.title)}">${icon('share')}<span>공유</span></button>
       ${(p.tags || []).slice(0, 4).map((t) => `<button class="btn ghost" data-act="tag" data-v="${esc(t)}">#${esc(t)}</button>`).join('')}</div></div>
     ${compact ? thumbHtml(p) : ''}</article>`;
 }
@@ -101,14 +101,20 @@ export function postRow(p) {
 function previewHtml(p) {
   if (p.kind === 'image' && p.images.length > 1) return `<a class="prev gallery3" href="#/p/${p.id}">${p.images.slice(0, 3).map((u) => `<img src="${esc(u)}" alt="" loading="lazy">`).join('')}</a>`;
   if (p.kind === 'image' && p.images.length) return `<a class="prev" href="#/p/${p.id}"><img src="${esc(p.images[0])}" alt="" loading="lazy"></a>`;
-  if (p.kind === 'html') return `<a class="prev frame" href="#/p/${p.id}" data-frame="${p.id}"><span class="ph">미리보기 준비 중…</span><span class="playhint">눌러서 실행</span></a>`;
-  if (p.kind === 'link' && safeUrl(p.url)) return `<a class="prev linkp" href="${esc(p.url)}" target="_blank" rel="noopener noreferrer"><span class="d">${esc(domain(p.url))}</span><span class="muted" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.url)}</span><span>↗</span></a>`;
-  if (p.kind === 'code' && p.codeHead) return `<a class="prev codep" href="#/p/${p.id}"><pre>${esc(p.codeHead)}</pre></a>`;
+  if (p.kind === 'html') return `<a class="prev frame" href="#/p/${p.id}" data-frame="${p.id}"><span class="ph">미리보기 준비 중…</span><span class="playhint">▶ 눌러서 실행</span></a>`;
+  if (p.kind === 'link' && safeUrl(p.url)) return `<a class="prev linkp" href="${esc(p.url)}" target="_blank" rel="noopener noreferrer"><span class="fav">${icon('link')}</span><span class="d">${esc(domain(p.url))}</span><span class="muted" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.url)}</span><span>↗</span></a>`;
   return '';
+}
+// colourful cover for posts that have no image or runnable preview
+function coverHtml(p) {
+  const kind = { text: ['text', '글'], code: ['code', '코드'], link: ['link', '링크'] }[p.kind] || ['text', '글'];
+  const body = p.kind === 'code' ? (p.codeHead || p.excerpt) : p.excerpt;
+  if (!body) return '';
+  return `<a class="cover${p.kind === 'code' ? ' code' : ''}" href="#/p/${p.id}" style="--cv:${gradFor(p.community?.slug || p.id)}"><span class="k">${icon(kind[0])}<span>${kind[1]}</span></span><span class="q" data-ugc>${esc(body.slice(0, 300))}</span></a>`;
 }
 function thumbHtml(p) {
   if (p.kind === 'image' && p.images.length) return `<a class="thumb" href="#/p/${p.id}"><img src="${esc(p.images[0])}" alt="" loading="lazy"></a>`;
-  return `<a class="thumb" href="#/p/${p.id}">${{ text: '글', link: esc(domain(p.url).slice(0, 10)) || '링크', html: '실행', code: '&lt;/&gt;' }[p.kind] || ''}</a>`;
+  return `<a class="thumb" href="#/p/${p.id}" style="--cv:${gradFor(p.community?.slug || p.id)}">${icon({ text: 'text', link: 'link', html: 'play', code: 'code' }[p.kind] || 'text')}</a>`;
 }
 
 const codeCache = new Map();

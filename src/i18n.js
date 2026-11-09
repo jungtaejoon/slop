@@ -138,7 +138,7 @@ const D = {
   '게시글': 'posts', '의견 수': 'comments', '운영자 지정': 'Adding moderators',
   // judge
   '판정할 글을 다 봤어요 🎉': "You've judged everything 🎉", '보석함 보기': 'See gems', '내가 만든 것 올리기': 'Post your own',
-  '하나씩 보고 바로 판정해요. 오늘': 'Judge one at a time. Today:', '개 · 남은 글': 'judged · left:', '개': '', '범위': 'Scope', '전체': 'All', '팔로우한 곳': 'Following',
+  '하나씩 보고 바로 판정해요. 오늘': 'Judge one at a time. Today:', '개 · 남은 글': ' judged · left:', '개': '', '범위': 'Scope', '전체': 'All', '팔로우한 곳': 'Following',
   '…더 보기': '…more', '슬롭 (←)': 'Slop (←)', '건너뛰기 (↓)': 'Skip (↓)', '모르겠어요': 'Not sure', '보석 (→)': 'Gem (→)', '한 줄이면 충분해요 (선택)': 'One line is enough (optional)',
   '남기기': 'Send', '다음 글': 'Next', '실행할 코드가 없어요': 'No code to run', '이유를 남겼어요': 'Reason posted', '댓글을 남기지 못했어요': "Couldn't post the comment",
   // moderation

@@ -2,7 +2,7 @@ import './styles.css';
 import { startTranslator, lang, setLang } from './i18n.js';
 startTranslator();
 { const ls = document.getElementById('langSel'); ls.value = lang; ls.onchange = () => setLang(ls.value); }
-import { api, S, $, isMod, anyCommunityMod, go, vote, toggleSave, toggleFollow, report, share, openShare, avatarHtml, toast, loadMyCommunities } from './core.js';
+import { api, S, $, icon, isMod, anyCommunityMod, go, vote, toggleSave, toggleFollow, report, share, openShare, avatarHtml, toast, loadMyCommunities } from './core.js';
 import { esc } from './text.js';
 import { renderFeed } from './views/feed.js';
 import { renderPost, closePost } from './views/post.js';
@@ -67,7 +67,7 @@ export function renderAuth() {
   const el = $('#authArea'), m = api.me;
   $('#newBtn').hidden = !!(m && m.banned);
   if (!m) { el.innerHTML = `<a class="btn" href="#/login">${api.mode === 'demo' ? '데모 시작' : '로그인'}</a>`; return; }
-  el.innerHTML = `<a class="iconbtn" href="#/inbox" aria-label="알림${S.unread ? ` ${S.unread}개` : ''}" title="알림">🔔${S.unread ? `<span class="dot">${S.unread > 99 ? '99+' : S.unread}</span>` : ''}</a>
+  el.innerHTML = `<a class="iconbtn" href="#/inbox" aria-label="알림${S.unread ? ` ${S.unread}개` : ''}" title="알림">${icon('bell')}${S.unread ? `<span class="dot">${S.unread > 99 ? '99+' : S.unread}</span>` : ''}</a>
     <button class="authbtn" id="meBtn" aria-haspopup="menu" aria-expanded="false" style="border:0;background:none;padding:0;cursor:pointer">${avatarHtml(m, 34).replace('class="av', 'class="me av')}</button>
     <div class="menu" id="meMenu" role="menu" hidden><div class="who-line">${esc(m.name)} · @${esc(m.username)}${m.role !== 'member' ? ` · ${m.role === 'admin' ? '관리자' : '운영자'}` : ''}</div>
       <a href="#/u/${esc(m.username)}" role="menuitem">내 프로필</a><a href="#/saved" role="menuitem">저장함</a><a href="#/settings" role="menuitem">프로필 설정</a>
