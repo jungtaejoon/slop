@@ -198,6 +198,7 @@ const D = {
 /* dynamic text nodes: [regex, replacement] (replacement may be a function) */
 const tr = (s) => D[s] ?? s;
 const R = [
+  [/^사람들은 AI 결과물을 쉽게 "슬롭"이라고 부르지만, 그 안에도 쓸모 있고 재미있는 게 숨어 있어요\. 여기서 같이 캐내요\.$/, 'People are quick to call AI output "slop", but useful and fun things hide in there too. Dig them up with us.'],
   [/^의견 (\d+)개$/, (m, n) => `${n} comment${n === '1' ? '' : 's'}`],
   [/^좋은 점을 짚을 땐 "가치 발견", 고칠 점은 "개선 제안"을 골라 주세요\.$/, 'Pointing out something good? Pick "Found value". For fixes, pick "Suggestion".'],
   [/^\*\*굵게\*\*, `코드`, - 목록, > 인용, 링크는 자동 연결돼요$/, '**bold**, `code`, - lists, > quotes; links are linked automatically'],
