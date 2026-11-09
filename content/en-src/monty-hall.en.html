@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Monty Hall Simulator</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Apple SD Gothic Neo",sans-serif;background:#f8fafc;color:#0f172a;padding:18px}
+  .app{max-width:640px;margin:0 auto;display:grid;gap:14px}
+  h1{margin:0;font-size:21px} p{margin:0;color:#475569}
+  .doors{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .door{aspect-ratio:3/4;border:0;border-radius:12px;background:#92400e;color:#fff;font-size:22px;font-weight:800;cursor:pointer;display:grid;place-items:center;transition:transform .15s}
+  .door:hover{transform:translateY(-2px)} .door.pick{outline:4px solid #2563eb}
+  .door.open{background:#e2e8f0;color:#0f172a;font-size:46px;cursor:default}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+  button.b{border:1px solid #cbd5e1;background:#fff;border-radius:999px;padding:9px 14px;font-weight:700;cursor:pointer}
+  button.b.pri{background:#2563eb;border-color:#2563eb;color:#fff}
+  table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+  td,th{border-bottom:1px solid #e2e8f0;padding:8px;text-align:left}
+  .bar{height:10px;background:#e2e8f0;border-radius:999px;overflow:hidden}.bar i{display:block;height:100%;background:#2563eb}
+</style></head><body>
+<div class="app">
+  <h1>Monty Hall Simulator</h1>
+  <p id="say">Pick a door.</p>
+  <div class="doors" id="doors"></div>
+  <div class="row" id="act"></div>
+  <table><tr><th>Strategy</th><th>Plays</th><th>Wins</th><th>Win rate</th><th style="width:35%"></th></tr>
+    <tr><td>Switch</td><td id="sn">0</td><td id="sw">0</td><td id="sr">-</td><td><div class="bar"><i id="sb" style="width:0"></i></div></td></tr>
+    <tr><td>Stay</td><td id="kn">0</td><td id="kw">0</td><td id="kr">-</td><td><div class="bar"><i id="kb" style="width:0"></i></div></td></tr></table>
+  <div class="row"><button class="b" id="auto">Run 1000 automatically (half switch, half stay)</button><button class="b" id="reset">Reset stats</button></div>
+</div>
+<script>
+  const $ = (id) => document.getElementById(id);
+  const stat = { s: [0, 0], k: [0, 0] }; let car, pick, opened, phase;
+  function record(switched, won) { const s = stat[switched ? 's' : 'k']; s[0]++; if (won) s[1]++; drawStat(); }
+  function drawStat() {
+    for (const k of ['s', 'k']) { const [n, w] = stat[k]; $(k + 'n').textContent = n; $(k + 'w').textContent = w; $(k + 'r').textContent = n ? (w / n * 100).toFixed(1) + '%' : '-'; $(k + 'b').style.width = n ? (w / n * 100) + '%' : 0; }
+  }
+  function round() {
+    car = Math.floor(Math.random() * 3); pick = null; opened = null; phase = 'pick';
+    $('say').textContent = 'Pick a door.'; $('act').innerHTML = '';
+    $('doors').innerHTML = [0, 1, 2].map((i) => `<button class="door" data-i="${i}">${i + 1}</button>`).join('');
+  }
+  $('doors').onclick = (e) => {
+    const d = e.target.closest('.door'); if (!d || phase !== 'pick') return;
+    pick = +d.dataset.i; d.classList.add('pick');
+    const goats = [0, 1, 2].filter((i) => i !== pick && i !== car); opened = goats[Math.floor(Math.random() * goats.length)];
+    const od = $('doors').children[opened]; od.classList.add('open'); od.textContent = '🐐';
+    phase = 'decide'; $('say').textContent = `Door ${opened + 1} hides a goat. Do you want to switch?`;
+    $('act').innerHTML = '<button class="b pri" id="sw">Switch</button><button class="b" id="st">Stay</button>';
+    $('sw').onclick = () => finish(true); $('st').onclick = () => finish(false);
+  };
+  function finish(switched) {
+    if (switched) pick = [0, 1, 2].find((i) => i !== pick && i !== opened);
+    [...$('doors').children].forEach((d, i) => { d.classList.add('open'); d.classList.toggle('pick', i === pick); d.textContent = i === car ? '🚗' : '🐐'; });
+    const won = pick === car; record(switched, won); phase = 'done';
+    $('say').textContent = won ? 'You won the car! 🎉' : 'Sorry, it was a goat.';
+    $('act').innerHTML = '<button class="b pri" id="again">Again</button>'; $('again').onclick = round;
+  }
+  $('auto').onclick = () => {
+    for (let n = 0; n < 1000; n++) {
+      const c = Math.floor(Math.random() * 3), p = Math.floor(Math.random() * 3), sw = n % 2 === 0;
+      const goats = [0, 1, 2].filter((i) => i !== p && i !== c), o = goats[Math.floor(Math.random() * goats.length)];
+      const fin = sw ? [0, 1, 2].find((i) => i !== p && i !== o) : p; record(sw, fin === c);
+    }
+  };
+  $('reset').onclick = () => { stat.s = [0, 0]; stat.k = [0, 0]; drawStat(); };
+  round(); drawStat();
+</script>
+</body></html>

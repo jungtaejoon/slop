@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Memory Pairs</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:grid;place-items:center;background:#1e1b4b;color:#eef;font-family:system-ui,-apple-system,"Apple SD Gothic Neo",sans-serif;padding:16px}
+  .app{width:min(440px,100%);display:grid;gap:12px;text-align:center}
+  h1{margin:0;font-size:22px}
+  .stat{display:flex;justify-content:center;gap:18px;font-variant-numeric:tabular-nums;color:#c7d2fe}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .card{aspect-ratio:1;border:0;border-radius:12px;font-size:clamp(26px,9vw,40px);cursor:pointer;background:#4338ca;color:transparent;transition:transform .25s,background .25s}
+  .card.open,.card.done{background:#eef2ff;color:#111;transform:rotateY(180deg)}
+  .card.done{background:#a7f3d0;cursor:default}
+  button.again{border:0;border-radius:999px;padding:10px 18px;font-weight:700;background:#fbbf24;color:#111;cursor:pointer}
+  .sel{display:flex;gap:6px;justify-content:center}
+  .sel button{border:1px solid #6366f1;background:none;color:#c7d2fe;border-radius:999px;padding:5px 12px;cursor:pointer}
+  .sel button[aria-pressed="true"]{background:#6366f1;color:#fff}
+</style></head><body>
+<div class="app">
+  <h1>Memory Pairs</h1>
+  <div class="sel"><button data-n="6">Easy</button><button data-n="8" aria-pressed="true">Normal</button><button data-n="10">Hard</button></div>
+  <div class="stat"><span>Moves <b id="moves">0</b></span><span>Time <b id="time">0</b>s</span><span>Best <b id="best">-</b></span></div>
+  <div class="grid" id="grid"></div>
+  <div id="msg"></div>
+</div>
+<script>
+  const ICONS = ['🍙', '🧋', '🐧', '🌵', '🎧', '🪐', '🦊', '🍋', '🧩', '🚲', '🐙', '🌈'];
+  let pairs = 8, open = [], moves = 0, matched = 0, t0 = 0, timer = null, lock = false;
+  const $ = (id) => document.getElementById(id);
+  const bestKey = () => 'pairs-best-' + pairs;
+  function start() {
+    clearInterval(timer); open = []; moves = 0; matched = 0; t0 = 0; lock = false;
+    $('moves').textContent = 0; $('time').textContent = 0; $('msg').innerHTML = '';
+    try { $('best').textContent = localStorage.getItem(bestKey()) || '-'; } catch { $('best').textContent = '-'; }
+    const deck = ICONS.slice(0, pairs).flatMap((x) => [x, x]).sort(() => Math.random() - 0.5);
+    $('grid').style.gridTemplateColumns = `repeat(${pairs > 8 ? 5 : 4},1fr)`;
+    $('grid').innerHTML = deck.map((x, i) => `<button class="card" data-i="${i}" data-v="${x}" aria-label="card">${x}</button>`).join('');
+  }
+  $('grid').onclick = (e) => {
+    const c = e.target.closest('.card'); if (!c || lock || c.classList.contains('open') || c.classList.contains('done')) return;
+    if (!t0) { t0 = Date.now(); timer = setInterval(() => ($('time').textContent = Math.floor((Date.now() - t0) / 1000)), 250); }
+    c.classList.add('open'); open.push(c);
+    if (open.length < 2) return;
+    moves++; $('moves').textContent = moves; lock = true;
+    const [a, b] = open;
+    setTimeout(() => {
+      if (a.dataset.v === b.dataset.v) { a.classList.add('done'); b.classList.add('done'); matched++; } else { a.classList.remove('open'); b.classList.remove('open'); }
+      open = []; lock = false;
+      if (matched === pairs) {
+        clearInterval(timer); const s = Math.floor((Date.now() - t0) / 1000);
+        let best = null; try { best = +localStorage.getItem(bestKey()) || null; if (!best || moves < best) localStorage.setItem(bestKey(), moves); } catch { /* */ }
+        $('msg').innerHTML = `<p>${moves} moves, ${s} seconds!${best && moves < best ? ' New best 🎉' : ''}</p><button class="again">Play again</button>`;
+        $('msg').querySelector('button').onclick = start;
+      }
+    }, a.dataset.v === b.dataset.v ? 250 : 700);
+  };
+  document.querySelectorAll('.sel button').forEach((b) => (b.onclick = () => { pairs = +b.dataset.n; document.querySelectorAll('.sel button').forEach((x) => x.setAttribute('aria-pressed', x === b)); start(); }));
+  start();
+</script>
+</body></html>

@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rainy Day Lo-fi Generator</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:grid;place-items:center;background:radial-gradient(circle at 30% 20%,#2a2f45,#12141f);color:#e9e6ff;font-family:system-ui,-apple-system,"Apple SD Gothic Neo",sans-serif;padding:20px}
+  .box{width:min(440px,100%);text-align:center;display:flex;flex-direction:column;gap:16px}
+  h1{margin:0;font-size:22px} p{margin:0;color:#a9a4cc;font-size:14px}
+  button{border:0;border-radius:999px;padding:14px 26px;font-size:17px;font-weight:700;background:#b9a7ff;color:#15122b;cursor:pointer}
+  .ctl{display:grid;grid-template-columns:auto 1fr;gap:10px 14px;align-items:center;text-align:left;font-size:14px;color:#cfc9f5}
+  input[type=range]{width:100%}
+  .chord{font-family:ui-monospace,Menlo,monospace;font-size:20px;min-height:28px;color:#fff}
+  canvas{width:100%;height:80px;border-radius:12px;background:rgb(255 255 255 / .04)}
+</style></head><body>
+<div class="box">
+  <h1>Rainy Day Lo-fi Generator</h1>
+  <p>Makes a new chord progression and rain sound in real time, every time. It plays audio, so check your volume.</p>
+  <button id="play">Play</button>
+  <div class="chord" id="chord"></div>
+  <canvas id="viz" width="440" height="80"></canvas>
+  <div class="ctl">
+    <span>Rain</span><input id="rain" type="range" min="0" max="1" step="0.01" value="0.35">
+    <span>Keys</span><input id="keys" type="range" min="0" max="1" step="0.01" value="0.5">
+    <span>Tempo</span><input id="tempo" type="range" min="60" max="90" step="1" value="72">
+  </div>
+</div>
+<script>
+  let ctx, master, rainGain, keysGain, analyser, playing = false, timer = null, step = 0;
+  const NAMES = ['C','C#','D','Eb','E','F','F#','G','Ab','A','Bb','B'];
+  // ii-V-I family plus variations, 7th/9th voicings
+  const PROGS = [[[2,'m9'],[7,'9'],[0,'maj9'],[9,'m7']], [[5,'maj7'],[4,'m7'],[2,'m7'],[0,'maj9']], [[9,'m9'],[5,'maj7'],[0,'maj7'],[7,'9']]];
+  const SHAPES = { m9:[0,3,7,10,14], '9':[0,4,7,10,14], maj9:[0,4,7,11,14], m7:[0,3,7,10], maj7:[0,4,7,11] };
+  const hz = (midi) => 440 * Math.pow(2, (midi - 69) / 12);
+  function setup() {
+    ctx = new AudioContext();
+    master = ctx.createGain(); master.gain.value = 0.8;
+    analyser = ctx.createAnalyser(); analyser.fftSize = 512;
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2400;
+    master.connect(lp); lp.connect(analyser); analyser.connect(ctx.destination);
+    keysGain = ctx.createGain(); keysGain.connect(master);
+    // rain: near-pink noise through a band-pass
+    const len = ctx.sampleRate * 2, buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
+    let b0 = 0, b1 = 0, b2 = 0;
+    for (let i = 0; i < len; i++) { const w = Math.random() * 2 - 1; b0 = 0.997 * b0 + w * 0.029; b1 = 0.985 * b1 + w * 0.032; b2 = 0.95 * b2 + w * 0.048; d[i] = (b0 + b1 + b2 + w * 0.02) * 0.6; }
+    const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1800; bp.Q.value = 0.4;
+    rainGain = ctx.createGain(); src.connect(bp); bp.connect(rainGain); rainGain.connect(master); src.start();
+    applyLevels();
+  }
+  function applyLevels() { if (!ctx) return; rainGain.gain.value = +document.getElementById('rain').value; keysGain.gain.value = +document.getElementById('keys').value * 0.5; }
+  function note(freq, t, dur, vel) {
+    const o = ctx.createOscillator(), o2 = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'triangle'; o2.type = 'sine'; o.frequency.value = freq; o2.frequency.value = freq * 2.001;
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vel, t + 0.02); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    o.connect(g); o2.connect(g); g.connect(keysGain); o.start(t); o2.start(t); o.stop(t + dur + 0.05); o2.stop(t + dur + 0.05);
+  }
+  let prog = PROGS[0], key = 0;
+  function bar() {
+    if (step % 16 === 0) { prog = PROGS[Math.floor(Math.random() * PROGS.length)]; key = [0, 2, 5, 7, 9][Math.floor(Math.random() * 5)]; }
+    const [deg, shape] = prog[step % 4], root = 48 + ((deg + key) % 12), beat = 60 / +document.getElementById('tempo').value, t = ctx.currentTime + 0.05;
+    document.getElementById('chord').textContent = NAMES[root % 12] + shape;
+    SHAPES[shape].forEach((iv, i) => note(hz(root + 12 + iv), t + i * 0.035 + Math.random() * 0.02, beat * 3.6, 0.09));
+    note(hz(root - 12), t, beat * 3.8, 0.12);
+    for (let k = 0; k < 4; k++) if (Math.random() < 0.55) { const iv = SHAPES[shape][Math.floor(Math.random() * SHAPES[shape].length)]; note(hz(root + 24 + iv), t + beat * (k + 0.5 + (Math.random() < 0.4 ? 0.25 : 0)), beat * 0.9, 0.05); }
+    step++;
+    timer = setTimeout(bar, beat * 4 * 1000);
+  }
+  function viz() {
+    const c = document.getElementById('viz'), g = c.getContext('2d'), data = new Uint8Array(analyser.frequencyBinCount);
+    (function frame() {
+      analyser.getByteFrequencyData(data); g.clearRect(0, 0, c.width, c.height);
+      const w = c.width / 64;
+      for (let i = 0; i < 64; i++) { const v = data[i * 2] / 255; g.fillStyle = `hsla(${250 + i}, 80%, 75%, ${0.3 + v * 0.7})`; g.fillRect(i * w + 1, c.height - v * c.height, w - 2, v * c.height); }
+      requestAnimationFrame(frame);
+    })();
+  }
+  document.getElementById('play').onclick = async () => {
+    if (!ctx) { setup(); viz(); }
+    if (playing) { clearTimeout(timer); await ctx.suspend(); playing = false; document.getElementById('play').textContent = 'Play'; }
+    else { await ctx.resume(); playing = true; bar(); document.getElementById('play').textContent = 'Pause'; }
+  };
+  ['rain', 'keys'].forEach((id) => document.getElementById(id).oninput = applyLevels);
+</script>
+</body></html>

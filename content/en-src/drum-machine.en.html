@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>16-Step Drum Machine</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;background:#111827;color:#e5e7eb;font-family:system-ui,-apple-system,"Apple SD Gothic Neo",sans-serif;padding:18px;display:grid;place-items:center}
+  .app{width:min(760px,100%);display:grid;gap:12px}
+  h1{margin:0;font-size:20px}
+  .bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  button{border:0;border-radius:999px;padding:9px 16px;font-weight:700;cursor:pointer;background:#374151;color:#e5e7eb}
+  button.play{background:#f59e0b;color:#111}
+  .grid{display:grid;grid-template-columns:70px repeat(16,1fr);gap:4px;align-items:center}
+  .name{font-size:13px;color:#9ca3af}
+  .cell{aspect-ratio:1;border-radius:5px;background:#1f2937;border:1px solid #374151;cursor:pointer;padding:0}
+  .cell:nth-child(4n+2){border-color:#4b5563}
+  .cell.on{background:#f59e0b;border-color:#f59e0b}
+  .cell.now{outline:2px solid #fff}
+  input[type=range]{width:140px}
+</style></head><body>
+<div class="app">
+  <h1>16-Step Drum Machine</h1>
+  <div class="bar"><button class="play" id="play">▶ Play</button><label>Tempo <input type="range" id="bpm" min="70" max="160" value="96"> <span id="bpmV">96</span></label>
+    <button id="pat">Next pattern</button><button id="clear">Clear</button></div>
+  <div class="grid" id="grid"></div>
+  <p style="font-size:13px;color:#9ca3af;margin:0">Tap cells to toggle beats. Every sound is synthesized in the browser; no samples.</p>
+</div>
+<script>
+  const ROWS = ['Kick', 'Snare', 'Hi-hat', 'Clap'];
+  const PATS = [
+    ['x...x...x...x...', '....x.......x...', 'x.x.x.x.x.x.x.x.', '................'],
+    ['x.....x...x.....', '....x.......x..x', '.xxx.xxx.xxx.xxx', '............x...'],
+    ['x..x..x...x..x..', '....x.......x...', 'xxxxxxxxxxxxxxxx', '....x.......x...'],
+  ];
+  let grid = PATS[0].map((r) => [...r].map((c) => c === 'x')), pat = 0, ctx, step = 0, timer = null, noise;
+  const $ = (id) => document.getElementById(id);
+  function drawGrid() {
+    $('grid').innerHTML = ROWS.map((n, r) => `<span class="name">${n}</span>` + grid[r].map((on, i) => `<button class="cell${on ? ' on' : ''}" data-r="${r}" data-i="${i}" aria-label="${n} ${i + 1}"></button>`).join('')).join('');
+  }
+  $('grid').onclick = (e) => { const c = e.target.closest('.cell'); if (!c) return; const r = +c.dataset.r, i = +c.dataset.i; grid[r][i] = !grid[r][i]; c.classList.toggle('on'); };
+  function setup() {
+    ctx = new AudioContext();
+    const len = ctx.sampleRate, buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1; noise = buf;
+  }
+  function hit(r, t) {
+    const g = ctx.createGain(); g.connect(ctx.destination);
+    if (r === 0) { const o = ctx.createOscillator(); o.frequency.setValueAtTime(140, t); o.frequency.exponentialRampToValueAtTime(40, t + 0.15); g.gain.setValueAtTime(1, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.3); o.connect(g); o.start(t); o.stop(t + 0.3); return; }
+    const s = ctx.createBufferSource(); s.buffer = noise; const f = ctx.createBiquadFilter();
+    if (r === 1) { f.type = 'bandpass'; f.frequency.value = 1800; g.gain.setValueAtTime(0.7, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.18); }
+    if (r === 2) { f.type = 'highpass'; f.frequency.value = 7000; g.gain.setValueAtTime(0.35, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.05); }
+    if (r === 3) { f.type = 'bandpass'; f.frequency.value = 1200; f.Q.value = 3; g.gain.setValueAtTime(0.8, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.12); }
+    s.connect(f); f.connect(g); s.start(t); s.stop(t + 0.3);
+  }
+  function tick() {
+    const t = ctx.currentTime + 0.02;
+    grid.forEach((row, r) => { if (row[step]) hit(r, t); });
+    document.querySelectorAll('.cell.now').forEach((c) => c.classList.remove('now'));
+    document.querySelectorAll(`.cell[data-i="${step}"]`).forEach((c) => c.classList.add('now'));
+    step = (step + 1) % 16;
+    timer = setTimeout(tick, 60000 / +$('bpm').value / 4);
+  }
+  $('play').onclick = async () => {
+    if (!ctx) setup();
+    if (timer) { clearTimeout(timer); timer = null; $('play').textContent = '▶ Play'; return; }
+    await ctx.resume(); step = 0; tick(); $('play').textContent = '■ Stop';
+  };
+  $('bpm').oninput = () => ($('bpmV').textContent = $('bpm').value);
+  $('pat').onclick = () => { pat = (pat + 1) % PATS.length; grid = PATS[pat].map((r) => [...r].map((c) => c === 'x')); drawGrid(); };
+  $('clear').onclick = () => { grid = grid.map((r) => r.map(() => false)); drawGrid(); };
+  drawGrid();
+</script>
+</body></html>
