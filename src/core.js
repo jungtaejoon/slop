@@ -57,9 +57,21 @@ export async function toggleFollow(cid) {
   catch (e) { on ? S.my.delete(cid) : S.my.set(cid, 'member'); if (c) c.members += on ? -1 : 1; sync(); toast(errMsg(e)); }
 }
 export const followBtn = (c, sm) => c ? `<button class="btn${sm ? ' sm' : ''}${S.my.has(c.id) ? '' : ' pri'}" data-act="follow" data-id="${c.id}">${S.my.has(c.id) ? '팔로우 중' : '팔로우'}</button>` : '';
-export const go = (h) => { if (location.hash === '#' + h) window.dispatchEvent(new HashChangeEvent('hashchange')); else location.hash = h; };
+// The app lives at BASE_PATH (e.g. /slop-lab/). Posts and communities also exist as real
+// paths (/slop-lab/p/<id>/, /slop-lab/c/<slug>/), built for search engines and link previews.
+// Those pages load this same app, which then takes the route from the path (no hash yet).
+export const BASE_PATH = new URL(document.baseURI).pathname.replace(/[^/]*$/, '');
+export function currentHash() {
+  if (location.hash.replace(/^#\/?/, '')) return location.hash;
+  const rest = location.pathname.startsWith(BASE_PATH) ? location.pathname.slice(BASE_PATH.length) : '';
+  const m = rest.match(/^(p|c|u)\/([^/]+)\/?$/);
+  return m ? `#/${m[1]}/${m[2]}` : location.hash || '#/';
+}
+// before navigating away from a path page, give the address the app's own form, so hash links stay in this page
+export function toAppUrl() { if (location.pathname !== BASE_PATH) history.replaceState(history.state, '', BASE_PATH + location.search + currentHash()); }
+export const go = (h) => { toAppUrl(); if (location.hash === '#' + h) window.dispatchEvent(new HashChangeEvent('hashchange')); else location.hash = h; };
 // like go(), but replaces the current history entry (for redirects, so Back doesn't bounce)
-export const replaceTo = (h) => { if (location.hash === '#' + h) window.dispatchEvent(new HashChangeEvent('hashchange')); else location.replace(location.pathname + location.search + '#' + h); };
+export const replaceTo = (h) => { toAppUrl(); if (location.hash === '#' + h) window.dispatchEvent(new HashChangeEvent('hashchange')); else location.replace(location.pathname + location.search + '#' + h); };
 
 let toastT;
 export function toast(m) { const t = $('#toast'); t.textContent = m; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => (t.hidden = true), 2800); }
@@ -68,7 +80,7 @@ export const errMsg = (e, fallback = '저장하지 못했어요. 다시 시도�
 
 export function requireLogin(msg = '로그인이 필요해요') {
   if (api.me) { if (api.me.banned) { toast('작성이 제한된 계정이에요'); return false; } return true; }
-  toast(msg); try { sessionStorage.setItem('slop-after-login', location.hash); } catch { /* ignore */ }
+  toast(msg); try { sessionStorage.setItem('slop-after-login', currentHash()); } catch { /* ignore */ }
   go('/login'); return false;
 }
 
@@ -166,7 +178,7 @@ export function report(t, id) {
 }
 
 // shareable URL: the static preview page (link previews), which redirects into the app
-export const shareUrl = (path) => `${location.origin}${location.pathname.replace(/index\.html$/, '')}${path}`;
+export const shareUrl = (path) => `${location.origin}${BASE_PATH}${path}`;
 
 export function openShare(path, title, lead = '') {
   const url = shareUrl(path), text = lang === 'en' ? `${tt(title)} | Gem or slop? Judge it on Slop Lab` : `${title} | Slop Lab에서 보석인지 슬롭인지 판정해 주세요`;

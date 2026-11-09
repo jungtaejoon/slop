@@ -1,4 +1,4 @@
-import { api, S, $, app, KINDS, TOOLS, MAX_CODE, MAX_BODY, sandboxFrame, canWrite, isMod, remember, commBySlug, toast, errMsg, go } from '../core.js';
+import { api, S, $, app, KINDS, TOOLS, MAX_CODE, MAX_BODY, sandboxFrame, canWrite, isMod, remember, commBySlug, toast, errMsg, go, currentHash } from '../core.js';
 import { esc, md, safeUrl, domain } from '../text.js';
 
 const DRAFT = 'slop-draft-v2';
@@ -9,7 +9,7 @@ export async function renderCompose(v) {
   const st = S.c = { hash: location.hash, mode: v.mode, id: v.id, images: [], kindTouched: v.mode !== 'new' };
   if (!canWrite()) {
     app.innerHTML = `<a class="crumb" href="#/">← 게시판으로</a><div class="banner">${api.me ? '작성이 제한된 계정이에요.' : '글을 쓰려면 먼저 로그인해 주세요. <a class="btn sm pri" href="#/login">로그인</a>'}</div>`;
-    if (!api.me) try { sessionStorage.setItem('slop-after-login', location.hash); } catch { /* */ }
+    if (!api.me) try { sessionStorage.setItem('slop-after-login', currentHash()); } catch { /* */ }
     return;
   }
   let all = []; try { all = await api.listCommunities({ limit: 300 }); all.forEach(remember); } catch { /* fall back to known ones */ }

@@ -6,7 +6,8 @@ export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&a
 export const safeUrl = (u) => (/^https?:\/\/[^\s]+$/i.test(u || '') ? u : '');
 // Images: https URLs or same-site relative paths (examples/x.svg). Anything with a scheme (javascript:, data:) is dropped.
 export const safeImg = (u) => (/^https?:\/\/[^\s"'<>]+$/i.test(u || '') || /^[A-Za-z0-9_][A-Za-z0-9_./-]*$/.test(u || '') ? u : '');
-export const safeImgs = (a) => (a || []).map(safeImg).filter(Boolean);
+const BASE = new URL(document.baseURI).pathname.replace(/[^/]*$/, '');
+export const safeImgs = (a) => (a || []).map(safeImg).filter(Boolean).map((u) => (/^https?:/i.test(u) ? u : BASE + u));
 export const domain = (u) => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return ''; } };
 
 export function md(src) {

@@ -472,3 +472,5 @@ footer{background:transparent}
 .mverdict{display:none}
 @media (max-width:640px){.mverdict{display:flex;margin:14px 0 4px;padding:12px;border:1px solid var(--line);border-radius:var(--r);background:var(--sunk)}}
 .judge-more{display:inline-block;margin-top:4px;font-size:14px}
+/* static copies written into /p/<id>/ and /c/<slug>/ pages (shown until the app takes over) */
+.article.prerender,.post.prerender{grid-template-columns:minmax(0,1fr)}

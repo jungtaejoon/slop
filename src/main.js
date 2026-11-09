@@ -2,7 +2,7 @@ import './styles.css';
 import { startTranslator, lang, setLang } from './i18n.js';
 startTranslator();
 { const ls = document.getElementById('langSel'); ls.value = lang; ls.onchange = () => setLang(ls.value); }
-import { api, S, $, icon, isMod, anyCommunityMod, go, vote, toggleSave, toggleFollow, report, share, openShare, avatarHtml, toast, loadMyCommunities } from './core.js';
+import { api, S, $, icon, isMod, anyCommunityMod, go, currentHash, toAppUrl, vote, toggleSave, toggleFollow, report, share, openShare, avatarHtml, toast, loadMyCommunities } from './core.js';
 import { esc } from './text.js';
 import { renderFeed } from './views/feed.js';
 import { renderPost, closePost } from './views/post.js';
@@ -16,7 +16,7 @@ import { renderJudge } from './views/judge.js';
    #/ (home: followed)  #/popular  #/gems  #/saved  #/c/<slug>  #/c/<slug>/settings  #/communities  #/communities/new
    #/p/<id>[/v/<n>]  #/submit[/<slug>]  #/edit/<id>  #/remix/<id>/<n>  #/u/<name>  #/login  #/settings  #/inbox  #/mod */
 function parse() {
-  const parts = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean).map((s) => { try { return decodeURIComponent(s); } catch { return s; } });
+  const parts = currentHash().replace(/^#\/?/, '').split('/').filter(Boolean).map((s) => { try { return decodeURIComponent(s); } catch { return s; } });
   const [a, b, c, d] = parts;
   if (!a) return { name: 'feed', special: 'home' };
   if (a === 'c' && b && c === 'settings') return { name: 'cform', slug: b };
@@ -86,7 +86,7 @@ export async function refreshUnread() {
 
 /* ---------- global actions (data-act) ---------- */
 document.addEventListener('click', (e) => {
-  if (e.target.closest('a[href="#/login"]') && location.hash !== '#/login') try { sessionStorage.setItem('slop-after-login', location.hash || '#/'); } catch { /* */ }
+  if (e.target.closest('a[href="#/login"]') && currentHash() !== '#/login') try { sessionStorage.setItem('slop-after-login', currentHash()); } catch { /* */ }
   const t = e.target.closest('[data-act]'); if (!t) return;
   const { act, id } = t.dataset;
   if (act === 'vote') { e.preventDefault(); vote(t.dataset.t, id, +t.dataset.d); }
@@ -110,9 +110,12 @@ function goAfterLogin() {
   let after = null; try { after = sessionStorage.getItem('slop-after-login'); } catch { /* */ }
   if (!api.me || !after) return false;
   try { sessionStorage.removeItem('slop-after-login'); } catch { /* */ }
-  if (after === location.hash) return false;
+  if (after === currentHash()) return false;
+  toAppUrl();
   location.replace(location.pathname + location.search + after); return true;
 }
+// on a /p/<id>/ page, in-app links (#/...) must stay in this document: fix the address first (capture phase)
+document.addEventListener('click', (e) => { if (e.target.closest('a[href^="#"]')) toAppUrl(); }, true);
 window.addEventListener('slop:unread', refreshUnread);
 window.addEventListener('slop:follows', () => renderBoards());
 const gq = $('#gq'); let gqT;

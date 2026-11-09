@@ -7,7 +7,8 @@ export async function renderPost(v) {
   if (S.d?.id === v.id) { S.d.sel = v.n; drawArticle(); drawSide(); return; }
   closePost();
   const d = S.d = { id: v.id, sel: v.n, versions: [], comments: [], loaded: false, tab: 'run', collapsed: new Set(), expanded: new Set(), replyTo: null, editing: null, drafts: {}, flair: 'opinion', delArm: false };
-  app.innerHTML = `<a class="crumb" href="#/" id="crumb">← 게시판으로</a><div class="layout"><div style="min-width:0"><div id="pArticle"><div class="skel" style="height:320px"></div></div><div id="pThread"></div></div><aside class="side" id="pSide"></aside></div>`;
+  const pre = app.querySelector('.article.prerender'); // static copy on /p/<id>/ pages: keep it until the post loads
+  app.innerHTML = `<a class="crumb" href="#/" id="crumb">← 게시판으로</a><div class="layout"><div style="min-width:0"><div id="pArticle">${pre ? pre.outerHTML : '<div class="skel" style="height:320px"></div>'}</div><div id="pThread"></div></div><aside class="side" id="pSide"></aside></div>`;
   try {
     const [post, versions, comments] = await Promise.all([api.getPost(v.id), api.getVersions(v.id), api.listComments(v.id)]);
     if (S.d !== d) return;
@@ -56,7 +57,7 @@ function drawArticle() {
       ${commLink(p.community)}<span class="pill">${esc(KINDS[p.kind]?.[0] || '')}</span>
       ${p.tool ? `<button class="pill tool" data-act="tool" data-v="${esc(p.tool)}">${esc(p.tool)}</button>` : ''}<span class="pill gem" data-gembadge="${p.id}"${p.isGem ? '' : ' hidden'}>보석</span>${p.isExample ? '<span class="pill ex">예시</span>' : ''}
       ${who(p.author, p.isExample)}<span>${ago(p.createdAt)}</span>${p.version > 1 ? `<span>· 수정 ${ago(p.updatedAt)}</span>` : ''}</div>
-    <h1>${esc(v.title || p.title)}</h1>
+    <h1 lang="${/[가-힣]/.test(v.title || p.title) ? 'ko' : 'en'}">${esc(v.title || p.title)}</h1>
     ${p.remixOf ? `<div class="muted" style="font-size:13px;margin:-4px 0 8px">↳ 리믹스 원본: <a href="#/p/${esc(p.remixOf)}${p.remixOfVersion ? '/v/' + p.remixOfVersion : ''}"><span${p.remixTitle ? ' data-ugc' : ''}>${esc(p.remixTitle || '원본 글')}</span>${p.remixOfVersion ? ` v${p.remixOfVersion}` : ''}</a></div>` : ''}
     ${p.hidden ? `<div class="banner warnb" style="margin:0 0 8px">운영자가 숨긴 글이에요${p.hiddenReason ? ` (사유: ${esc(p.hiddenReason)})` : ''}. 작성자와 운영자에게만 보여요.</div>` : ''}
     ${mine && Date.now() - p.createdAt < 3 * 864e5 && p.up + p.down < 3 && !p.hidden ? `<div class="nudge"><div><b>판정을 더 받아 보세요.</b> 친구나 단톡방, 관련 커뮤니티에 공유하면 보석인지 슬롭인지 금방 모여요.</div><button class="btn sm gem" data-act="share" data-id="${p.id}" data-title="${esc(p.title)}">공유하기</button></div>` : ''}

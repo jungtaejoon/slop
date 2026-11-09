@@ -263,6 +263,10 @@ export function agoText(s) {
 
 export function t(s) {
   if (lang === 'ko' || !s) return s;
+  return toEnglish(s);
+}
+export function toEnglish(s) {
+  if (!s) return s;
   const lead = s.match(/^\s*/)[0], trail = s.match(/\s*$/)[0], core = s.trim().replace(/\s+/g, ' ');
   if (!core) return s;
   if (D[core] !== undefined) return lead + D[core] + trail;
