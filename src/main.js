@@ -16,7 +16,7 @@ import { renderJudge } from './views/judge.js';
    #/ (home: followed)  #/popular  #/gems  #/saved  #/c/<slug>  #/c/<slug>/settings  #/communities  #/communities/new
    #/p/<id>[/v/<n>]  #/submit[/<slug>]  #/edit/<id>  #/remix/<id>/<n>  #/u/<name>  #/login  #/settings  #/inbox  #/mod */
 function parse() {
-  const parts = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent);
+  const parts = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean).map((s) => { try { return decodeURIComponent(s); } catch { return s; } });
   const [a, b, c, d] = parts;
   if (!a) return { name: 'feed', special: 'home' };
   if (a === 'c' && b && c === 'settings') return { name: 'cform', slug: b };
@@ -74,7 +74,6 @@ export function renderAuth() {
       <a href="#/communities/new" role="menuitem">커뮤니티 만들기</a>${anyCommunityMod() ? '<a href="#/mod" role="menuitem">운영</a>' : ''}<button id="logout" role="menuitem">로그아웃</button></div>`;
   const btn = $('#meBtn'), menu = $('#meMenu');
   btn.onclick = (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; btn.setAttribute('aria-expanded', String(!menu.hidden)); };
-  document.addEventListener('click', () => { menu.hidden = true; btn.setAttribute('aria-expanded', 'false'); }, { once: true });
   $('#logout').onclick = async () => { await api.signOut(); toast('로그아웃했어요'); go('/'); };
   const ban = $('#banNote'); ban.hidden = !m.banned;
   if (m.banned) ban.firstElementChild.textContent = `운영자가 이 계정의 글쓰기·댓글·판정을 제한했어요${m.banReason ? ` (사유: ${m.banReason})` : ''}. 읽기는 계속할 수 있어요.`;
@@ -87,6 +86,7 @@ export async function refreshUnread() {
 
 /* ---------- global actions (data-act) ---------- */
 document.addEventListener('click', (e) => {
+  if (e.target.closest('a[href="#/login"]') && location.hash !== '#/login') try { sessionStorage.setItem('slop-after-login', location.hash || '#/'); } catch { /* */ }
   const t = e.target.closest('[data-act]'); if (!t) return;
   const { act, id } = t.dataset;
   if (act === 'vote') { e.preventDefault(); vote(t.dataset.t, id, +t.dataset.d); }
@@ -100,6 +100,19 @@ document.addEventListener('click', (e) => {
   else if (act === 'follow') { e.preventDefault(); toggleFollow(id); }
   else if (act === 'mod') { e.preventDefault(); modAction(t.dataset.op, t.dataset.t, id, t.dataset); }
 });
+// the account menu closes on any outside click, on Esc and on navigation
+function closeMenu() { const m = $('#meMenu'); if (m && !m.hidden) { m.hidden = true; $('#meBtn')?.setAttribute('aria-expanded', 'false'); } }
+document.addEventListener('click', (e) => { if (!e.target.closest('#meMenu, #meBtn')) closeMenu(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMenu(); });
+window.addEventListener('hashchange', closeMenu);
+// after logging in, go back to the page that asked for it, replacing the login entry in history
+function goAfterLogin() {
+  let after = null; try { after = sessionStorage.getItem('slop-after-login'); } catch { /* */ }
+  if (!api.me || !after) return false;
+  try { sessionStorage.removeItem('slop-after-login'); } catch { /* */ }
+  if (after === location.hash) return false;
+  location.replace(location.pathname + location.search + after); return true;
+}
 window.addEventListener('slop:unread', refreshUnread);
 window.addEventListener('slop:follows', () => renderBoards());
 const gq = $('#gq'); let gqT;
@@ -116,10 +129,9 @@ async function boot() {
   try { await api.init(); } catch (e) { console.error(e); }
   // the PKCE login redirect lands with ?code=...; drop it and go back where the user was
   if (location.search.includes('code=')) history.replaceState(null, '', location.pathname + (location.hash || '#/'));
-  const after = sessionStorage.getItem('slop-after-login');
-  if (api.me && after) { sessionStorage.removeItem('slop-after-login'); if (after !== location.hash) location.hash = after; }
+  goAfterLogin();
   await afterAuth();
-  api.onAuthChange(async () => { S.votes = { p: {}, c: {} }; await afterAuth(); route(); });
+  api.onAuthChange(async () => { S.votes = { p: {}, c: {} }; await afterAuth(); if (!goAfterLogin()) route(); });
   window.addEventListener('hashchange', route);
   route();
 }

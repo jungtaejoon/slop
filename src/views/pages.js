@@ -1,9 +1,9 @@
-import { api, S, $, app, avatarHtml, toast, errMsg, go, loadMyVotes } from '../core.js';
+import { api, S, $, app, avatarHtml, toast, errMsg, go, replaceTo, loadMyVotes } from '../core.js';
 import { esc, ago } from '../text.js';
-import { postRow } from './feed.js';
+import { postRow, setupPreviews } from './feed.js';
 
 export function renderLogin() {
-  if (api.me) { go('/'); return; }
+  if (api.me) { replaceTo('/'); return; }
   if (api.mode === 'demo') {
     app.innerHTML = `<form class="form narrow" id="demoForm"><h1>데모로 시작하기</h1>
       <p class="muted" style="margin:0">이 사이트는 지금 데모 모드예요. 서버 없이 이 브라우저에만 저장되고, 데모 계정은 운영자 권한이 있어서 신고 처리와 숨기기도 써 볼 수 있어요.</p>
@@ -16,11 +16,12 @@ export function renderLogin() {
   const NAMES = { google: 'Google', kakao: '카카오', github: 'GitHub' };
   const st = (S.login ??= { mode: 'signup', email: '' });
   app.innerHTML = `<form class="form narrow" id="loginForm" novalidate><h1>${st.mode === 'signup' ? '가입하기' : st.mode === 'login' ? '로그인' : st.mode === 'link' ? '메일 링크로 로그인' : '비밀번호 찾기'}</h1>
+    ${st.mode === 'signup' || st.mode === 'login' ? '<p class="hint" style="margin:0">판정(▲/▼)은 가입하지 않아도 할 수 있어요. 글과 댓글을 쓰려면 가입해 주세요.</p>' : ''}
     ${oauth.length ? `<div style="display:flex;flex-direction:column;gap:8px">${oauth.map((o) => `<button type="button" class="btn block" data-oauth="${esc(o)}">${esc(NAMES[o] || o)}로 계속하기</button>`).join('')}</div><div class="row" style="justify-content:center"><span class="hint">또는 이메일로</span></div>` : ''}
     <div class="seg" role="tablist" style="align-self:flex-start">${[['signup', '가입'], ['login', '로그인']].map(([k, l]) => `<button type="button" data-mode="${k}" aria-pressed="${st.mode === k}">${l}</button>`).join('')}</div>
     <div class="field"><label for="email">이메일</label><input type="email" id="email" autocomplete="email" required placeholder="you@example.com" value="${esc(st.email)}"></div>
-    ${st.mode === 'signup' || st.mode === 'login' ? `<div class="field"><label for="pw">비밀번호</label><input type="password" id="pw" autocomplete="${st.mode === 'signup' ? 'new-password' : 'current-password'}" minlength="8" required placeholder="8자 이상">${st.mode === 'signup' ? '<span class="hint">가입하면 바로 시작할 수 있어요. 확인 메일을 기다리지 않아도 돼요.</span>' : ''}</div>` : ''}
-    <button class="btn pri block" type="submit" id="sendBtn">${st.mode === 'signup' ? '가입하고 시작하기' : st.mode === 'login' ? '로그인' : st.mode === 'link' ? '로그인 링크 받기' : '재설정 메일 받기'}</button>
+    ${st.mode === 'signup' || st.mode === 'login' ? `<div class="field"><label for="pw">비밀번호</label><input type="password" id="pw" autocomplete="${st.mode === 'signup' ? 'new-password' : 'current-password'}" minlength="8" required placeholder="8자 이상">${st.mode === 'signup' ? '<span class="hint">가입하면 확인 메일이 가요. 메일의 링크를 누르면 가입이 끝나요.</span>' : ''}</div>` : ''}
+    <button class="btn pri block" type="submit" id="sendBtn">${st.mode === 'signup' ? '가입하기' : st.mode === 'login' ? '로그인' : st.mode === 'link' ? '로그인 링크 받기' : '재설정 메일 받기'}</button>
     <p class="hint" id="loginSt" role="status" style="margin:0"></p>
     <div class="row" style="justify-content:space-between">${st.mode !== 'link' ? '<button type="button" class="linkbtn" data-mode="link">비밀번호 없이 메일 링크로</button>' : '<button type="button" class="linkbtn" data-mode="login">비밀번호로 로그인</button>'}${st.mode === 'login' ? '<button type="button" class="linkbtn" data-mode="reset">비밀번호를 잊었어요</button>' : ''}</div></form>`;
   app.querySelectorAll('[data-mode]').forEach((b) => (b.onclick = () => { st.email = $('#email').value.trim(); st.mode = b.dataset.mode; renderLogin(); }));
@@ -49,7 +50,7 @@ export function renderLogin() {
 }
 
 export function renderSettings() {
-  const m = api.me; if (!m) { go('/login'); return; }
+  const m = api.me; if (!m) { replaceTo('/login'); return; }
   app.innerHTML = `<form class="form narrow" id="setForm"><h1>프로필 설정</h1>
     <div class="field"><label for="sUser">아이디</label><input type="text" id="sUser" value="${esc(m.username)}" maxlength="20" pattern="[a-z0-9_]{3,20}"><span class="hint">영문 소문자, 숫자, 밑줄로 3~20자. 프로필 주소에 쓰여요.</span></div>
     <div class="field"><label for="sName">표시 이름</label><input type="text" id="sName" value="${esc(m.displayName)}" maxlength="40"></div>
@@ -79,17 +80,18 @@ export async function renderProfile(v) {
   list.posts.forEach((x) => S.cache.set(x.id, Object.assign(S.cache.get(x.id) || {}, x)));
   await loadMyVotes(list.posts.map((x) => x.id));
   const mine = api.me?.id === p.id;
-  app.innerHTML = `<div class="phead">${avatarHtml(p, 64)}<div class="t"><h1>${esc(p.name)}</h1><div class="muted">@${esc(p.username)} · ${ago(p.createdAt)} 가입${p.role !== 'member' ? ` · ${p.role === 'admin' ? '관리자' : '운영자'}` : ''}${p.banned ? ' · <span class="warn">작성 제한됨</span>' : ''}</div>${p.bio ? `<p>${esc(p.bio)}</p>` : ''}</div>
+  app.innerHTML = `<div class="phead">${avatarHtml(p, 64)}<div class="t"><h1>${esc(p.name)}</h1><div class="muted"><span>@${esc(p.username)}</span> · <span>${ago(p.createdAt)} 가입</span>${p.role !== 'member' ? ` · <span>${p.role === 'admin' ? '관리자' : '운영자'}</span>` : ''}${p.banned ? ' · <span class="warn">작성 제한됨</span>' : ''}</div>${p.bio ? `<p>${esc(p.bio)}</p>` : ''}</div>
     ${stats ? `<div class="statrow"><div><b>${stats.karma}</b><span>판정 점수</span></div><div><b>${stats.gems}</b><span>보석</span></div><div><b>${stats.posts}</b><span>게시글</span></div><div><b>${stats.comments}</b><span>의견 수</span></div></div>` : ''}
     ${mine ? '<a class="btn" href="#/settings">프로필 설정</a>' : ''}</div>
     <h2 style="margin:0 0 10px">올린 글</h2>
     ${list.posts.length ? `<div class="list">${list.posts.map(postRow).join('')}</div>` : `<div class="banner">${mine ? '아직 올린 글이 없어요. <a href="#/submit">첫 글을 올려 보세요.</a>' : '아직 올린 글이 없어요.'}</div>`}`;
   document.title = `${p.name} · Slop Lab`;
+  setupPreviews(app);
 }
 
 const NOTE_TEXT = { reply: '님이 내 댓글에 답글을 달았어요', comment: '님이 내 글에 의견을 남겼어요', resolved: '님이 내 제안을 새 버전에 반영했어요', gem: '' };
 export async function renderInbox() {
-  if (!api.me) { go('/login'); return; }
+  if (!api.me) { replaceTo('/login'); return; }
   app.innerHTML = '<h1 style="margin-bottom:14px">알림</h1><div class="skel"></div>';
   let list = []; try { list = await api.notifications(); } catch { /* */ }
   if (S.view.name !== 'inbox') return;

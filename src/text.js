@@ -52,7 +52,7 @@ export function diffHtml(a, b) {
   const show = new Uint8Array(d.length);
   d.forEach((x, i) => { if (x[0] !== ' ') for (let k = Math.max(0, i - 3); k <= Math.min(d.length - 1, i + 3); k++) show[k] = 1; });
   let h = '', skip = 0;
-  d.forEach((x, i) => { if (!show[i]) { skip++; return; } if (skip) { h += `<div class="gap">… ${skip}줄 동일 …</div>`; skip = 0; } h += `<div class="${x[0] === '+' ? 'a' : x[0] === '-' ? 'd' : ''}">${x[0]} ${esc(x[1])}</div>`; });
+  d.forEach((x, i) => { if (!show[i]) { skip++; return; } if (skip) { h += `<div class="gap">… ${skip}줄 동일 …</div>`; skip = 0; } h += `<div class="${x[0] === '+' ? 'a' : x[0] === '-' ? 'd' : ''}" data-ugc>${x[0]} ${esc(x[1])}</div>`; });
   if (skip) h += `<div class="gap">… ${skip}줄 동일 …</div>`;
   return `<div class="diff"><div class="gap"><span class="ok">+${add}</span> / <span class="warn">−${del}</span></div>${add + del ? h : '<div class="gap">변경 없음</div>'}</div>`;
 }

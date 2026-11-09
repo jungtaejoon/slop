@@ -2,7 +2,7 @@
 import { createSupabaseApi } from './api/supabase.js';
 import { createDemoApi } from './api/demo.js';
 import { esc } from './text.js';
-import { lang } from './i18n.js';
+import { lang, tt } from './i18n.js';
 
 const SB_URL = import.meta.env.VITE_SUPABASE_URL, SB_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 export const api = SB_URL && SB_KEY ? createSupabaseApi(SB_URL, SB_KEY) : createDemoApi();
@@ -58,11 +58,13 @@ export async function toggleFollow(cid) {
 }
 export const followBtn = (c, sm) => c ? `<button class="btn${sm ? ' sm' : ''}${S.my.has(c.id) ? '' : ' pri'}" data-act="follow" data-id="${c.id}">${S.my.has(c.id) ? '팔로우 중' : '팔로우'}</button>` : '';
 export const go = (h) => { if (location.hash === '#' + h) window.dispatchEvent(new HashChangeEvent('hashchange')); else location.hash = h; };
+// like go(), but replaces the current history entry (for redirects, so Back doesn't bounce)
+export const replaceTo = (h) => { if (location.hash === '#' + h) window.dispatchEvent(new HashChangeEvent('hashchange')); else location.replace(location.pathname + location.search + '#' + h); };
 
 let toastT;
 export function toast(m) { const t = $('#toast'); t.textContent = m; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => (t.hidden = true), 2800); }
 export const errMsg = (e, fallback = '저장하지 못했어요. 다시 시도해 주세요.') =>
-  e?.code === '42501' ? (api.me?.banned ? '작성이 제한된 계정이에요.' : '권한이 없어요.') : e?.code === '23505' ? '이미 쓰이고 있는 값이에요.' : e?.code === '54000' ? '커뮤니티는 하루에 두 개까지 만들 수 있어요.' : e?.code === 'too_large' ? e.message : e?.code === 'demo' ? e.message : fallback;
+  e?.code === '42501' ? (api.me?.banned ? '작성이 제한된 계정이에요.' : '권한이 없어요.') : e?.code === '23505' ? '이미 쓰이고 있는 값이에요.' : e?.code === '54000' ? '커뮤니티는 하루에 두 개까지 만들 수 있어요.' : e?.code === 'SL429' ? '짧은 시간에 너무 많이 올렸어요. 잠시 후 다시 해 주세요.' : e?.code === 'too_large' ? e.message : e?.code === 'demo' ? e.message : fallback;
 
 export function requireLogin(msg = '로그인이 필요해요') {
   if (api.me) { if (api.me.banned) { toast('작성이 제한된 계정이에요'); return false; } return true; }
@@ -123,16 +125,28 @@ function refreshVote(t, id) {
     const p = S.cache.get(id); if (p) { p.isGem = p.up >= 3 && p.up * 4 >= 3 * (p.up + p.down); document.querySelectorAll(`[data-gembadge="${id}"]`).forEach((el) => (el.hidden = !p.isGem)); }
   }
 }
-export async function vote(t, id, d) {
-  if (!requireLogin('판정하려면 로그인해 주세요')) return;
-  const o = t === 'p' ? S.cache.get(id) : S.d?.comments.find((c) => c.id === id); if (!o) return;
-  const cur = S.votes[t][id] || 0, next = cur === d ? 0 : d;
-  const apply = (from, to) => { if (from === 1) o.up--; if (from === -1) o.down--; if (to === 1) o.up++; if (to === -1) o.down++; S.votes[t][id] = to; refreshVote(t, id); };
-  apply(cur, next);
-  try { await api.vote(t, id, next); } catch (e) { apply(next, cur); toast(errMsg(e, '판정을 저장하지 못했어요')); }
+const voting = new Set();
+// Saves a verdict and returns true on success. Visitors vote as guests (no sign-up).
+// Pressing the same button again takes the vote back, except with { toggle: false }
+// (Judge mode), so a double tap can't undo a verdict.
+export async function vote(t, id, d, { toggle = true } = {}) {
+  if (api.me?.banned) { toast('작성이 제한된 계정이에요'); return false; }
+  const key = t + id; if (voting.has(key)) return false;
+  const o = t === 'p' ? S.cache.get(id) : S.d?.comments.find((c) => c.id === id); if (!o) return false;
+  voting.add(key);
+  try {
+    if (!api.me && !(await api.signInGuest())) { requireLogin('판정하려면 로그인해 주세요'); return false; }
+    const cur = S.votes[t][id] || 0, next = toggle && cur === d ? 0 : d;
+    if (next === cur) return true;
+    const apply = (from, to) => { if (from === 1) o.up--; if (from === -1) o.down--; if (to === 1) o.up++; if (to === -1) o.down++; S.votes[t][id] = to; refreshVote(t, id); };
+    apply(cur, next);
+    try { await api.vote(t, id, next); } catch (e) { apply(next, cur); toast(errMsg(e, '판정을 저장하지 못했어요')); return false; }
+    if (!api.me) { let seen = true; try { seen = !!sessionStorage.getItem('slop-guest-hint'); sessionStorage.setItem('slop-guest-hint', '1'); } catch { /* */ } if (!seen) toast('판정했어요. 이유를 남기거나 글을 올리려면 가입해 주세요'); }
+    return true;
+  } finally { voting.delete(key); }
 }
 export async function loadMyVotes(postIds = [], commentIds = []) {
-  if (!api.me) return;
+  if (!api.uid()) return;
   try { const v = await api.myVotes({ postIds, commentIds }); Object.assign(S.votes.p, v.p); Object.assign(S.votes.c, v.c); } catch { /* counts still show */ }
 }
 
@@ -155,7 +169,8 @@ export function report(t, id) {
 export const shareUrl = (path) => `${location.origin}${location.pathname.replace(/index\.html$/, '')}${path}`;
 
 export function openShare(path, title, lead = '') {
-  const url = shareUrl(path), text = `${title} | Slop Lab에서 보석인지 슬롭인지 판정해 주세요`;
+  const url = shareUrl(path), text = lang === 'en' ? `${tt(title)} | Gem or slop? Judge it on Slop Lab` : `${title} | Slop Lab에서 보석인지 슬롭인지 판정해 주세요`;
+  title = lang === 'en' ? tt(title) : title;
   if (navigator.share && matchMedia('(pointer:coarse)').matches) { navigator.share({ title, text, url }).catch(() => {}); return; }
   const e = encodeURIComponent, d = $('#dlg'), f = $('#dlgForm'), back = document.activeElement;
   f.innerHTML = `<h2>공유하기</h2>${lead ? `<p class="muted" style="margin:0;font-size:13px">${esc(lead)}</p>` : ''}

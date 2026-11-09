@@ -39,7 +39,7 @@ export async function modAction(op, t, id, ds = {}) {
 }
 
 export async function renderMod() {
-  if (!anyCommunityMod()) { app.innerHTML = `<div class="banner">${api.me ? '운영자만 볼 수 있는 화면이에요. 커뮤니티를 만들면 그 커뮤니티의 운영자가 돼요.' : '운영자로 <a href="#/login">로그인</a>해 주세요.'}</div>`; return; }
+  if (!anyCommunityMod()) { app.innerHTML = `<div class="banner">${api.me ? '운영자만 볼 수 있는 화면이에요. 커뮤니티를 만들면 그 커뮤니티의 운영자가 돼요.' : '운영자로 로그인해 주세요. <a class="btn sm" href="#/login">로그인</a>'}</div>`; return; }
   if (!$('#modRoot')) app.innerHTML = '<div id="modRoot"><div class="skel"></div></div>';
   let rep, hid, bans, log;
   try { [rep, hid, bans, log] = await Promise.all([api.listReports(), api.listHidden(), api.listBanned(), api.listModLog()]); }

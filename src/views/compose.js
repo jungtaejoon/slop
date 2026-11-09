@@ -8,7 +8,7 @@ export async function renderCompose(v) {
   if (S.c?.hash === location.hash) return;
   const st = S.c = { hash: location.hash, mode: v.mode, id: v.id, images: [], kindTouched: v.mode !== 'new' };
   if (!canWrite()) {
-    app.innerHTML = `<a class="crumb" href="#/">← 게시판으로</a><div class="banner">${api.me ? '작성이 제한된 계정이에요.' : '글을 쓰려면 먼저 <a href="#/login">로그인</a>해 주세요.'}</div>`;
+    app.innerHTML = `<a class="crumb" href="#/">← 게시판으로</a><div class="banner">${api.me ? '작성이 제한된 계정이에요.' : '글을 쓰려면 먼저 로그인해 주세요. <a class="btn sm pri" href="#/login">로그인</a>'}</div>`;
     if (!api.me) try { sessionStorage.setItem('slop-after-login', location.hash); } catch { /* */ }
     return;
   }

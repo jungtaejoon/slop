@@ -1,7 +1,8 @@
 // Quick judge mode: one post at a time, ▲ gem / ▼ slop / skip, with an
 // optional one-line reason. The fastest way for a newcomer to take part,
 // and it keeps the "waiting for a verdict" queue short.
-import { api, S, $, app, KINDS, who, sandboxFrame, loadMyVotes, requireLogin, commLink, remember, toast, errMsg, vote, followIds } from '../core.js';
+import { api, S, $, app, KINDS, who, sandboxFrame, loadMyVotes, commLink, remember, toast, errMsg, vote, followIds } from '../core.js';
+import { tt } from '../i18n.js';
 import { esc, md, safeUrl, safeImgs, domain } from '../text.js';
 import { getCode } from './feed.js';
 
@@ -16,14 +17,14 @@ export async function renderJudge() {
   try {
     const opts = { special: J.scope === 'mine' && followIds().length ? 'home' : null, followIds: followIds(), clang: S.prefs.clang, sort: 'pending', limit: 60 };
     const [pending, fresh] = await Promise.all([api.listPosts(opts), api.listPosts({ ...opts, sort: 'new', limit: 40 })]);
-    if (J !== my) return;
+    if (J !== my || S.view.name !== 'judge') return;
     const seen = new Set(), all = [...pending.posts, ...fresh.posts].filter((p) => !seen.has(p.id) && seen.add(p.id));
     all.forEach((p) => { S.cache.set(p.id, Object.assign(S.cache.get(p.id) || {}, p)); if (p.community) remember(p.community); });
     await loadMyVotes(all.map((p) => p.id));
-    if (J !== my) return;
+    if (J !== my || S.view.name !== 'judge') return;
     // posts I haven't judged and didn't write, least-judged first
     my.queue = all.filter((p) => !S.votes.p[p.id] && p.authorId !== api.me?.id).sort((a, b) => (a.up + a.down) - (b.up + b.down) || b.createdAt - a.createdAt).map((p) => S.cache.get(p.id));
-  } catch (e) { console.error(e); app.innerHTML = '<div class="banner warnb">글을 불러오지 못했어요. 새로고침해 주세요.</div>'; return; }
+  } catch (e) { console.error(e); if (J === my && S.view.name === 'judge') app.innerHTML = '<div class="banner warnb">글을 불러오지 못했어요. 새로고침해 주세요.</div>'; return; }
   draw();
 }
 
@@ -45,7 +46,7 @@ function draw() {
     <article class="judge-card">
       <div class="pmeta">${commLink(p.community)}<span class="pill">${esc(KINDS[p.kind]?.[0] || '')}</span>${p.tool ? `<span class="pill tool">${esc(p.tool)}</span>` : ''}${p.isExample ? '<span class="pill ex">예시</span>' : ''}${who(p.author, p.isExample)}<span class="mono">보석 ${p.up} · 슬롭 ${p.down}</span></div>
       <h2 class="judge-title"><a href="#/p/${p.id}">${esc(p.title)}</a></h2>
-      ${preview}${p.excerpt ? `<div class="md judge-body">${md(p.excerpt)}${p.excerpt.length >= 395 ? ' <a href="#/p/' + p.id + '">…더 보기</a>' : ''}</div>` : ''}
+      ${preview}${p.excerpt ? `<div class="md judge-body">${md(p.excerpt)}</div>${p.excerpt.length >= 395 ? `<a class="judge-more" href="#/p/${p.id}">…더 보기</a>` : ''}` : ''}
     </article>
     <div class="judge-actions">
       <button class="jbtn s" data-j="-1" title="슬롭 (←)">▼ 슬롭이다<small>←</small></button>
@@ -54,23 +55,27 @@ function draw() {
     </div>
     <form class="judge-why" id="why" hidden><label for="whyText" id="whyLabel"></label><div class="row" style="flex-wrap:nowrap"><input type="text" id="whyText" maxlength="300" placeholder="한 줄이면 충분해요 (선택)"><button class="btn sm pri" type="submit">남기기</button><button class="btn sm ghost" type="button" id="whySkip">다음 글</button></div></form>
   </div>`;
-  if (p.kind === 'html') getCode(p.id).then((code) => { const el = $('#jRun'); if (el && J.queue[J.i] === p) el.replaceChildren(sandboxFrame(code || '<p>실행할 코드가 없어요</p>', p.title)); });
+  if (p.kind === 'html') getCode(p.id).then((code) => { const el = $('#jRun'); if (el && J.queue[J.i] === p) el.replaceChildren(sandboxFrame(code || `<p>${tt('실행할 코드가 없어요')}</p>`, p.title)); });
   app.querySelectorAll('[data-scope]').forEach((b) => (b.onclick = () => { J.scope = b.dataset.scope; renderJudge(); }));
   app.querySelectorAll('[data-j]').forEach((b) => (b.onclick = () => judge(+b.dataset.j)));
   $('#whySkip').onclick = next;
   $('#why').onsubmit = async (e) => {
     e.preventDefault(); const text = $('#whyText').value.trim(); if (!text) return next();
+    const sb = $('#why [type=submit]'); if (sb.disabled) return; sb.disabled = true;
     try { await api.addComment({ postId: p.id, text, flair: J.last > 0 ? 'gem' : 'improve', version: p.version }); p.comments++; toast('이유를 남겼어요'); } catch (err) { toast(errMsg(err, '댓글을 남기지 못했어요')); }
     next();
   };
 }
 
 async function judge(d) {
-  const p = J.queue[J.i]; if (!p) return;
+  const p = J.queue[J.i]; if (!p || J.busy) return;
   if (d === 0) return next();
-  if (!requireLogin('판정하려면 로그인해 주세요')) return;
-  J.last = d; await vote('p', p.id, d); bump();
-  app.querySelectorAll('[data-j]').forEach((b) => (b.disabled = true));
+  J.busy = true; app.querySelectorAll('[data-j]').forEach((b) => (b.disabled = true));
+  const saved = await vote('p', p.id, d, { toggle: false });
+  J.busy = false;
+  if (!saved) { app.querySelectorAll('[data-j]').forEach((b) => (b.disabled = false)); return; }
+  J.last = d; bump();
+  if (!api.me) return next(); // guests can't comment, so go straight to the next card
   const w = $('#why'); w.hidden = false;
   $('#whyLabel').textContent = d > 0 ? '어디가 보석인가요? 이유를 남기면 "가치 발견" 댓글이 돼요.' : '무엇이 아쉬웠나요? 이유를 남기면 "개선 제안" 댓글이 돼요.';
   $('#whyText').focus();

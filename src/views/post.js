@@ -57,11 +57,12 @@ function drawArticle() {
       ${p.tool ? `<button class="pill tool" data-act="tool" data-v="${esc(p.tool)}">${esc(p.tool)}</button>` : ''}<span class="pill gem" data-gembadge="${p.id}"${p.isGem ? '' : ' hidden'}>보석</span>${p.isExample ? '<span class="pill ex">예시</span>' : ''}
       ${who(p.author, p.isExample)}<span>${ago(p.createdAt)}</span>${p.version > 1 ? `<span>· 수정 ${ago(p.updatedAt)}</span>` : ''}</div>
     <h1>${esc(v.title || p.title)}</h1>
-    ${p.remixOf ? `<div class="muted" style="font-size:13px;margin:-4px 0 8px">↳ 리믹스 원본: <a href="#/p/${esc(p.remixOf)}${p.remixOfVersion ? '/v/' + p.remixOfVersion : ''}">${esc(p.remixTitle || '원본 글')}${p.remixOfVersion ? ` v${p.remixOfVersion}` : ''}</a></div>` : ''}
+    ${p.remixOf ? `<div class="muted" style="font-size:13px;margin:-4px 0 8px">↳ 리믹스 원본: <a href="#/p/${esc(p.remixOf)}${p.remixOfVersion ? '/v/' + p.remixOfVersion : ''}"><span${p.remixTitle ? ' data-ugc' : ''}>${esc(p.remixTitle || '원본 글')}</span>${p.remixOfVersion ? ` v${p.remixOfVersion}` : ''}</a></div>` : ''}
     ${p.hidden ? `<div class="banner warnb" style="margin:0 0 8px">운영자가 숨긴 글이에요${p.hiddenReason ? ` (사유: ${esc(p.hiddenReason)})` : ''}. 작성자와 운영자에게만 보여요.</div>` : ''}
     ${mine && Date.now() - p.createdAt < 3 * 864e5 && p.up + p.down < 3 && !p.hidden ? `<div class="nudge"><div><b>판정을 더 받아 보세요.</b> 친구나 단톡방, 관련 커뮤니티에 공유하면 보석인지 슬롭인지 금방 모여요.</div><button class="btn sm gem" data-act="share" data-id="${p.id}" data-title="${esc(p.title)}">공유하기</button></div>` : ''}
     ${old ? `<div class="oldver">지금 v${v.n}을 보고 있어요. 최신은 v${latest}이에요. <a href="#/p/${p.id}">최신 보기</a></div>` : ''}</div>
     ${main}
+    <div class="verdict mverdict" data-verdict="${p.id}">${verdictInner(p.id)}</div>
     ${p.tags.length ? `<div class="chips">${p.tags.map((t) => `<button class="chip" data-act="tag" data-v="${esc(t)}">#${esc(t)}</button>`).join('')}</div>` : ''}
     <div class="pact"><button class="btn ghost" data-act="save" data-id="${p.id}">${S.saves.has(p.id) ? '저장됨' : '저장'}</button><button class="btn ghost" data-act="share" data-id="${p.id}" data-title="${esc(p.title)}">공유</button>
       ${canWrite() ? `<a class="btn ghost" href="#/remix/${p.id}/${v.n}">리믹스</a>` : ''}${(mine || isMod()) && canWrite() ? `<a class="btn ghost" href="#/edit/${p.id}">수정판 올리기</a>` : ''}
@@ -120,8 +121,8 @@ function drawThread() {
     if (col) return `<button class="collapsed" data-expand="${c.id}">[+] ${c.deleted ? '삭제된 댓글' : low ? `점수가 낮아 접힌 댓글 (${sc}점)` : '접힌 댓글'} · 답글 ${count(c.id)}개</button>`;
     return `<div class="cmt${c.flair === 'gem' && !c.deleted ? ' gemc' : ''}" id="c-${c.id}"><button class="rail" data-collapse="${c.id}" title="접기" aria-label="이 스레드 접기"><i></i></button><div style="min-width:0">
       <div class="ch">${c.deleted ? '<span>삭제됨</span>' : `${c.author ? `<a class="who nm" href="#/u/${esc(c.author.username)}">${avatarHtml(c.author, 22)}<span>${esc(c.author.name)}</span></a>` : '<span>탈퇴한 사용자</span>'}${c.authorId && c.authorId === p.authorId ? '<span class="pill">작성자</span>' : ''}
-        ${c.flair !== 'opinion' ? `<span class="flair ${esc(c.flair)}">${esc(FLAIRS[c.flair] || '')}</span>` : ''}`}<span class="pill">v${c.version}</span>${c.hidden ? '<span class="pill warn">숨김</span>' : ''}${c.resolvedIn ? `<a class="pill gem" href="#/p/${p.id}/v/${c.resolvedIn}" style="text-decoration:none">v${c.resolvedIn}에서 반영</a>` : ''}<span>${ago(c.createdAt)}${c.editedAt ? ' · 수정됨' : ''}</span></div>
-      ${d.editing === c.id ? box('edit:' + c.id, '') : `<div class="ctext">${c.deleted ? '<span class="muted">[삭제된 댓글]</span>' : esc(c.text)}</div>`}
+        ${c.flair !== 'opinion' ? `<span class="flair ${esc(c.flair)}">${esc(FLAIRS[c.flair] || '')}</span>` : ''}`}<span class="pill">v${c.version}</span>${c.hidden ? '<span class="pill warn">숨김</span>' : ''}${c.resolvedIn ? `<a class="pill gem" href="#/p/${p.id}/v/${c.resolvedIn}" style="text-decoration:none">v${c.resolvedIn}에서 반영</a>` : ''}<span>${ago(c.createdAt)}</span>${c.editedAt ? '<span>· 수정됨</span>' : ''}</div>
+      ${d.editing === c.id ? box('edit:' + c.id, '') : (c.deleted ? '<div class="muted">[삭제된 댓글]</div>' : `<div class="ctext">${esc(c.text)}</div>`)}
       ${c.deleted ? '' : `<div class="cact">${voteBox('c', c.id, true)}${canWrite() && !p.locked && depth < 8 ? `<button class="linkbtn" data-reply="${c.id}">답글</button>` : ''}
         ${mine && canWrite() ? `<button class="linkbtn" data-edit="${c.id}">수정</button>` : ''}${mine || canMod ? `<button class="linkbtn" data-delc="${c.id}">삭제</button>` : ''}
         ${api.me && !mine ? `<button class="linkbtn" data-act="report" data-t="c" data-id="${c.id}">${S.reports.has('c:' + c.id) ? '신고함' : '신고'}</button>` : ''}
@@ -135,7 +136,7 @@ function drawThread() {
     <div class="seg" role="group" aria-label="댓글 정렬">${[['best', '베스트'], ['new', '최신'], ['old', '오래된 순']].map(([k, l]) => `<button data-csort="${k}" aria-pressed="${sortK === k}">${l}</button>`).join('')}</div></div>
     ${p.locked ? '<p class="muted" style="font-size:13px">운영자가 이 글의 댓글을 잠갔어요. 기존 의견은 읽을 수 있어요.</p>'
       : canWrite() ? box('root', '이 결과물에서 가치 있는 점, 아쉬운 점, 고칠 점을 남겨 주세요')
-      : api.me ? '<p class="muted" style="font-size:13px">작성이 제한된 계정이에요.</p>' : '<p class="muted" style="font-size:13px"><a href="#/login">로그인</a>하면 의견을 남길 수 있어요.</p>'}
+      : api.me ? '<p class="muted" style="font-size:13px">작성이 제한된 계정이에요.</p>' : '<p class="muted" style="font-size:13px">의견을 남기려면 로그인해 주세요. <a class="btn sm" href="#/login">로그인</a></p>'}
     ${roots.length ? roots.map((c) => node(c, 0)).join('') : '<p class="muted" style="font-size:13px">아직 의견이 없어요. 첫 판정 이유를 남겨 주세요.</p>'}</section>`;
   el.querySelectorAll('textarea[data-draft]').forEach((t) => {
     const k = t.dataset.draft; t.value = d.drafts[k] ?? (k.startsWith('edit:') ? d.comments.find((c) => c.id === k.slice(5))?.text || '' : '');
@@ -182,9 +183,9 @@ function drawSide() {
     ${api.aiAvailable ? `<section class="panel"><h2>토론 요약</h2><p>댓글과 판정을 Claude가 정리해 줘요. 어디가 보석이고 어디가 슬롭인지 한눈에 봐요.</p>
       <div id="sumOut">${d.sum ? `<div class="ai-sum"><div class="md">${md(d.sum)}</div></div>` : ''}</div>
       <button class="btn sm" id="sumGo" ${d.comments.filter((c) => !c.deleted).length ? '' : 'disabled title="댓글이 생기면 요약할 수 있어요"'}>${d.sum ? '다시 요약' : '요약하기'}</button></section>` : ''}
-    ${d.versions.length > 1 ? `<section class="panel"><h2>수정 이력</h2><div class="hist">${d.versions.slice().reverse().map((x) => `<a href="#/p/${p.id}/v/${x.n}" aria-current="${x.n === v?.n}"><b class="mono">v${x.n}</b><div><div>${esc(x.note || '메모 없음')}</div><div class="m">${ago(x.createdAt)} · 이 버전에 단 의견 ${d.comments.filter((c) => c.version === x.n).length}</div></div></a>`).join('')}</div></section>` : ''}
-    ${d.remixes?.length ? `<section class="panel"><h2>이 글의 리믹스</h2><div class="hist">${d.remixes.map((x) => `<a href="#/p/${x.id}"><b class="mono">${x.score}</b><div>${esc(x.title)}<div class="m">${ago(x.createdAt)}</div></div></a>`).join('')}</div></section>` : ''}
-    <section class="panel"><h2>작성 정보</h2><p>${who(p.author, p.isExample)}</p><p>${p.community ? esc(p.community.name) : ''} · ${esc(KINDS[p.kind]?.[0] || '')}${p.tool ? ` · ${esc(p.tool)}` : ''}</p>
+    ${d.versions.length > 1 ? `<section class="panel"><h2>수정 이력</h2><div class="hist">${d.versions.slice().reverse().map((x) => `<a href="#/p/${p.id}/v/${x.n}" aria-current="${x.n === v?.n}"><b class="mono">v${x.n}</b><div><div${x.note ? ' data-ugc' : ''}>${esc(x.note || '메모 없음')}</div><div class="m">${ago(x.createdAt)} · 이 버전에 단 의견 ${d.comments.filter((c) => c.version === x.n).length}</div></div></a>`).join('')}</div></section>` : ''}
+    ${d.remixes?.length ? `<section class="panel"><h2>이 글의 리믹스</h2><div class="hist">${d.remixes.map((x) => `<a href="#/p/${x.id}"><b class="mono">${x.score}</b><div><span data-ugc>${esc(x.title)}</span><div class="m">${ago(x.createdAt)}</div></div></a>`).join('')}</div></section>` : ''}
+    <section class="panel"><h2>작성 정보</h2><p>${who(p.author, p.isExample)}</p><p>${p.community ? `<span>${esc(p.community.name)}</span> · ` : ''}<span>${esc(KINDS[p.kind]?.[0] || '')}</span>${p.tool ? ` · <span data-ugc>${esc(p.tool)}</span>` : ''}</p>
       ${p.isExample ? '<p>Slop Lab이 게시판 사용법을 보여 주려고 Claude로 만들어 올린 예시예요. 판정과 의견은 실제로 남길 수 있어요.</p>' : ''}</section>`;
   const sg = $('#sumGo'); if (sg) sg.onclick = () => summarize(sg);
 }

@@ -192,6 +192,21 @@ const D = {
   '댓글이 생기면 요약할 수 있어요': 'Available once there are comments', '다시 요약': 'Summarize again', '요약하기': 'Summarize', '수정 이력': 'Version history', '메모 없음': 'no note',
   '이 글의 리믹스': 'Remixes', '작성 정보': 'About this post', 'Slop Lab이 게시판 사용법을 보여 주려고 Claude로 만들어 올린 예시예요. 판정과 의견은 실제로 남길 수 있어요.': 'An example Slop Lab made with Claude to show how things work. Votes and comments are real.',
   '요약하려면 로그인해 주세요': 'Log in to summarize', '정리하는 중…': 'Summarizing…', '요약하지 못했어요.': "Couldn't summarize.",
+  // guests, limits, empty states, share
+  '판정(▲/▼)은 가입하지 않아도 할 수 있어요. 글과 댓글을 쓰려면 가입해 주세요.': 'You can judge (▲/▼) without an account. Sign up to post and comment.',
+  '가입하면 확인 메일이 가요. 메일의 링크를 누르면 가입이 끝나요.': "We'll email you a confirmation link. Click it and you're in.",
+  '판정했어요. 이유를 남기거나 글을 올리려면 가입해 주세요': 'Verdict saved. Sign up to leave reasons or post your own.',
+  '짧은 시간에 너무 많이 올렸어요. 잠시 후 다시 해 주세요.': "That's a lot in a short time. Please try again a bit later.",
+  '글을 쓰려면 먼저 로그인해 주세요.': 'Please log in to post.', '의견을 남기려면 로그인해 주세요.': 'Log in to comment.', '운영자로 로그인해 주세요.': 'Please log in as a moderator.',
+  '이미 가입된 이메일이에요. "로그인"을 눌러 주세요.': 'That email is already registered. Use "Log in" instead.',
+  'http:// 또는 https://로 시작하는 링크 주소를 넣어 주세요.': 'Enter a link that starts with http:// or https://.',
+  '저장함은 로그인해야 쓸 수 있어요.': 'Log in to use Saved.', '저장한 글이 없어요. 글 아래의 "저장"을 누르면 여기에 모여요.': 'Nothing saved yet. Tap "Save" under a post to keep it here.',
+  '판정하기에서 ▲/▼를 눌러 주세요. 보석 3표 이상, 비율 75% 이상이면 여기에 모여요.': 'Vote ▲/▼ in Judge. Posts with 3+ gem votes and a 75% gem ratio land here.',
+  '이 언어로 된 글이 아직 없어요': 'No posts in this language yet', '다른 언어로 된 글이 있을 수 있어요.': 'There may be posts in other languages.', '모든 언어 보기': 'Show all languages',
+  '더 불러오지 못했어요. 다시 눌러 주세요.': "Couldn't load more. Please try again.",
+  '어디가 보석인가요? 이유를 남기면 "가치 발견" 댓글이 돼요.': 'What makes it a gem? Your reason becomes a "Found value" comment.',
+  '무엇이 아쉬웠나요? 이유를 남기면 "개선 제안" 댓글이 돼요.': 'What fell short? Your reason becomes a "Suggestion" comment.',
+  '스레드': 'Threads', '페이스북': 'Facebook', '레딧': 'Reddit', '실행할 코드가 없어요': 'No code to run',
   '첫 버전': 'first version', '예시 게시물': 'example post', '언어': 'Language', '글 언어': 'Post language', '콘텐츠 언어': 'Content language', '모든 언어': 'All languages',
 };
 
@@ -218,14 +233,14 @@ const R = [
   [/^오늘 (\d+)개를 판정했어요\. 새 글이 올라오면 다시 와 주세요\.$/, 'You judged $1 today. Come back when new posts arrive.'],
   [/^(.+)를 팔로우했어요$/, (m, c) => `Following ${tr(c)}`], [/^v(\d+)을 올렸어요$/, 'Posted v$1'], [/^@(.+)님을 운영자로 추가했어요$/, 'Added @$1 as moderator'],
   [/^검색: (.*) ✕$/, 'Search: $1 ✕'], [/^도구: (.*) ✕$/, 'Tool: $1 ✕'], [/^신고 (\d+)$/, '$1 report(s)'], [/^최근 (.+)$/, 'latest $1'], [/^사유: (.*)$/, 'Reason: $1'],
+  [/^\[\+\] 점수가 낮아 접힌 댓글 \((-?\d+)점\) · 답글 (\d+)개$/, (m, s, n) => `[+] Collapsed for low score (${s}) · ${n} repl${n === '1' ? 'y' : 'ies'}`],
   [/^\[\+\] (.+) · 답글 (\d+)개$/, (m, a, n) => `[+] ${tr(a)} · ${n} repl${n === '1' ? 'y' : 'ies'}`],
-  [/^\[\+\] 점수가 낮아 접힌 댓글 \((-?\d+)점\) · 답글 (\d+)개$/, '[+] Collapsed (score $1) · $2 replies'],
   [/^지금 v(\d+)을 보고 있어요\. 최신은 v(\d+)이에요\.$/, "You're viewing v$1. The latest is v$2."],
   [/^수정판 올리기 · v(\d+)$/, 'New version · v$1'], [/^리믹스: (.+)$/, 'Remix: $1'], [/^(.+)에서 찾은 …$/, 'Found on $1 …'],
   [/^커뮤니티: (.+)$/, (m, c) => `Community: ${tr(c)}`], [/^(.+)로 이동$/, (m, c) => `Move to ${tr(c)}`], [/^(.+)\(으\)로 옮겼어요$/, (m, c) => `Moved to ${tr(c)}`],
   [/^← (.+)$/, (m, c) => `← ${tr(c)}`], [/^(.+) 생김$/, 'created $1'], [/^· (.+) 가입$/, '· joined $1'], [/^(.+) 가입$/, 'joined $1'], [/^· 수정 (.+)$/, '· edited $1'],
-  [/^운영자가 숨긴 글이에요(.*)\. 작성자와 운영자에게만 보여요\.$/, 'Hidden by a moderator$1. Only the author and moderators can see it.'],
-  [/^운영자가 이 계정의 글쓰기·댓글·판정을 제한했어요(.*)\. 읽기는 계속할 수 있어요\.$/, 'A moderator restricted this account from posting, commenting and voting$1. You can still read.'],
+  [/^운영자가 숨긴 글이에요(.*)\. 작성자와 운영자에게만 보여요\.$/, (m, r) => `Hidden by a moderator${r.replace(/^ \(사유: (.*)\)$/, ' (reason: $1)')}. Only the author and moderators can see it.`],
+  [/^운영자가 이 계정의 글쓰기·댓글·판정을 제한했어요(.*)\. 읽기는 계속할 수 있어요\.$/, (m, r) => `A moderator restricted this account from posting, commenting and voting${r.replace(/^ \(사유: (.*)\)$/, ' (reason: $1)')}. You can still read.`],
   [/^\(사유: (.*)\)$/, '(reason: $1)'], [/^ \(사유: (.*)\)$/, ' (reason: $1)'],
   [/^작성자 제한: (.+)$/, 'Restrict author: $1'], [/^(.+)에 글쓰기$/, (m, c) => `Post in ${tr(c)}`],
   [/^"(.+)" 커뮤니티가 없어요$/, 'The "$1" community does not exist'], [/^"(.+)"에 맞는 커뮤니티가 없어요$/, 'No communities match "$1"'],
@@ -234,6 +249,9 @@ const R = [
   [/^오늘 (\d+)개 · 남은 글 (\d+)개$/, 'Today $1 · $2 left'], [/^(\d+)명 팔로우 · 글 (\d+)$/, '$1 followers · $2 posts'], [/^· 이 버전에 단 의견 (\d+)$/, '· $1 comments on this version'],
   [/^(.+) · 이 버전에 단 의견 (\d+)$/, '$1 · $2 comments on this version'],
   [/^(.+) 설정$/, (m, c) => `${tr(c)} settings`],
+  [/^알림 (\d+)개$/, '$1 notifications'], [/^… (\d+)줄 동일 …$/, '… $1 unchanged lines …'], [/^(.+) \(나\)$/, '$1 (you)'],
+  [/^(.+) · c\/([a-z0-9-]+)$/, (m, n, s) => `${tr(n)} · c/${s}`],
+  [/^아래 개선 제안·질문 중 이번에 반영한 것을 고르면 "v(\d+)에서 반영"으로 표시되고, 쓴 사람에게 알림이 가요\.$/, 'Pick the suggestions and questions this version addresses: they get marked "addressed in v$1" and their authors are notified.'],
 ];
 
 /* ago() strings */
@@ -252,6 +270,7 @@ export function t(s) {
   return s;
 }
 
+const ATTRS = ['placeholder', 'title', 'aria-label', 'label'];
 const SKIP = '.md, .ctext, .ptitle, .excerpt, pre, code, textarea, .judge-title, .article h1, .linkcard, [data-ugc], .note .q, .mono-ugc, script, style';
 const HANGUL = /[가-힣]/;
 // only write when the value actually changes, or the observer would loop forever
@@ -262,13 +281,16 @@ function translateNode(n) {
     const p = n.parentElement; if (!p || p.closest(SKIP)) return;
     const v = t(n.nodeValue); if (v !== n.nodeValue) n.nodeValue = v;
   } else if (n.nodeType === 1) {
+    for (const a of ATTRS) setAttr(n, a);
     if (n.matches?.(SKIP)) return;
-    for (const a of ['placeholder', 'title', 'aria-label']) setAttr(n, a);
     if (n.tagName === 'INPUT' && (n.type === 'submit' || n.type === 'button') && HANGUL.test(n.value)) { const nv = t(n.value); if (nv !== n.value) n.value = nv; }
-    const w = document.createTreeWalker(n, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, { acceptNode: (x) => (x.nodeType === 1 && x.matches(SKIP) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT) });
+    const w = document.createTreeWalker(n, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, { acceptNode: (x) => {
+      if (x.nodeType === 1 && x.matches(SKIP)) { for (const a of ATTRS) setAttr(x, a); return NodeFilter.FILTER_REJECT; }
+      return NodeFilter.FILTER_ACCEPT;
+    } });
     let x; while ((x = w.nextNode())) {
       if (x.nodeType === 3) translateNode(x);
-      else for (const a of ['placeholder', 'title', 'aria-label']) setAttr(x, a);
+      else for (const a of ATTRS) setAttr(x, a);
     }
   }
 }
@@ -283,6 +305,6 @@ export function startTranslator() {
       else if (m.type === 'attributes') translateNode(m.target);
       else m.addedNodes.forEach(translateNode);
     }
-  }).observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['placeholder', 'title', 'aria-label'] });
+  }).observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
 }
 export const tt = t; // for toasts and dialogs built as strings

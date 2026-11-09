@@ -1,5 +1,6 @@
 import { api, S, $, app, KINDS, voteBox, who, sandboxFrame, savePrefs, loadMyVotes, canWrite, isCommunityMod, followIds, remember, commBySlug, commLink, followBtn, icon, gradFor, cav } from '../core.js';
 import { md } from '../text.js';
+import { t as tr } from '../i18n.js';
 import { esc, safeUrl, safeImgs, domain, ago } from '../text.js';
 
 const PAGE = 30;
@@ -11,9 +12,9 @@ export async function renderFeed() {
   let c = null;
   if (v.slug) {
     c = commBySlug(v.slug);
-    if (!c) { app.innerHTML = '<div class="skel" style="height:140px"></div>'; try { c = remember(await api.getCommunity(v.slug)); } catch { /* shown below */ } if (my !== feedToken) return; }
+    if (!c) { app.innerHTML = '<div class="skel" style="height:140px"></div>'; try { c = remember(await api.getCommunity(v.slug)); } catch { /* shown below */ } if (my !== feedToken || S.view !== v) return; }
     if (!c) { app.innerHTML = `<div class="empty"><h2>"${esc(v.slug)}" 커뮤니티가 없어요</h2><p class="muted">주소를 확인하거나, 직접 만들어 보세요.</p><a class="btn pri" href="#/communities/new">커뮤니티 만들기</a> <a class="btn" href="#/communities">커뮤니티 찾기</a></div>`; return; }
-    v.communityId = c.id; document.title = `${c.name} · Slop Lab`;
+    v.communityId = c.id; document.title = `${tr(c.name)} · Slop Lab`;
   }
   // home falls back to popular for visitors and members who follow nothing
   const homeFallback = v.special === 'home' && (!api.me || !followIds().length);
@@ -52,7 +53,7 @@ async function loadPage(my) {
   try {
     const special = S.feed.homeFallback ? null : v.special;
     const r = await api.listPosts({ communityId: v.communityId, special, followIds: followIds(), clang: S.prefs.clang, sort: S.prefs.sort, win: S.prefs.win, q: S.q, tool: F.tool, tag: F.tag, offset: S.feed.posts.length, limit: PAGE });
-    if (my !== feedToken) return;
+    if (my !== feedToken || S.view !== v) return;
     r.posts.forEach((p) => { S.cache.set(p.id, Object.assign(S.cache.get(p.id) || {}, p)); if (p.community) remember(p.community); });
     await loadMyVotes(r.posts.map((p) => p.id));
     if (my !== feedToken) return;
@@ -64,19 +65,23 @@ async function loadPage(my) {
 function drawList() {
   const el = $('#feedBody'); if (!el) return; const f = S.feed, v = S.view;
   app.querySelectorAll('[data-layout]').forEach((b) => b.setAttribute('aria-pressed', String(S.prefs.layout === b.dataset.layout)));
-  if (f.error) { el.innerHTML = `<div class="banner warnb">글을 불러오지 못했어요. 잠시 후 새로고침해 주세요.</div>`; return; }
+  if (f.error && !f.posts.length) { el.innerHTML = `<div class="banner warnb">글을 불러오지 못했어요. 잠시 후 새로고침해 주세요.</div>`; return; }
   if (!f.posts.length) {
-    el.innerHTML = S.q || S.filters?.tool || S.filters?.tag ? '<div class="banner">조건에 맞는 글이 없어요.</div>'
-      : v.special === 'gems' ? '<div class="empty"><h2>아직 보석으로 판정된 글이 없어요</h2><p class="muted">"판정 대기" 탭에서 아직 아무도 판정하지 않은 글을 골라 ▲/▼를 눌러 주세요.</p><a class="btn" href="#/">판정하러 가기</a></div>'
+    const otherLangs = S.prefs.clang !== 'all' && !S.q && !S.filters?.tool && !S.filters?.tag && v.special !== 'saved';
+    el.innerHTML = v.special === 'saved' && !api.me ? '<div class="banner">저장함은 로그인해야 쓸 수 있어요. <a class="btn sm" href="#/login">로그인</a></div>'
+      : otherLangs ? `<div class="empty"><h2>이 언어로 된 글이 아직 없어요</h2><p class="muted">다른 언어로 된 글이 있을 수 있어요.</p><button class="btn" id="allLangs">모든 언어 보기</button>${canWrite() && v.special !== 'gems' ? ` <a class="btn pri" href="#/submit${v.slug ? '/' + esc(v.slug) : ''}">첫 글 올리기</a>` : ''}</div>`
+      : S.q || S.filters?.tool || S.filters?.tag ? '<div class="banner">조건에 맞는 글이 없어요.</div>'
+      : v.special === 'gems' ? '<div class="empty"><h2>아직 보석으로 판정된 글이 없어요</h2><p class="muted">판정하기에서 ▲/▼를 눌러 주세요. 보석 3표 이상, 비율 75% 이상이면 여기에 모여요.</p><a class="btn" href="#/judge">판정하러 가기</a></div>'
       : v.special === 'saved' ? '<div class="banner">저장한 글이 없어요. 글 아래의 "저장"을 누르면 여기에 모여요.</div>'
       : S.prefs.sort === 'contro' ? '<div class="banner">의견이 갈리는 글이 아직 없어요.</div>'
       : S.prefs.sort === 'pending' ? '<div class="banner">판정을 기다리는 글이 없어요. 모두 5표 이상 받았어요.</div>'
       : v.special === 'home' ? '<div class="empty"><h2>팔로우한 커뮤니티에 아직 글이 없어요</h2><p class="muted">다른 커뮤니티도 둘러보세요.</p><a class="btn" href="#/communities">커뮤니티 찾기</a> <a class="btn" href="#/popular">인기 글 보기</a></div>'
       : `<div class="empty"><h2>아직 글이 없어요</h2><p class="muted">첫 글을 올려 보세요. 사용한 도구와 프롬프트를 함께 적으면 다른 사람이 재현하고 판정하기 쉬워요.</p>${canWrite() ? `<a class="btn pri" href="#/submit${v.slug ? '/' + esc(v.slug) : ''}">첫 글 올리기</a>` : ''}</div>`;
+    const al = $('#allLangs'); if (al) al.onclick = () => { S.prefs.clang = 'all'; savePrefs(); renderFeed(); };
     return;
   }
   el.innerHTML = `<div class="list ${S.prefs.layout === 'compact' ? 'compact' : ''}">${f.posts.map(postRow).join('')}</div>
-    ${f.hasMore ? '<div class="more"><button class="btn" id="moreBtn">더 보기</button></div>' : ''}`;
+    ${f.error ? '<div class="banner warnb">더 불러오지 못했어요. 다시 눌러 주세요.</div>' : ''}${f.hasMore || f.error ? '<div class="more"><button class="btn" id="moreBtn">더 보기</button></div>' : ''}`;
   const mb = $('#moreBtn'); if (mb) mb.onclick = () => { mb.disabled = true; mb.textContent = '불러오는 중…'; loadPage(feedToken); };
   setupPreviews(el);
 }
@@ -120,7 +125,7 @@ function thumbHtml(p) {
 const codeCache = new Map();
 export const getCode = (id) => { if (!codeCache.has(id)) codeCache.set(id, api.getPostCode(id).catch(() => { codeCache.delete(id); return ''; })); return codeCache.get(id); };
 let io;
-function setupPreviews(root) {
+export function setupPreviews(root) {
   io?.disconnect();
   io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { io.unobserve(e.target); loadPreview(e.target); } }), { rootMargin: '200px' });
   root.querySelectorAll('[data-frame]').forEach((el) => io.observe(el));
@@ -150,7 +155,7 @@ async function renderSide(c) {
     ${!c ? '<section class="panel" id="discover"></section>' : ''}`;
   };
   draw(null, null, null);
-  const [st, ps, mods, top] = await Promise.all([api.boardStats(c?.id).catch(() => null), !c && api.me ? api.profileStats(api.me.id).catch(() => null) : null,
+  const [st, ps, mods, top] = await Promise.all([api.boardStats(c?.id, S.prefs.clang).catch(() => null), !c && api.me ? api.profileStats(api.me.id).catch(() => null) : null,
     c ? api.communityMods(c.id).catch(() => []) : null, !c ? api.listCommunities({ limit: 8 }).catch(() => []) : null]);
   if (S.view !== v) return;
   draw(st, ps, mods);

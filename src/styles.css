@@ -467,3 +467,8 @@ footer{background:transparent}
   .iconbtn{width:34px;height:34px}
 }
 @media (max-width:420px){ .logo .wm{display:none} }
+
+/* phones: the side rail (with the verdict buttons) sits below the comments, so repeat the verdict under the post */
+.mverdict{display:none}
+@media (max-width:640px){.mverdict{display:flex;margin:14px 0 4px;padding:12px;border:1px solid var(--line);border-radius:var(--r);background:var(--sunk)}}
+.judge-more{display:inline-block;margin-top:4px;font-size:14px}

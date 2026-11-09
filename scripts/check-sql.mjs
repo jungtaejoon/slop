@@ -12,11 +12,11 @@ const fail = (m) => { failures++; console.log('  ✗ ' + m); };
 await db.exec(`
   create role anon nologin; create role authenticated nologin; create role service_role nologin bypassrls;
   create schema auth; create schema storage;
-  create table auth.users (id uuid primary key, email text, raw_user_meta_data jsonb default '{}');
+  create table auth.users (id uuid primary key, email text, raw_user_meta_data jsonb default '{}', is_anonymous boolean not null default false);
   create function auth.uid() returns uuid language sql stable as $$
     select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
   create table storage.buckets (id text primary key, name text, public boolean, file_size_limit bigint, allowed_mime_types text[]);
-  create table storage.objects (id uuid primary key default gen_random_uuid(), bucket_id text, name text, owner uuid);
+  create table storage.objects (id uuid primary key default gen_random_uuid(), bucket_id text, name text, owner uuid, created_at timestamptz default now());
   alter table storage.objects enable row level security;
   create function storage.foldername(name text) returns text[] language sql immutable as $$ select string_to_array(name, '/') $$;
   grant usage on schema auth, storage, public to anon, authenticated;
@@ -152,6 +152,46 @@ await as(U.a, `select set_community_mod($1, 'userb', true)`, [aiId]);
 (await db.query(`select role from community_members where community_id = $1 and user_id = $2`, [aiId, U.b])).rows[0].role === 'mod' ? ok('mod adds a co-moderator') : fail('add mod');
 const feed = (await as(U.b, `select id from post_feed where community_id in (select community_id from community_members where user_id = $1)`, [U.b])).rows.length;
 feed > 0 ? ok(`home feed query returns ${feed} posts`) : fail('home feed empty');
+
+// ---------------------------------------------------------------- guests (anonymous sign-in)
+const G = '00000000-0000-0000-0000-0000000000e1';
+await db.exec(`insert into auth.users (id, is_anonymous) values ('${G}', true)`);
+const gp = (await db.query(`select username, is_guest, (select count(*)::int from community_members where user_id = $1) follows from profiles where id = $1`, [G])).rows[0];
+gp?.is_guest && /^guest_[0-9a-f]{6}$/.test(gp.username) && gp.follows === 0 ? ok(`guest profile ${gp.username}, no default follows`) : fail(JSON.stringify(gp));
+await as(G, `insert into post_votes (post_id, value) values ($1, 1)`, [otherP]);
+(await db.query(`select up_count from posts where id = $1`, [otherP])).rows[0].up_count === 2 ? ok('guest can judge (vote)') : fail('guest vote not counted');
+await expectError('guest cannot post', () => as(G, `select create_post($1)`, [JSON.stringify({ community_id: CID.web, kind: 'text', title: 'x' })]));
+await expectError('guest cannot comment', () => as(G, `insert into comments (post_id, text) values ($1, 'x')`, [otherP]));
+await expectError('guest cannot report', () => as(G, `insert into reports (target_type, target_id, reason) values ('post', $1, '기타')`, [otherP]));
+await expectError('guest cannot follow', () => as(G, `insert into community_members (community_id) values ($1)`, [CID.art]));
+await expectError('guest cannot create a community', () => as(G, `select create_community($1)`, [JSON.stringify({ slug: 'guest-made', name: 'x' })]));
+await as(G, `update profiles set is_guest = false where id = $1`, [G]);
+(await db.query(`select is_guest from profiles where id = $1`, [G])).rows[0].is_guest ? ok("guest can't clear their own guest flag") : fail('guest flag cleared by client');
+await db.exec(`update auth.users set is_anonymous = false, email = 'g@example.com' where id = '${G}'`);
+const gu = (await db.query(`select is_guest, (select count(*)::int from community_members where user_id = $1) follows from profiles where id = $1`, [G])).rows[0];
+!gu.is_guest && gu.follows === 10 ? ok('guest who links an email becomes a member and follows the defaults') : fail(JSON.stringify(gu));
+
+// ---------------------------------------------------------------- image URLs
+await expectError('javascript: image URL refused', () => as(U.b, `select create_post($1)`, [JSON.stringify({ community_id: CID.art, kind: 'image', title: 'x', images: ['javascript:alert(1)'] })]));
+await expectError('data: image URL refused on edit', () => as(U.b, `select save_post_version($1, $2)`, [otherP, JSON.stringify({ title: 'x', images: ['data:text/html,x'] })]));
+await as(U.b, `select create_post($1)`, [JSON.stringify({ community_id: CID.art, kind: 'image', title: 'imgs', images: ['https://x.supabase.co/a.png', 'examples/art.svg'] })]);
+ok('https and same-site image paths accepted');
+
+// ---------------------------------------------------------------- rate limits
+let made = 0;
+try { for (let i = 0; i < 12; i++) { await as(U.a, `select create_post($1)`, [JSON.stringify({ community_id: CID.web, kind: 'text', title: 'burst ' + i })]); made++; } } catch { /* limit reached */ }
+const aRecent = (await db.query(`select count(*)::int n from posts where author_id = $1 and created_at > now() - interval '1 hour'`, [U.a])).rows[0].n;
+aRecent === 10 ? ok(`post limit: stops at 10 per hour (made ${made} in the burst)`) : fail(`posts in the last hour: ${aRecent}`);
+let cmade = 0;
+try { for (let i = 0; i < 25; i++) { await as(U.b, `insert into comments (post_id, text) values ($1, $2)`, [otherP, 'c' + i]); cmade++; } } catch { /* limit */ }
+const bRecent = (await db.query(`select count(*)::int n from comments where author_id = $1 and created_at > now() - interval '10 minutes'`, [U.b])).rows[0].n;
+bRecent === 20 ? ok(`comment limit: stops at 20 per 10 minutes`) : fail(`comments in 10 min: ${bRecent}`);
+const modBurst = (await as(U.m, `select create_post($1) id`, [JSON.stringify({ community_id: CID.web, kind: 'text', title: 'mod post' })])).rows.length;
+modBurst === 1 ? ok('moderators are not post-limited') : fail('mod limited');
+
+// ---------------------------------------------------------------- sidebar stats per language
+const ls = (await as(null, `select (board_stats(null, 'ko')->>'posts')::int ko, (board_stats(null, 'en')->>'posts')::int en, (board_stats()->>'posts')::int total`)).rows[0];
+ls.ko + ls.en === ls.total && ls.ko > 0 && ls.en > 0 ? ok(`board_stats by language: ko=${ls.ko} en=${ls.en} total=${ls.total}`) : fail(JSON.stringify(ls));
 
 console.log(failures ? `\n${failures} check(s) failed` : '\nall checks passed');
 process.exit(failures ? 1 : 0);

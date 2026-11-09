@@ -1,6 +1,7 @@
 // Community directory, create form and settings (moderators).
 import { api, S, $, app, KINDS, canWrite, isCommunityMod, remember, commBySlug, followBtn, who, toast, errMsg, go, requireLogin } from '../core.js';
 import { esc, ago } from '../text.js';
+import { t as tr } from '../i18n.js'; // not `t`: draw() has a timer variable named t
 
 let dirToken = 0;
 export async function renderDirectory() {
@@ -20,11 +21,11 @@ export async function renderDirectory() {
     if (my !== dirToken) return;
     list.forEach(remember);
     body.innerHTML = list.length ? `<div class="list">${list.map((c) => `<article class="post" style="grid-template-columns:minmax(0,1fr) auto;padding:12px 14px;align-items:center">
-        <a href="#/c/${esc(c.slug)}" style="text-decoration:none;min-width:0"><div class="ptitle" style="margin:0">${esc(c.name)} <span class="mono muted" style="font-size:12px;font-weight:400">c/${esc(c.slug)}</span></div>
-          ${c.description ? `<div class="excerpt" style="-webkit-line-clamp:2;margin:2px 0 4px">${esc(c.description)}</div>` : ''}
+        <a href="#/c/${esc(c.slug)}" style="text-decoration:none;min-width:0"><div class="ptitle" style="margin:0">${esc(tr(c.name))} <span class="mono muted" style="font-size:12px;font-weight:400">c/${esc(c.slug)}</span></div>
+          ${c.description ? `<div class="excerpt" style="-webkit-line-clamp:2;margin:2px 0 4px">${esc(tr(c.description))}</div>` : ''}
           <div class="pmeta"><span><span data-members="${c.id}">${c.members}</span>명 팔로우</span><span>글 ${c.posts}</span><span>${c.isDefault ? '기본 커뮤니티' : ago(c.createdAt) + ' 생김'}</span>${isCommunityMod(c.id) ? '<span class="pill">운영 중</span>' : ''}</div></a>
         ${followBtn(c, true)}</article>`).join('')}</div>`
-      : `<div class="empty"><h2>${st.q ? `"${esc(st.q)}"에 맞는 커뮤니티가 없어요` : '아직 커뮤니티가 없어요'}</h2><p class="muted">첫 번째로 만들어 보세요.</p>${canWrite() ? `<a class="btn pri" href="#/communities/new${st.q ? '?' : ''}">커뮤니티 만들기</a>` : ''}</div>`;
+      : `<div class="empty"><h2>${st.q ? `"${esc(st.q)}"에 맞는 커뮤니티가 없어요` : '아직 커뮤니티가 없어요'}</h2><p class="muted">첫 번째로 만들어 보세요.</p>${canWrite() ? `<a class="btn pri" href="#/communities/new">커뮤니티 만들기</a>` : ''}</div>`;
   };
   let t; $('#cq').oninput = (e) => { clearTimeout(t); t = setTimeout(() => { st.q = e.target.value.trim(); draw(); }, 250); };
   app.querySelectorAll('[data-csort]').forEach((b) => (b.onclick = () => { st.sort = b.dataset.csort; app.querySelectorAll('[data-csort]').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); draw(); }));

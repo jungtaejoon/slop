@@ -14,11 +14,16 @@ const FEED_COLS = 'id,author_id,community_id,community_slug,community_name,kind,
 export function createSupabaseApi(url, key) {
   const sb = createClient(url, key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' } });
   const check = ({ data, error }) => { if (error) throw Object.assign(new Error(error.message), { code: error.code }); return data; };
-  const api = { mode: 'supabase', me: null, aiAvailable: true };
+  const api = { mode: 'supabase', me: null, guest: null, aiAvailable: !!import.meta.env.VITE_AI_ENABLED };
   const listeners = new Set();
 
+  // Guests are anonymous Supabase users who can only vote. For the UI they are
+  // not logged in (api.me stays null); api.guest holds their id.
+  const identityOf = (s) => (s?.user ? (s.user.is_anonymous ? 'g:' : 'u:') + s.user.id : null);
+  let identity = null;
   async function loadMe(session) {
-    if (!session?.user) { api.me = null; return null; }
+    api.guest = session?.user?.is_anonymous ? { id: session.user.id } : null;
+    if (!session?.user || session.user.is_anonymous) { api.me = null; return null; }
     const row = check(await sb.from('profiles').select('*').eq('id', session.user.id).maybeSingle());
     api.me = row ? { ...shape.profile(row), email: session.user.email } : null;
     return api.me;
@@ -26,13 +31,32 @@ export function createSupabaseApi(url, key) {
 
   api.init = async () => {
     const { data } = await sb.auth.getSession();
+    identity = identityOf(data.session);
     await loadMe(data.session);
     sb.auth.onAuthStateChange((evt, session) => {
-      if (evt === 'TOKEN_REFRESHED') return;
       if (evt === 'PASSWORD_RECOVERY') api.recovering = true;
-      loadMe(session).then(() => listeners.forEach((f) => f(api.me)));
+      const next = identityOf(session);
+      // supabase-js re-announces the same session on tab focus and token refresh: nothing changed
+      if (next === identity) return;
+      const member = (x) => !!x && x.startsWith('u:'), wasMember = member(identity);
+      identity = next;
+      // signed out <-> guest (a visitor's first vote) changes nothing on screen
+      if (!wasMember && !member(next)) { api.guest = next ? { id: session.user.id } : null; return; }
+      // run outside the callback: supabase-js asks not to await its own calls in here
+      setTimeout(() => loadMe(session).then(() => listeners.forEach((f) => f(api.me)), (e) => console.error(e)), 0);
     });
     return api.me;
+  };
+  api.uid = () => api.me?.id || api.guest?.id || null;
+  // a visitor's first vote creates a guest session (Supabase Auth: anonymous sign-ins)
+  api.signInGuest = async () => {
+    if (api.me || api.guest) return true;
+    try {
+      const { data, error } = await sb.auth.signInAnonymously();
+      if (error || !data?.user) return false;
+      api.guest = { id: data.user.id }; identity = 'g:' + data.user.id;
+      return true;
+    } catch { return false; }
   };
   api.onAuthChange = (f) => listeners.add(f);
   api.refreshMe = async () => { const { data } = await sb.auth.getSession(); await loadMe(data.session); listeners.forEach((f) => f(api.me)); return api.me; };
@@ -48,7 +72,7 @@ export function createSupabaseApi(url, key) {
   api.resetPassword = async (email) => { check(await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname + '#/settings' })); };
   api.updatePassword = async (password) => { check(await sb.auth.updateUser({ password })); };
   api.signInOAuth = async (provider) => check(await sb.auth.signInWithOAuth({ provider, options: { redirectTo: location.origin + location.pathname } }));
-  api.signOut = async () => { await sb.auth.signOut(); api.me = null; listeners.forEach((f) => f(null)); };
+  api.signOut = async () => { identity = null; api.me = null; api.guest = null; await sb.auth.signOut(); listeners.forEach((f) => f(null)); };
 
   api.updateProfile = async ({ username, displayName, bio }) => {
     check(await sb.from('profiles').update({ username, display_name: displayName, bio }).eq('id', api.me.id));
@@ -107,15 +131,15 @@ export function createSupabaseApi(url, key) {
   api.resolveComment = async (id, n) => { check(await sb.from('comments').update({ resolved_in: n }).eq('id', id)); };
 
   api.myVotes = async ({ postIds = [], commentIds = [] }) => {
-    const out = { p: {}, c: {} }; if (!api.me) return out;
+    const out = { p: {}, c: {} }; if (!api.uid()) return out;
     if (postIds.length) check(await sb.from('post_votes').select('post_id,value').in('post_id', postIds)).forEach((r) => (out.p[r.post_id] = r.value));
     if (commentIds.length) check(await sb.from('comment_votes').select('comment_id,value').in('comment_id', commentIds)).forEach((r) => (out.c[r.comment_id] = r.value));
     return out;
   };
   api.vote = async (type, id, value) => {
     const [table, col] = type === 'p' ? ['post_votes', 'post_id'] : ['comment_votes', 'comment_id'];
-    if (!value) check(await sb.from(table).delete().eq(col, id).eq('user_id', api.me.id));
-    else check(await sb.from(table).upsert({ [col]: id, user_id: api.me.id, value }, { onConflict: `${col},user_id` }));
+    if (!value) check(await sb.from(table).delete().eq(col, id).eq('user_id', api.uid()));
+    else check(await sb.from(table).upsert({ [col]: id, user_id: api.uid(), value }, { onConflict: `${col},user_id` }));
   };
   api.mySaves = async () => (api.me ? new Set(check(await sb.from('saves').select('post_id')).map((r) => r.post_id)) : new Set());
   api.toggleSave = async (id, on) => {
@@ -132,7 +156,10 @@ export function createSupabaseApi(url, key) {
 
   api.report = async (type, id, reason, note) => { check(await sb.from('reports').insert({ target_type: type === 'p' ? 'post' : 'comment', target_id: id, reason, note, reporter_id: api.me.id })); };
   api.myReports = async () => (api.me ? new Set(check(await sb.from('reports').select('target_type,target_id').eq('reporter_id', api.me.id).is('resolved_at', null)).map((r) => `${r.target_type[0]}:${r.target_id}`)) : new Set());
-  api.boardStats = async (cid) => check(await sb.rpc('board_stats', { cid: cid || null }));
+  api.boardStats = async (cid, clang = 'all') => {
+    const r = await sb.rpc('board_stats', { cid: cid || null, clang });
+    return r.error ? check(await sb.rpc('board_stats', { cid: cid || null })) : r.data; // older DB without the language parameter
+  };
 
   // communities
   const CCOLS = 'id,slug,name,description,rules,default_kind,creator_id,is_default,member_count,post_count,created_at';
