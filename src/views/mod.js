@@ -71,6 +71,6 @@ export async function renderMod() {
   </div><aside class="side">
     ${isMod() ? `<section class="panel"><h2>작성 제한 <span class="mono muted">${bans.length}</span></h2>${bans.length ? bans.map((b) => `<div class="mq">${who(b)}<div class="hint">${esc(b.banReason || '')}</div><div class="row"><button class="btn sm" data-act="mod" data-op="unban" data-t="u" data-id="${b.id}" data-name="${esc(b.name)}">제한 해제</button></div></div>`).join('') : '<p>제한된 사람이 없어요.</p>'}</section>` : ''}
     <section class="panel"><h2>운영 기록</h2>${log.length ? log.slice(0, 40).map((l) => `<div class="logrow"><b>${esc(ACT[l.action] || l.action)}</b> ${l.type === 'post' && l.action !== 'delete' ? `<a href="#/p/${l.targetId}">${esc(l.label || '글')}</a>` : `<span class="muted">${esc(l.label || (l.type === 'comment' ? '댓글' : l.type === 'user' ? '사용자' : '글'))}</span>`}${l.reason ? ` <span class="muted">· ${esc(l.reason)}</span>` : ''}<div class="hint">${esc(l.actor?.name || '')} · ${ago(l.createdAt)}</div></div>`).join('') : '<p>아직 기록이 없어요.</p>'}</section>
-    <section class="panel"><h2>운영자 추가</h2><p>커뮤니티 운영자는 각 커뮤니티의 <b>설정</b>에서 아이디로 추가해요. 사이트 전체 운영자는 관리자가 따로 지정해요.</p></section>
+    <section class="panel"><h2>운영자 지정</h2><p>커뮤니티 운영자는 각 커뮤니티의 <b>설정</b>에서 아이디로 추가해요. 사이트 전체 운영자는 관리자가 따로 지정해요.</p></section>
   </aside></div>`;
 }

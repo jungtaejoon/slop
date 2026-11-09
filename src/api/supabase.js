@@ -65,6 +65,8 @@ export function createSupabaseApi(url, key) {
     q = q.eq('hidden', false);
     if (o.authorId) q = q.eq('author_id', o.authorId);
     if (o.tool) q = q.eq('tool', o.tool);
+    // content language is inferred from the title: Hangul means Korean
+    if (o.clang === 'ko') q = q.filter('title', 'match', '[가-힣]'); else if (o.clang === 'en') q = q.not('title', 'match', '[가-힣]');
     if (o.tag) q = q.contains('tags', [o.tag]);
     if (o.q) { const t = o.q.replace(/[%,()*\\]/g, ' ').trim(); if (t) q = q.or(`title.ilike.*${t}*,excerpt.ilike.*${t}*,tool.ilike.*${t}*`); }
     if (o.special === 'saved') { const ids = [...(await api.mySaves())]; if (!ids.length) return { posts: [], hasMore: false }; q = q.in('id', ids); }

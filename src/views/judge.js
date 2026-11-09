@@ -14,7 +14,7 @@ export async function renderJudge() {
   const my = (J = { queue: [], i: 0, scope: J?.scope || 'all', token: Symbol() });
   app.innerHTML = '<div class="judge"><div class="skel" style="height:420px"></div></div>';
   try {
-    const opts = { special: J.scope === 'mine' && followIds().length ? 'home' : null, followIds: followIds(), sort: 'pending', limit: 60 };
+    const opts = { special: J.scope === 'mine' && followIds().length ? 'home' : null, followIds: followIds(), clang: S.prefs.clang, sort: 'pending', limit: 60 };
     const [pending, fresh] = await Promise.all([api.listPosts(opts), api.listPosts({ ...opts, sort: 'new', limit: 40 })]);
     if (J !== my) return;
     const seen = new Set(), all = [...pending.posts, ...fresh.posts].filter((p) => !seen.has(p.id) && seen.add(p.id));

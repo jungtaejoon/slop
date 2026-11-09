@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="750" height="750" viewBox="0 -285 1200 1200">
+  <rect y="-285" width="1200" height="1200" fill="#121412"/>
+  <g opacity="0.9">
+    <circle cx="1010" cy="140" r="210" fill="#123430"/>
+    <path d="M1010 40 L1110 140 L1010 290 L910 140 Z" fill="#3FD0BE"/>
+    <path d="M1010 40 L1060 140 L1010 290 L960 140 Z" fill="#7ee6d8"/>
+  </g>
+  <text x="80" y="210" font-family="Helvetica Neue, Arial, sans-serif" font-weight="800" font-size="104" fill="#ECEEE7">SLOP<tspan fill="#3FD0BE">.</tspan>LAB</text>
+  <text x="80" y="300" font-family="Helvetica Neue, Arial, sans-serif" font-weight="700" font-size="56" fill="#ECEEE7">Find the gems in AI-made stuff</text>
+  <text x="80" y="370" font-family="Helvetica Neue, Arial, sans-serif" font-size="32" fill="#9AA297">Post AI-made apps, art, writing and code. Try them. Judge them. Say why.</text>
+  <g font-family="Helvetica Neue, Arial, sans-serif" font-weight="700" font-size="40">
+    <rect x="80" y="450" width="250" height="84" rx="42" fill="#123430" stroke="#3FD0BE" stroke-width="3"/>
+    <text x="205" y="505" text-anchor="middle" fill="#3FD0BE">▲ Gem</text>
+    <rect x="356" y="450" width="250" height="84" rx="42" fill="#3A2617" stroke="#F09A5E" stroke-width="3"/>
+    <text x="481" y="505" text-anchor="middle" fill="#F09A5E">▼ Slop</text>
+  </g>
+</svg>

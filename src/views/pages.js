@@ -80,7 +80,7 @@ export async function renderProfile(v) {
   await loadMyVotes(list.posts.map((x) => x.id));
   const mine = api.me?.id === p.id;
   app.innerHTML = `<div class="phead">${avatarHtml(p, 64)}<div class="t"><h1>${esc(p.name)}</h1><div class="muted">@${esc(p.username)} · ${ago(p.createdAt)} 가입${p.role !== 'member' ? ` · ${p.role === 'admin' ? '관리자' : '운영자'}` : ''}${p.banned ? ' · <span class="warn">작성 제한됨</span>' : ''}</div>${p.bio ? `<p>${esc(p.bio)}</p>` : ''}</div>
-    ${stats ? `<div class="statrow"><div><b>${stats.karma}</b><span>판정 점수</span></div><div><b>${stats.gems}</b><span>보석</span></div><div><b>${stats.posts}</b><span>글</span></div><div><b>${stats.comments}</b><span>의견</span></div></div>` : ''}
+    ${stats ? `<div class="statrow"><div><b>${stats.karma}</b><span>판정 점수</span></div><div><b>${stats.gems}</b><span>보석</span></div><div><b>${stats.posts}</b><span>게시글</span></div><div><b>${stats.comments}</b><span>의견 수</span></div></div>` : ''}
     ${mine ? '<a class="btn" href="#/settings">프로필 설정</a>' : ''}</div>
     <h2 style="margin:0 0 10px">올린 글</h2>
     ${list.posts.length ? `<div class="list">${list.posts.map(postRow).join('')}</div>` : `<div class="banner">${mine ? '아직 올린 글이 없어요. <a href="#/submit">첫 글을 올려 보세요.</a>' : '아직 올린 글이 없어요.'}</div>`}`;

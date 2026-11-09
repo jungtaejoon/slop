@@ -33,7 +33,7 @@ export async function renderFeed() {
       <div class="row">${c ? followBtn(c) : ''}${v.special === 'gems' ? '<button class="btn" data-act="sharebest">이번 주 보석 공유</button>' : ''}${v.special !== 'saved' ? `<a class="btn${c ? '' : ' pri'}" href="#/submit${c ? '/' + esc(c.slug) : ''}">글쓰기</a>` : ''}</div></div>
     ${v.special === 'gems' ? '' : `<div class="sortbar"><div class="seg" role="group" aria-label="정렬">${sorts.map(([k, l]) => `<button data-sort="${k}" aria-pressed="${S.prefs.sort === k}">${l}</button>`).join('')}</div>
       ${S.prefs.sort === 'top' ? `<select class="inline" id="win" aria-label="기간">${[['day', '오늘'], ['week', '이번 주'], ['month', '이번 달'], ['all', '전체 기간']].map(([k, l]) => `<option value="${k}"${S.prefs.win === k ? ' selected' : ''}>${l}</option>`).join('')}</select>` : ''}
-      <span class="sp"></span><div class="seg" role="group" aria-label="보기">${[['card', '카드'], ['compact', '목록']].map(([k, l]) => `<button data-layout="${k}" aria-pressed="${S.prefs.layout === k}">${l}</button>`).join('')}</div></div>`}
+      <span class="sp"></span><select class="inline" id="clang" aria-label="콘텐츠 언어">${[['all', '모든 언어'], ['en', 'English'], ['ko', '한국어']].map(([k, l]) => `<option value="${k}"${S.prefs.clang === k ? ' selected' : ''}>${l}</option>`).join('')}</select><div class="seg" role="group" aria-label="보기">${[['card', '카드'], ['compact', '목록']].map(([k, l]) => `<button data-layout="${k}" aria-pressed="${S.prefs.layout === k}">${l}</button>`).join('')}</div></div>`}
     ${S.q || F.tool || F.tag ? `<div class="filters">${S.q ? `<button class="fchip" data-clear="q">검색: ${esc(S.q)} ✕</button>` : ''}${F.tool ? `<button class="fchip" data-clear="tool">도구: ${esc(F.tool)} ✕</button>` : ''}${F.tag ? `<button class="fchip" data-clear="tag">#${esc(F.tag)} ✕</button>` : ''}</div>` : ''}
     <div id="feedBody"><div class="list">${'<div class="skel"></div>'.repeat(3)}</div></div></div><aside class="side" id="side"></aside></div>`;
   const wo = $('#welcomeOff'); if (wo) wo.onclick = () => { try { localStorage.setItem('slop-welcome-off', '1'); } catch { /* */ } $('#welcome')?.remove(); };
@@ -41,6 +41,7 @@ export async function renderFeed() {
   app.querySelectorAll('[data-layout]').forEach((b) => (b.onclick = () => { S.prefs.layout = b.dataset.layout; savePrefs(); drawList(); }));
   app.querySelectorAll('[data-clear]').forEach((b) => (b.onclick = () => { const k = b.dataset.clear; if (k === 'q') { S.q = ''; $('#gq').value = ''; } else S.filters = { ...S.filters, [k]: null }; renderFeed(); }));
   const w = $('#win'); if (w) w.onchange = () => { S.prefs.win = w.value; savePrefs(); renderFeed(); };
+  const cl = $('#clang'); if (cl) cl.onchange = () => { S.prefs.clang = cl.value; savePrefs(); renderFeed(); };
   renderSide(c);
   S.feed = { posts: [], hasMore: false, loading: true, homeFallback };
   await loadPage(my);
@@ -50,7 +51,7 @@ async function loadPage(my) {
   const v = S.view, F = S.filters || {};
   try {
     const special = S.feed.homeFallback ? null : v.special;
-    const r = await api.listPosts({ communityId: v.communityId, special, followIds: followIds(), sort: S.prefs.sort, win: S.prefs.win, q: S.q, tool: F.tool, tag: F.tag, offset: S.feed.posts.length, limit: PAGE });
+    const r = await api.listPosts({ communityId: v.communityId, special, followIds: followIds(), clang: S.prefs.clang, sort: S.prefs.sort, win: S.prefs.win, q: S.q, tool: F.tool, tag: F.tag, offset: S.feed.posts.length, limit: PAGE });
     if (my !== feedToken) return;
     r.posts.forEach((p) => { S.cache.set(p.id, Object.assign(S.cache.get(p.id) || {}, p)); if (p.community) remember(p.community); });
     await loadMyVotes(r.posts.map((p) => p.id));
@@ -128,12 +129,12 @@ async function renderSide(c) {
   const el = $('#side'); if (!el) return; const v = S.view, F = S.filters || {};
   const draw = (st, ps, mods) => {
     el.innerHTML = (c ? `<section class="panel"><h2>${esc(c.name)}</h2><p class="mono">c/${esc(c.slug)}</p>${c.description ? `<p>${esc(c.description)}</p>` : ''}
-        <div class="statrow"><div><b data-members="${c.id}">${c.members}</b><span>팔로워</span></div><div><b>${st ? st.posts : c.posts}</b><span>글</span></div><div><b>${st ? st.gems : '–'}</b><span>보석</span></div></div>
+        <div class="statrow"><div><b data-members="${c.id}">${c.members}</b><span>팔로워</span></div><div><b>${st ? st.posts : c.posts}</b><span>게시글</span></div><div><b>${st ? st.gems : '–'}</b><span>보석</span></div></div>
         <div class="row">${followBtn(c, true)}${canWrite() ? `<a class="btn sm" href="#/submit/${esc(c.slug)}">글쓰기</a>` : ''}<button class="btn sm ghost" data-act="sharec" data-slug="${esc(c.slug)}" data-title="${esc(c.name)}">공유</button>${isCommunityMod(c.id) ? `<a class="btn sm ghost" href="#/c/${esc(c.slug)}/settings">커뮤니티 설정</a>` : ''}</div></section>
       ${c.rules ? `<section class="panel"><h2>규칙</h2><div class="md" style="font-size:13.5px">${md(c.rules)}</div></section>` : ''}
       ${mods?.length ? `<section class="panel"><h2>운영자</h2><div class="chips" style="flex-direction:column;align-items:flex-start;gap:6px">${mods.map((m) => who(m)).join('')}</div></section>` : ''}`
       : `<section class="panel"><h2>Slop Lab</h2><p>AI가 만든 결과물을 그냥 넘기지 말고, 써 보고, 판정하고, 이유를 남기는 커뮤니티예요. 주제별 커뮤니티를 팔로우하고, 없으면 직접 만들어요.</p>
-        <div class="statrow"><div><b>${st ? st.posts : '–'}</b><span>글</span></div><div><b>${st ? st.gems : '–'}</b><span>보석</span></div>${ps ? `<div><b>${ps.karma}</b><span>내 판정 점수</span></div>` : ''}</div>
+        <div class="statrow"><div><b>${st ? st.posts : '–'}</b><span>게시글</span></div><div><b>${st ? st.gems : '–'}</b><span>보석</span></div>${ps ? `<div><b>${ps.karma}</b><span>내 판정 점수</span></div>` : ''}</div>
         <a class="btn gem block" href="#/judge" style="margin-bottom:8px">판정하기: 한 장씩 넘기며 판정</a>
       ${canWrite() ? '<div class="row"><a class="btn pri sm" href="#/submit">글쓰기</a><a class="btn sm" href="#/communities/new">커뮤니티 만들기</a></div>' : !api.me ? '<a class="btn block" href="#/login">로그인하고 참여하기</a>' : ''}</section>`)
     + `<section class="panel"><h2>판정 기준</h2><ul><li><b style="color:var(--gem)">▲ 보석</b>: 쓸모 있거나, 재미있거나, 영감을 줘요.</li><li><b style="color:var(--slop)">▼ 슬롭</b>: 시간이 아까웠어요.</li>

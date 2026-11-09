@@ -1,5 +1,7 @@
 // Escaping, markdown-lite (author text is always escaped first), line diff, time.
 
+import { agoText } from './i18n.js';
+
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 export const safeUrl = (u) => (/^https?:\/\/[^\s]+$/i.test(u || '') ? u : '');
 export const domain = (u) => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return ''; } };
@@ -54,6 +56,7 @@ export function diffHtml(a, b) {
 
 export function ago(ts) {
   if (!ts) return ''; const s = (Date.now() - ts) / 1000;
+  const en = agoText(s); if (en) return en;
   if (s < 60) return '방금'; if (s < 3600) return Math.floor(s / 60) + '분 전'; if (s < 86400) return Math.floor(s / 3600) + '시간 전';
   if (s < 86400 * 30) return Math.floor(s / 86400) + '일 전';
   const d = new Date(ts); return `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`;

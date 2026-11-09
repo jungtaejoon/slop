@@ -1,4 +1,7 @@
 import './styles.css';
+import { startTranslator, lang, setLang } from './i18n.js';
+startTranslator();
+{ const ls = document.getElementById('langSel'); ls.value = lang; ls.onchange = () => setLang(ls.value); }
 import { api, S, $, isMod, anyCommunityMod, go, vote, toggleSave, toggleFollow, report, share, openShare, avatarHtml, toast, loadMyCommunities } from './core.js';
 import { esc } from './text.js';
 import { renderFeed } from './views/feed.js';

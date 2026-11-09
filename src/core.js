@@ -13,7 +13,7 @@ export const REPORT_REASONS = ['스팸·광고', '악성 코드·위험한 실�
 export const MAX_CODE = 200 * 1024, MAX_BODY = 40000;
 
 export const S = {
-  prefs: { sort: 'hot', win: 'week', layout: 'card', csort: 'best' },
+  prefs: { sort: 'hot', win: 'week', layout: 'card', csort: 'best', clang: 'all' },
   view: { name: 'boot' }, q: '',
   cache: new Map(),          // post id -> post object (counts are mutated in place on vote)
   votes: { p: {}, c: {} },   // my votes

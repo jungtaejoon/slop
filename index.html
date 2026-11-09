@@ -1,15 +1,16 @@
 <!doctype html>
-<html lang="ko">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <title>Slop Lab</title>
-  <meta name="description" content="AI가 만든 글·이미지·실행물·코드를 올리고, 보석/슬롭으로 판정하고, 토론하며 가치 있는 것을 가려내는 커뮤니티">
+  <meta name="description" content="Slop Lab: post AI-made apps, games, art, writing, code and prompts. Try them right on the page, vote gem or slop, and say why. AI가 만든 것들 속에서 보석을 캐는 커뮤니티.">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Slop Lab">
-  <meta property="og:locale" content="ko_KR">
-  <meta property="og:title" content="Slop Lab · AI가 만든 것들 속에서 보석을 캐는 곳">
-  <meta property="og:description" content="AI로 만든 글·이미지·실행물·코드·프롬프트를 올리고, 직접 써 보고, ▲보석 / ▼슬롭으로 판정하는 커뮤니티">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:locale:alternate" content="ko_KR">
+  <meta property="og:title" content="Slop Lab · Find the gems in AI-made stuff">
+  <meta property="og:description" content="Post AI-made apps, games, art, writing and code. Try them right on the page, vote ▲ gem or ▼ slop, and say why.">
   <meta property="og:image" content="https://jungtaejoon.github.io/slop-lab/og.png">
   <meta property="og:url" content="https://jungtaejoon.github.io/slop-lab/">
   <meta name="twitter:card" content="summary_large_image">
@@ -31,6 +32,7 @@
         <a class="logo" href="#/"><b>SLOP<i>.</i>LAB</b><span>AI가 만든 것들 속에서 보석을 캐는 곳</span></a>
         <input class="gsearch" id="gq" type="search" placeholder="제목·내용·도구 검색  ( / )" aria-label="검색">
         <div class="sp"></div>
+        <label class="langsel" title="Language / 언어"><span aria-hidden="true">🌐</span><select id="langSel" aria-label="Language / 언어"><option value="en">English</option><option value="ko">한국어</option></select></label>
         <a class="btn pri" href="#/submit" id="newBtn">글쓰기</a>
         <div id="authArea" class="row" style="position:relative;flex-wrap:nowrap"></div>
       </div>

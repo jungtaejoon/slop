@@ -20,7 +20,7 @@ if (!existsSync(OUT)) { console.error('run vite build first'); process.exit(1); 
 writeFileSync(`${OUT}/404.html`, `<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>Slop Lab</title><script>
 var p=location.pathname,m=p.match(/^(.*?\\/)(p|c|u)\\/([^/]+)\\/?$/);
 location.replace(m?m[1]+'#/'+m[2]+'/'+m[3]:p.split('/').slice(0,2).join('/')+'/');
-</script></head><body><a href="./">Slop Lab으로 가기</a></body></html>`);
+</script></head><body><a href="./">Go to Slop Lab</a></body></html>`);
 
 if (!URL_ || !KEY) { console.log('demo build: share pages skipped (no Supabase settings)'); process.exit(0); }
 
@@ -34,14 +34,14 @@ function page({ title, desc, image, url, appHash, type = 'article', body, ld, re
   return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(title)} · Slop Lab</title>
 <meta name="description" content="${esc(desc)}"><link rel="canonical" href="${esc(url)}">
-<meta property="og:type" content="${type}"><meta property="og:site_name" content="Slop Lab"><meta property="og:locale" content="ko_KR">
+<meta property="og:type" content="${type}"><meta property="og:site_name" content="Slop Lab"><meta property="og:locale" content="en_US">
 <meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(desc)}">
 <meta property="og:image" content="${esc(image)}"><meta property="og:url" content="${esc(url)}">
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${esc(title)}"><meta name="twitter:description" content="${esc(desc)}"><meta name="twitter:image" content="${esc(image)}">
 ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, '\\u003c')}</script>` : ''}
-${redirect ? `<script>location.replace(${JSON.stringify(SITE + '#' + appHash)});</script>` : ''}<link rel="alternate" type="application/rss+xml" title="Slop Lab 새 글" href="${SITE}rss.xml">
+${redirect ? `<script>location.replace(${JSON.stringify(SITE + '#' + appHash)});</script>` : ''}<link rel="alternate" type="application/rss+xml" title="Slop Lab: new posts" href="${SITE}rss.xml">
 <style>body{font-family:system-ui,-apple-system,"Apple SD Gothic Neo",sans-serif;max-width:640px;margin:40px auto;padding:0 16px;line-height:1.6;color:#1a1c19}a{color:#0b7f73}</style>
-</head><body>${body}<p><a href="${esc(SITE + '#' + appHash)}">Slop Lab에서 보기 →</a></p></body></html>`;
+</head><body>${body}<p><a href="${esc(SITE + '#' + appHash)}">Open in Slop Lab →</a></p></body></html>`;
 }
 
 const [posts, comms] = await Promise.all([
@@ -50,7 +50,7 @@ const [posts, comms] = await Promise.all([
 ]);
 
 for (const p of posts) {
-  const meta = [`c/${p.community_slug}`, p.tool && `${p.tool}로 만듦`, `보석 ${p.up_count} · 슬롭 ${p.down_count} · 의견 ${p.comment_count}`].filter(Boolean).join(' · ');
+  const meta = [`c/${p.community_slug}`, p.tool && `made with ${p.tool}`, `▲ ${p.up_count} gem · ▼ ${p.down_count} slop · ${p.comment_count} comments`].filter(Boolean).join(' · ');
   const desc = clip(`${p.excerpt ? clip(p.excerpt, 110) + ' — ' : ''}${meta}`, 180);
   const url = `${SITE}p/${p.id}/`;
   mkdirSync(`${OUT}/p/${p.id}`, { recursive: true });
@@ -60,10 +60,10 @@ for (const p of posts) {
       author: { '@type': p.is_example || !p.author_username ? 'Organization' : 'Person', name: p.is_example ? 'Slop Lab' : (p.author_name || p.author_username || '익명'), ...(p.author_username ? { url: `${SITE}#/u/${p.author_username}` } : {}) },
       interactionStatistic: [{ '@type': 'InteractionCounter', interactionType: 'https://schema.org/CommentAction', userInteractionCount: p.comment_count },
         { '@type': 'InteractionCounter', interactionType: 'https://schema.org/LikeAction', userInteractionCount: p.up_count }] },
-    body: `<p>${esc(p.community_name)} · AI가 만든 결과물</p><h1>${esc(p.title)}</h1><p>${esc(clip(p.excerpt, 300))}</p><p>${esc(meta)}</p>` }));
+    body: `<p>${esc(p.community_name)} · AI-made</p><h1>${esc(p.title)}</h1><p>${esc(clip(p.excerpt, 300))}</p><p>${esc(meta)}</p>` }));
 }
 for (const c of comms) {
-  const desc = clip(`${c.description || 'AI가 만든 결과물을 모아 판정하는 커뮤니티'} · 팔로워 ${c.member_count} · 글 ${c.post_count}`, 180);
+  const desc = clip(`${c.description || 'A Slop Lab community for AI-made work'} · ${c.member_count} followers · ${c.post_count} posts`, 180);
   mkdirSync(`${OUT}/c/${c.slug}`, { recursive: true });
   writeFileSync(`${OUT}/c/${c.slug}/index.html`, page({ title: `${c.name} (c/${c.slug})`, desc, image: `${SITE}og.png`, url: `${SITE}c/${c.slug}/`, appHash: `/c/${c.slug}`, type: 'website',
     body: `<h1>${esc(c.name)}</h1><p>c/${esc(c.slug)}</p><p>${esc(c.description)}</p>` }));
@@ -72,23 +72,23 @@ for (const c of comms) {
 // weekly best: a real landing page (no redirect) that is easy to share every week
 const WEEK = 7 * 864e5, now = Date.now();
 const rank = (list) => list.slice().sort((a, b) => (b.up_count - b.down_count) - (a.up_count - a.down_count) || (b.up_count + b.down_count) - (a.up_count + a.down_count) || Date.parse(b.created_at) - Date.parse(a.created_at));
-let best = rank(posts.filter((p) => now - Date.parse(p.created_at) < WEEK && p.up_count > 0)).slice(0, 10), bestLabel = '이번 주';
-if (best.length < 3) { best = rank(posts.filter((p) => p.up_count > 0)).slice(0, 10); bestLabel = '지금까지'; }
-if (best.length < 3) { best = posts.slice(0, 10); bestLabel = '최근'; }
-const bestTitle = bestLabel === '최근' ? '최근 올라온 AI 결과물' : `${bestLabel}의 보석 TOP ${best.length}`;
+let best = rank(posts.filter((p) => now - Date.parse(p.created_at) < WEEK && p.up_count > 0)).slice(0, 10), bestLabel = 'this week';
+if (best.length < 3) { best = rank(posts.filter((p) => p.up_count > 0)).slice(0, 10); bestLabel = 'all time'; }
+if (best.length < 3) { best = posts.slice(0, 10); bestLabel = 'recent'; }
+const bestTitle = bestLabel === 'recent' ? 'Latest AI-made posts' : `Top ${best.length} gems ${bestLabel}`;
 mkdirSync(`${OUT}/best`, { recursive: true });
-writeFileSync(`${OUT}/best/index.html`, page({ title: bestTitle, desc: clip(`Slop Lab 사람들이 판정한 ${bestLabel} 가장 좋은 AI 결과물: ${best.slice(0, 3).map((p) => p.title).join(' · ')}`, 180),
+writeFileSync(`${OUT}/best/index.html`, page({ title: bestTitle, desc: clip(`The best AI-made work ${bestLabel}, as judged by Slop Lab: ${best.slice(0, 3).map((p) => p.title).join(' · ')}`, 180),
   image: abs(best.find((p) => p.kind === 'image')?.images?.[0] || ''), url: `${SITE}best/`, appHash: '/gems', type: 'website', redirect: false,
-  body: `<p><a href="${SITE}">SLOP.LAB</a> · AI가 만든 것들 속에서 보석을 캐는 곳</p><h1>${esc(bestTitle)}</h1>
-<p>사람들이 직접 써 보고 ▲보석 / ▼슬롭으로 판정한 결과예요. 3시간마다 갱신돼요.</p>
-<ol style="padding-left:22px">${best.map((p) => `<li style="margin:0 0 14px"><a href="${SITE}#/p/${p.id}" style="font-weight:700;font-size:17px">${esc(p.title)}</a><br><span style="color:#5d645b;font-size:14px">${esc(p.community_name)} · 보석 ${p.up_count} · 슬롭 ${p.down_count} · 의견 ${p.comment_count}${p.tool ? ' · ' + esc(p.tool) : ''}</span>${p.excerpt ? `<br><span style="font-size:14px">${esc(clip(p.excerpt, 120))}</span>` : ''}</li>`).join('')}</ol>
-<p><a href="${SITE}#/judge">나도 판정하러 가기 →</a></p>` }));
+  body: `<p><a href="${SITE}">SLOP.LAB</a> · Find the gems in AI-made stuff</p><h1>${esc(bestTitle)}</h1>
+<p>People tried these and voted ▲ gem / ▼ slop. Updated every 3 hours.</p>
+<ol style="padding-left:22px">${best.map((p) => `<li style="margin:0 0 14px"><a href="${SITE}#/p/${p.id}" style="font-weight:700;font-size:17px">${esc(p.title)}</a><br><span style="color:#5d645b;font-size:14px">${esc(p.community_name)} · ▲ ${p.up_count} · ▼ ${p.down_count} · ${p.comment_count} comments${p.tool ? ' · ' + esc(p.tool) : ''}</span>${p.excerpt ? `<br><span style="font-size:14px">${esc(clip(p.excerpt, 120))}</span>` : ''}</li>`).join('')}</ol>
+<p><a href="${SITE}#/judge">Judge some yourself →</a></p>` }));
 
 // RSS: newest 50 posts
 const rssDate = (d) => new Date(d).toUTCString();
 writeFileSync(`${OUT}/rss.xml`, `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel>
-<title>Slop Lab 새 글</title><link>${SITE}</link><description>AI가 만든 것들 속에서 보석을 캐는 곳</description><language>ko</language>
+<title>Slop Lab: new posts</title><link>${SITE}</link><description>Find the gems in AI-made stuff</description>
 <atom:link href="${SITE}rss.xml" rel="self" type="application/rss+xml"/>
 ${posts.slice(0, 50).map((p) => `<item><title>${esc(p.title)}</title><link>${SITE}p/${p.id}/</link><guid isPermaLink="true">${SITE}p/${p.id}/</guid><category>${esc(p.community_name)}</category><pubDate>${rssDate(p.created_at)}</pubDate><description>${esc(clip(p.excerpt, 300))}</description></item>`).join('\n')}
 </channel></rss>`);

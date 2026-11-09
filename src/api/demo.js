@@ -91,6 +91,7 @@ export function createDemoApi() {
     if (o.special === 'home') list = list.filter((p) => (o.followIds || []).includes(p.community_id));
     if (o.authorId) list = list.filter((p) => p.author_id === o.authorId);
     if (o.tool) list = list.filter((p) => p.tool === o.tool);
+    if (o.clang === 'ko') list = list.filter((p) => /[가-힣]/.test(p.title)); else if (o.clang === 'en') list = list.filter((p) => !/[가-힣]/.test(p.title));
     if (o.tag) list = list.filter((p) => p.tags.includes(o.tag));
     if (o.q) { const t = o.q.toLowerCase(); list = list.filter((p) => [p.title, p.body, p.tool].join(' ').toLowerCase().includes(t)); }
     if (o.special === 'saved') { const s = db.saves[api.me?.id] || {}; list = list.filter((p) => s[p.id]); }
