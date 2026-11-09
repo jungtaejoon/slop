@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>레시피 인분 계산기</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Apple SD Gothic Neo",sans-serif;background:#fffaf2;color:#2b2118;padding:20px}
+  .app{max-width:720px;margin:0 auto;display:grid;gap:14px}
+  h1{margin:0;font-size:22px}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  label{font-size:14px;color:#6b5a48}
+  input[type=number]{width:80px;padding:8px;border:1px solid #e4d5c2;border-radius:8px;font-size:16px}
+  textarea{width:100%;min-height:170px;padding:10px;border:1px solid #e4d5c2;border-radius:10px;font-size:15px;line-height:1.6;font-family:inherit}
+  .out{background:#fff;border:1px solid #e4d5c2;border-radius:10px;padding:12px 14px;line-height:1.9;white-space:pre-wrap}
+  .out b{color:#c2410c}
+  .hint{font-size:13px;color:#8a7a68}
+</style></head><body>
+<div class="app">
+  <h1>레시피 인분 계산기</h1>
+  <p class="hint">재료를 한 줄에 하나씩 붙여 넣고 인분을 바꾸면, 숫자만 골라서 비율대로 바꿔 줘요. "1/2", "1.5", "반 개" 같은 표현도 알아들어요.</p>
+  <div class="row"><label>원래 <input id="from" type="number" min="1" value="2"> 인분</label><span>→</span><label><input id="to" type="number" min="1" value="5"> 인분</label></div>
+  <textarea id="src">돼지고기 앞다리살 300g
+감자 2개
+양파 1/2개
+고추장 1.5큰술
+간장 2큰술
+설탕 1작은술
+다진 마늘 반 큰술
+물 400ml</textarea>
+  <div class="out" id="out"></div>
+</div>
+<script>
+  const $ = (id) => document.getElementById(id);
+  const WORD = { '반': 0.5, '한': 1, '두': 2, '세': 3, '네': 4 };
+  function fmt(n) {
+    if (Math.abs(n - Math.round(n)) < 0.05) return String(Math.round(n));
+    const frac = [[0.25, '1/4'], [0.33, '1/3'], [0.5, '1/2'], [0.67, '2/3'], [0.75, '3/4']];
+    const whole = Math.floor(n), rest = n - whole, hit = frac.find(([v]) => Math.abs(rest - v) < 0.04);
+    if (hit) return (whole ? whole + ' ' : '') + hit[1];
+    return n.toFixed(1).replace(/\.0$/, '');
+  }
+  function scaleLine(line, k) {
+    let done = false;
+    line = line.replace(/(\d+)\s*\/\s*(\d+)|\d+(?:\.\d+)?/, (m, a, b) => { done = true; const v = a ? a / b : parseFloat(m); return '<b>' + fmt(v * k) + '</b>'; });
+    if (!done) line = line.replace(/(반|한|두|세|네)\s*(?=(개|큰술|작은술|컵|줌|쪽|모))/, (m, w) => '<b>' + fmt(WORD[w] * k) + '</b> ');
+    return line;
+  }
+  function run() {
+    const k = (+$('to').value || 1) / (+$('from').value || 1);
+    $('out').innerHTML = $('src').value.split('\n').filter((l) => l.trim()).map((l) => scaleLine(l.replace(/[<>&]/g, ''), k)).join('\n') || '재료를 넣어 주세요';
+  }
+  ['from', 'to', 'src'].forEach((id) => $(id).addEventListener('input', run)); run();
+</script>
+</body></html>

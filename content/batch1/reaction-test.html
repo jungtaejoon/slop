@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>반응속도 테스트</title>
+<style>
+  html,body{margin:0;height:100%;font-family:system-ui,-apple-system,"Apple SD Gothic Neo",sans-serif}
+  #pad{height:100%;display:grid;place-items:center;text-align:center;color:#fff;cursor:pointer;user-select:none;transition:background .1s;padding:20px;box-sizing:border-box}
+  .wait{background:#334155}.ready{background:#b91c1c}.go{background:#15803d}.result{background:#1d4ed8}
+  h1{font-size:clamp(28px,7vw,52px);margin:0 0 10px} p{margin:4px 0;font-size:18px;opacity:.9}
+  .hist{font-variant-numeric:tabular-nums;font-size:15px;opacity:.85}
+</style></head><body>
+<div id="pad" class="wait"><div><h1>반응속도 테스트</h1><p>화면을 누르면 시작해요.</p><p>빨간색이 초록색으로 바뀌는 순간 최대한 빨리 누르세요.</p></div></div>
+<script>
+  const pad = document.getElementById('pad'); let state = 'wait', t = 0, timer = null; const hist = [];
+  const show = (cls, html) => { pad.className = cls; pad.innerHTML = '<div>' + html + '</div>'; };
+  const summary = () => hist.length ? `<p class="hist">최근 ${hist.length}번 평균 ${Math.round(hist.reduce((a, b) => a + b, 0) / hist.length)}ms · 최고 ${Math.min(...hist)}ms</p>` : '';
+  function down() {
+    if (state === 'wait' || state === 'result' || state === 'early') {
+      state = 'ready'; show('ready', '<h1>기다리세요…</h1><p>초록색이 되면 누르세요</p>');
+      timer = setTimeout(() => { state = 'go'; t = performance.now(); show('go', '<h1>지금!</h1>'); }, 1200 + Math.random() * 2800);
+    } else if (state === 'ready') {
+      clearTimeout(timer); state = 'early'; show('wait', '<h1>너무 빨랐어요!</h1><p>초록색이 될 때까지 기다려 주세요. 다시 누르면 시작해요.</p>' + summary());
+    } else if (state === 'go') {
+      const ms = Math.round(performance.now() - t); hist.push(ms); if (hist.length > 5) hist.shift(); state = 'result';
+      const verdict = ms < 200 ? '프로게이머급이에요' : ms < 260 ? '평균보다 빨라요' : ms < 330 ? '평균 정도예요' : '조금 졸리신가요?';
+      show('result', `<h1>${ms}ms</h1><p>${verdict}</p>${summary()}<p>다시 하려면 누르세요</p>`);
+    }
+  }
+  pad.addEventListener('pointerdown', down);
+  addEventListener('keydown', (e) => { if (e.code === 'Space') { e.preventDefault(); down(); } });
+</script>
+</body></html>
