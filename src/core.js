@@ -150,8 +150,24 @@ export function report(t, id) {
     onSubmit: async (reason, note) => { await api.report(t, id, reason, note); S.reports.add(`${t}:${id}`); document.querySelectorAll(`[data-act="report"][data-t="${t}"][data-id="${id}"]`).forEach((b) => (b.textContent = '신고함')); toast('신고했어요. 운영자가 확인할 거예요'); } });
 }
 
-export async function share(id, title) {
-  const url = `${location.origin}${location.pathname}#/p/${id}`;
-  try { if (navigator.share && matchMedia('(pointer:coarse)').matches) { await navigator.share({ title, url }); return; } await navigator.clipboard.writeText(url); toast('링크를 복사했어요'); }
-  catch { prompt?.('이 주소를 복사하세요', url); }
+// shareable URL: the static preview page (link previews), which redirects into the app
+export const shareUrl = (path) => `${location.origin}${location.pathname.replace(/index\.html$/, '')}${path}`;
+
+export function openShare(path, title, lead = '') {
+  const url = shareUrl(path), text = `${title} | Slop Lab에서 보석인지 슬롭인지 판정해 주세요`;
+  if (navigator.share && matchMedia('(pointer:coarse)').matches) { navigator.share({ title, text, url }).catch(() => {}); return; }
+  const e = encodeURIComponent, d = $('#dlg'), f = $('#dlgForm'), back = document.activeElement;
+  f.innerHTML = `<h2>공유하기</h2>${lead ? `<p class="muted" style="margin:0;font-size:13px">${esc(lead)}</p>` : ''}
+    <div class="row" style="flex-wrap:nowrap"><input type="text" id="shUrl" readonly value="${esc(url)}" aria-label="공유 주소"><button type="button" class="btn sm pri" id="shCopy">복사</button></div>
+    <div class="row"><a class="btn sm" target="_blank" rel="noopener" href="https://twitter.com/intent/tweet?text=${e(text)}&url=${e(url)}">X</a>
+      <a class="btn sm" target="_blank" rel="noopener" href="https://www.threads.net/intent/post?text=${e(text + ' ' + url)}">스레드</a>
+      <a class="btn sm" target="_blank" rel="noopener" href="https://www.facebook.com/sharer/sharer.php?u=${e(url)}">페이스북</a>
+      <a class="btn sm" target="_blank" rel="noopener" href="https://www.reddit.com/submit?url=${e(url)}&title=${e(title)}">레딧</a></div>
+    <p class="hint" style="margin:0">카카오톡·슬랙·디스코드에는 주소를 복사해 붙여 넣으면 제목과 그림이 미리보기로 나와요. 새 글은 미리보기가 나오기까지 최대 3시간쯤 걸릴 수 있어요.</p>
+    <div class="row"><span class="sp"></span><button type="button" class="btn sm" id="dlgCancel">닫기</button></div>`;
+  d.hidden = false; $('#shUrl').select();
+  const close = () => { d.hidden = true; f.innerHTML = ''; back?.focus?.(); };
+  $('#dlgCancel').onclick = close; d.onclick = (ev) => { if (ev.target === d) close(); }; f.onkeydown = (ev) => { if (ev.key === 'Escape') close(); }; f.onsubmit = (ev) => ev.preventDefault();
+  $('#shCopy').onclick = () => navigator.clipboard?.writeText(url).then(() => toast('링크를 복사했어요'), () => { $('#shUrl').select(); toast('선택해 두었어요. ⌘C로 복사해 주세요'); });
 }
+export const share = (id, title) => openShare(`p/${id}/`, title);

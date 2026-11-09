@@ -58,6 +58,7 @@ function drawArticle() {
     <h1>${esc(v.title || p.title)}</h1>
     ${p.remixOf ? `<div class="muted" style="font-size:13px;margin:-4px 0 8px">↳ 리믹스 원본: <a href="#/p/${esc(p.remixOf)}${p.remixOfVersion ? '/v/' + p.remixOfVersion : ''}">${esc(p.remixTitle || '원본 글')}${p.remixOfVersion ? ` v${p.remixOfVersion}` : ''}</a></div>` : ''}
     ${p.hidden ? `<div class="banner warnb" style="margin:0 0 8px">운영자가 숨긴 글이에요${p.hiddenReason ? ` (사유: ${esc(p.hiddenReason)})` : ''}. 작성자와 운영자에게만 보여요.</div>` : ''}
+    ${mine && Date.now() - p.createdAt < 3 * 864e5 && p.up + p.down < 3 && !p.hidden ? `<div class="nudge"><div><b>판정을 더 받아 보세요.</b> 친구나 단톡방, 관련 커뮤니티에 공유하면 보석인지 슬롭인지 금방 모여요.</div><button class="btn sm gem" data-act="share" data-id="${p.id}" data-title="${esc(p.title)}">공유하기</button></div>` : ''}
     ${old ? `<div class="oldver">지금 v${v.n}을 보고 있어요. 최신은 v${latest}이에요. <a href="#/p/${p.id}">최신 보기</a></div>` : ''}</div>
     ${main}
     ${p.tags.length ? `<div class="chips">${p.tags.map((t) => `<button class="chip" data-act="tag" data-v="${esc(t)}">#${esc(t)}</button>`).join('')}</div>` : ''}

@@ -23,7 +23,12 @@ export async function renderFeed() {
     : v.special === 'gems' ? '커뮤니티가 보석으로 판정한 글이에요. 보석 3표 이상, 보석 비율 75% 이상이면 여기에 모여요.' : '내가 저장한 글이에요. 나에게만 보여요.';
   const sorts = [['hot', '인기'], ['new', '최신'], ['top', '최고'], ['contro', '논쟁 중'], ['pending', '판정 대기']];
   const F = S.filters || {};
-  app.innerHTML = `<div class="layout"><div style="min-width:0">
+  let welcomeOff = false; try { welcomeOff = !!localStorage.getItem('slop-welcome-off'); } catch { /* */ }
+  const welcome = !api.me && !welcomeOff && !c ? `<section class="welcome" id="welcome"><div><h2>AI가 만든 것, 그냥 넘기지 마세요</h2>
+      <p>사람들은 AI 결과물을 쉽게 "슬롭"이라고 부르지만, 그 안에도 쓸모 있고 재미있는 게 숨어 있어요. 여기서 같이 캐내요.</p>
+      <ol><li><b>둘러보고 써 봐요.</b> 실행물은 그 자리에서 바로 돌아가요.</li><li><b>▲보석 / ▼슬롭으로 판정해요.</b> 이유를 댓글로 남기면 더 좋아요.</li><li><b>내가 만든 것도 올려요.</b> 판정과 의견을 받아 다음 버전으로 키워요.</li></ol>
+      <div class="row"><a class="btn pri" href="#/login">이메일로 바로 시작하기</a><a class="btn" href="#/communities">커뮤니티 둘러보기</a><button class="btn ghost" id="welcomeOff">닫기</button></div></div></section>` : '';
+  app.innerHTML = `${welcome}<div class="layout"><div style="min-width:0">
     <div class="fhead"><div><h1>${esc(title)}</h1><p${c ? ' class="mono"' : ''}>${esc(sub)}</p>${c?.description ? `<p>${esc(c.description)}</p>` : ''}</div>
       <div class="row">${c ? followBtn(c) : ''}${v.special !== 'saved' ? `<a class="btn${c ? '' : ' pri'}" href="#/submit${c ? '/' + esc(c.slug) : ''}">글쓰기</a>` : ''}</div></div>
     ${v.special === 'gems' ? '' : `<div class="sortbar"><div class="seg" role="group" aria-label="정렬">${sorts.map(([k, l]) => `<button data-sort="${k}" aria-pressed="${S.prefs.sort === k}">${l}</button>`).join('')}</div>
@@ -31,6 +36,7 @@ export async function renderFeed() {
       <span class="sp"></span><div class="seg" role="group" aria-label="보기">${[['card', '카드'], ['compact', '목록']].map(([k, l]) => `<button data-layout="${k}" aria-pressed="${S.prefs.layout === k}">${l}</button>`).join('')}</div></div>`}
     ${S.q || F.tool || F.tag ? `<div class="filters">${S.q ? `<button class="fchip" data-clear="q">검색: ${esc(S.q)} ✕</button>` : ''}${F.tool ? `<button class="fchip" data-clear="tool">도구: ${esc(F.tool)} ✕</button>` : ''}${F.tag ? `<button class="fchip" data-clear="tag">#${esc(F.tag)} ✕</button>` : ''}</div>` : ''}
     <div id="feedBody"><div class="list">${'<div class="skel"></div>'.repeat(3)}</div></div></div><aside class="side" id="side"></aside></div>`;
+  const wo = $('#welcomeOff'); if (wo) wo.onclick = () => { try { localStorage.setItem('slop-welcome-off', '1'); } catch { /* */ } $('#welcome')?.remove(); };
   app.querySelectorAll('[data-sort]').forEach((b) => (b.onclick = () => { S.prefs.sort = b.dataset.sort; savePrefs(); renderFeed(); }));
   app.querySelectorAll('[data-layout]').forEach((b) => (b.onclick = () => { S.prefs.layout = b.dataset.layout; savePrefs(); drawList(); }));
   app.querySelectorAll('[data-clear]').forEach((b) => (b.onclick = () => { const k = b.dataset.clear; if (k === 'q') { S.q = ''; $('#gq').value = ''; } else S.filters = { ...S.filters, [k]: null }; renderFeed(); }));
@@ -123,7 +129,7 @@ async function renderSide(c) {
   const draw = (st, ps, mods) => {
     el.innerHTML = (c ? `<section class="panel"><h2>${esc(c.name)}</h2><p class="mono">c/${esc(c.slug)}</p>${c.description ? `<p>${esc(c.description)}</p>` : ''}
         <div class="statrow"><div><b data-members="${c.id}">${c.members}</b><span>팔로워</span></div><div><b>${st ? st.posts : c.posts}</b><span>글</span></div><div><b>${st ? st.gems : '–'}</b><span>보석</span></div></div>
-        <div class="row">${followBtn(c, true)}${canWrite() ? `<a class="btn sm" href="#/submit/${esc(c.slug)}">글쓰기</a>` : ''}${isCommunityMod(c.id) ? `<a class="btn sm ghost" href="#/c/${esc(c.slug)}/settings">커뮤니티 설정</a>` : ''}</div></section>
+        <div class="row">${followBtn(c, true)}${canWrite() ? `<a class="btn sm" href="#/submit/${esc(c.slug)}">글쓰기</a>` : ''}<button class="btn sm ghost" data-act="sharec" data-slug="${esc(c.slug)}" data-title="${esc(c.name)}">공유</button>${isCommunityMod(c.id) ? `<a class="btn sm ghost" href="#/c/${esc(c.slug)}/settings">커뮤니티 설정</a>` : ''}</div></section>
       ${c.rules ? `<section class="panel"><h2>규칙</h2><div class="md" style="font-size:13.5px">${md(c.rules)}</div></section>` : ''}
       ${mods?.length ? `<section class="panel"><h2>운영자</h2><div class="chips" style="flex-direction:column;align-items:flex-start;gap:6px">${mods.map((m) => who(m)).join('')}</div></section>` : ''}`
       : `<section class="panel"><h2>Slop Lab</h2><p>AI가 만든 결과물을 그냥 넘기지 말고, 써 보고, 판정하고, 이유를 남기는 커뮤니티예요. 주제별 커뮤니티를 팔로우하고, 없으면 직접 만들어요.</p>

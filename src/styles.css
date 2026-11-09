@@ -281,3 +281,10 @@ footer .wrap{padding-block:18px;display:flex;gap:12px;flex-wrap:wrap}
   .article{grid-template-columns:minmax(0,1fr);padding:14px}.article > .vote{display:none}
 }
 @media (prefers-reduced-motion:no-preference){.post,.btn,.chip{transition:border-color .15s,color .15s}}
+
+/* growth: welcome card, author share nudge */
+.welcome{background:var(--surface);border:1px solid var(--gem);border-radius:var(--r);padding:18px 20px;margin-bottom:18px;background-image:linear-gradient(135deg,var(--gem-soft),transparent 60%)}
+.welcome h2{font-family:var(--f-display);font-weight:400;font-size:24px;margin-bottom:6px}
+.welcome p{margin:0 0 8px;color:var(--muted);max-width:62ch}
+.welcome ol{margin:0 0 14px;padding-left:20px;display:flex;flex-direction:column;gap:2px}
+.nudge{display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:space-between;background:var(--gem-soft);color:var(--ink);border-radius:8px;padding:10px 12px;font-size:13.5px;margin-bottom:8px}

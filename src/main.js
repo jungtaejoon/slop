@@ -1,5 +1,5 @@
 import './styles.css';
-import { api, S, $, isMod, anyCommunityMod, go, vote, toggleSave, toggleFollow, report, share, avatarHtml, toast, loadMyCommunities } from './core.js';
+import { api, S, $, isMod, anyCommunityMod, go, vote, toggleSave, toggleFollow, report, share, openShare, avatarHtml, toast, loadMyCommunities } from './core.js';
 import { esc } from './text.js';
 import { renderFeed } from './views/feed.js';
 import { renderPost, closePost } from './views/post.js';
@@ -88,6 +88,7 @@ document.addEventListener('click', (e) => {
   else if (act === 'save') { e.preventDefault(); toggleSave(id); }
   else if (act === 'report') { e.preventDefault(); report(t.dataset.t, id); }
   else if (act === 'share') { e.preventDefault(); share(id, t.dataset.title || ''); }
+  else if (act === 'sharec') { e.preventDefault(); openShare(`c/${t.dataset.slug}/`, t.dataset.title || '', '이 커뮤니티에 친구를 초대해 보세요. 링크를 붙이면 커뮤니티 소개가 미리보기로 나와요.'); }
   else if (act === 'tool') { e.preventDefault(); S.filters = { ...S.filters, tool: S.filters?.tool === t.dataset.v ? null : t.dataset.v }; S.view.name === 'feed' ? renderFeed() : go('/popular'); }
   else if (act === 'tag') { e.preventDefault(); S.filters = { ...S.filters, tag: t.dataset.v }; S.view.name === 'feed' ? renderFeed() : go('/popular'); }
   else if (act === 'follow') { e.preventDefault(); toggleFollow(id); }
