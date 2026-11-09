@@ -27,10 +27,10 @@ export async function renderFeed() {
   const welcome = !api.me && !welcomeOff && !c ? `<section class="welcome" id="welcome"><div><h2>AI가 만든 것, 그냥 넘기지 마세요</h2>
       <p>사람들은 AI 결과물을 쉽게 "슬롭"이라고 부르지만, 그 안에도 쓸모 있고 재미있는 게 숨어 있어요. 여기서 같이 캐내요.</p>
       <ol><li><b>둘러보고 써 봐요.</b> 실행물은 그 자리에서 바로 돌아가요.</li><li><b>▲보석 / ▼슬롭으로 판정해요.</b> 이유를 댓글로 남기면 더 좋아요.</li><li><b>내가 만든 것도 올려요.</b> 판정과 의견을 받아 다음 버전으로 키워요.</li></ol>
-      <div class="row"><a class="btn pri" href="#/login">이메일로 바로 시작하기</a><a class="btn" href="#/communities">커뮤니티 둘러보기</a><button class="btn ghost" id="welcomeOff">닫기</button></div></div></section>` : '';
+      <div class="row"><a class="btn pri" href="#/judge">지금 하나 판정해 보기</a><a class="btn" href="#/login">가입하기</a><a class="btn" href="#/communities">커뮤니티 둘러보기</a><button class="btn ghost" id="welcomeOff">닫기</button></div></div></section>` : '';
   app.innerHTML = `${welcome}<div class="layout"><div style="min-width:0">
     <div class="fhead"><div><h1>${esc(title)}</h1><p${c ? ' class="mono"' : ''}>${esc(sub)}</p>${c?.description ? `<p>${esc(c.description)}</p>` : ''}</div>
-      <div class="row">${c ? followBtn(c) : ''}${v.special !== 'saved' ? `<a class="btn${c ? '' : ' pri'}" href="#/submit${c ? '/' + esc(c.slug) : ''}">글쓰기</a>` : ''}</div></div>
+      <div class="row">${c ? followBtn(c) : ''}${v.special === 'gems' ? '<button class="btn" data-act="sharebest">이번 주 보석 공유</button>' : ''}${v.special !== 'saved' ? `<a class="btn${c ? '' : ' pri'}" href="#/submit${c ? '/' + esc(c.slug) : ''}">글쓰기</a>` : ''}</div></div>
     ${v.special === 'gems' ? '' : `<div class="sortbar"><div class="seg" role="group" aria-label="정렬">${sorts.map(([k, l]) => `<button data-sort="${k}" aria-pressed="${S.prefs.sort === k}">${l}</button>`).join('')}</div>
       ${S.prefs.sort === 'top' ? `<select class="inline" id="win" aria-label="기간">${[['day', '오늘'], ['week', '이번 주'], ['month', '이번 달'], ['all', '전체 기간']].map(([k, l]) => `<option value="${k}"${S.prefs.win === k ? ' selected' : ''}>${l}</option>`).join('')}</select>` : ''}
       <span class="sp"></span><div class="seg" role="group" aria-label="보기">${[['card', '카드'], ['compact', '목록']].map(([k, l]) => `<button data-layout="${k}" aria-pressed="${S.prefs.layout === k}">${l}</button>`).join('')}</div></div>`}
@@ -134,7 +134,8 @@ async function renderSide(c) {
       ${mods?.length ? `<section class="panel"><h2>운영자</h2><div class="chips" style="flex-direction:column;align-items:flex-start;gap:6px">${mods.map((m) => who(m)).join('')}</div></section>` : ''}`
       : `<section class="panel"><h2>Slop Lab</h2><p>AI가 만든 결과물을 그냥 넘기지 말고, 써 보고, 판정하고, 이유를 남기는 커뮤니티예요. 주제별 커뮤니티를 팔로우하고, 없으면 직접 만들어요.</p>
         <div class="statrow"><div><b>${st ? st.posts : '–'}</b><span>글</span></div><div><b>${st ? st.gems : '–'}</b><span>보석</span></div>${ps ? `<div><b>${ps.karma}</b><span>내 판정 점수</span></div>` : ''}</div>
-        ${canWrite() ? '<div class="row"><a class="btn pri sm" href="#/submit">글쓰기</a><a class="btn sm" href="#/communities/new">커뮤니티 만들기</a></div>' : !api.me ? '<a class="btn block" href="#/login">로그인하고 참여하기</a>' : ''}</section>`)
+        <a class="btn gem block" href="#/judge" style="margin-bottom:8px">판정하기: 한 장씩 넘기며 판정</a>
+      ${canWrite() ? '<div class="row"><a class="btn pri sm" href="#/submit">글쓰기</a><a class="btn sm" href="#/communities/new">커뮤니티 만들기</a></div>' : !api.me ? '<a class="btn block" href="#/login">로그인하고 참여하기</a>' : ''}</section>`)
     + `<section class="panel"><h2>판정 기준</h2><ul><li><b style="color:var(--gem)">▲ 보석</b>: 쓸모 있거나, 재미있거나, 영감을 줘요.</li><li><b style="color:var(--slop)">▼ 슬롭</b>: 시간이 아까웠어요.</li>
       <li>"가치 발견" 댓글로 어디가 좋은지 짚어 주면 다른 사람이 찾는 데 큰 도움이 돼요.</li><li>AI가 만들었다는 이유만으로 내리지 말아 주세요.</li><li>스팸, 악성 코드, 괴롭힘, 개인정보 노출은 "신고"해 주세요.</li></ul></section>
     ${st?.tools?.length ? `<section class="panel"><h2>만든 도구</h2><div class="chips">${st.tools.map((t) => `<button class="chip" data-act="tool" data-v="${esc(t.name)}" aria-pressed="${F.tool === t.name}">${esc(t.name)}<span class="mono">${t.n}</span></button>`).join('')}</div></section>` : ''}

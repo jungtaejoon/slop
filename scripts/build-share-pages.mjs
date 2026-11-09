@@ -30,7 +30,7 @@ async function get(path) {
   return r.json();
 }
 
-function page({ title, desc, image, url, appHash, type = 'article', body }) {
+function page({ title, desc, image, url, appHash, type = 'article', body, ld, redirect = true }) {
   return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(title)} · Slop Lab</title>
 <meta name="description" content="${esc(desc)}"><link rel="canonical" href="${esc(url)}">
@@ -38,13 +38,14 @@ function page({ title, desc, image, url, appHash, type = 'article', body }) {
 <meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(desc)}">
 <meta property="og:image" content="${esc(image)}"><meta property="og:url" content="${esc(url)}">
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${esc(title)}"><meta name="twitter:description" content="${esc(desc)}"><meta name="twitter:image" content="${esc(image)}">
-<script>location.replace(${JSON.stringify(SITE + '#' + appHash)});</script>
+${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, '\\u003c')}</script>` : ''}
+${redirect ? `<script>location.replace(${JSON.stringify(SITE + '#' + appHash)});</script>` : ''}<link rel="alternate" type="application/rss+xml" title="Slop Lab 새 글" href="${SITE}rss.xml">
 <style>body{font-family:system-ui,-apple-system,"Apple SD Gothic Neo",sans-serif;max-width:640px;margin:40px auto;padding:0 16px;line-height:1.6;color:#1a1c19}a{color:#0b7f73}</style>
 </head><body>${body}<p><a href="${esc(SITE + '#' + appHash)}">Slop Lab에서 보기 →</a></p></body></html>`;
 }
 
 const [posts, comms] = await Promise.all([
-  get('post_feed?select=id,title,excerpt,images,kind,tool,community_slug,community_name,up_count,down_count,comment_count,created_at,updated_at&hidden=eq.false&order=created_at.desc&limit=2000'),
+  get('post_feed?select=id,title,excerpt,images,kind,tool,community_slug,community_name,up_count,down_count,comment_count,created_at,updated_at,author_name,author_username,is_example&hidden=eq.false&order=created_at.desc&limit=2000'),
   get('communities?select=slug,name,description,member_count,post_count,created_at&order=member_count.desc&limit=1000'),
 ]);
 
@@ -54,6 +55,11 @@ for (const p of posts) {
   const url = `${SITE}p/${p.id}/`;
   mkdirSync(`${OUT}/p/${p.id}`, { recursive: true });
   writeFileSync(`${OUT}/p/${p.id}/index.html`, page({ title: p.title, desc, image: abs(p.kind === 'image' ? p.images?.[0] : ''), url, appHash: `/p/${p.id}`,
+    ld: { '@context': 'https://schema.org', '@type': 'DiscussionForumPosting', headline: p.title, text: clip(p.excerpt, 500), url, datePublished: p.created_at, dateModified: p.updated_at,
+      image: abs(p.kind === 'image' ? p.images?.[0] : ''), articleSection: p.community_name,
+      author: { '@type': p.is_example || !p.author_username ? 'Organization' : 'Person', name: p.is_example ? 'Slop Lab' : (p.author_name || p.author_username || '익명'), ...(p.author_username ? { url: `${SITE}#/u/${p.author_username}` } : {}) },
+      interactionStatistic: [{ '@type': 'InteractionCounter', interactionType: 'https://schema.org/CommentAction', userInteractionCount: p.comment_count },
+        { '@type': 'InteractionCounter', interactionType: 'https://schema.org/LikeAction', userInteractionCount: p.up_count }] },
     body: `<p>${esc(p.community_name)} · AI가 만든 결과물</p><h1>${esc(p.title)}</h1><p>${esc(clip(p.excerpt, 300))}</p><p>${esc(meta)}</p>` }));
 }
 for (const c of comms) {
@@ -63,12 +69,37 @@ for (const c of comms) {
     body: `<h1>${esc(c.name)}</h1><p>c/${esc(c.slug)}</p><p>${esc(c.description)}</p>` }));
 }
 
+// weekly best: a real landing page (no redirect) that is easy to share every week
+const WEEK = 7 * 864e5, now = Date.now();
+const rank = (list) => list.slice().sort((a, b) => (b.up_count - b.down_count) - (a.up_count - a.down_count) || (b.up_count + b.down_count) - (a.up_count + a.down_count) || Date.parse(b.created_at) - Date.parse(a.created_at));
+let best = rank(posts.filter((p) => now - Date.parse(p.created_at) < WEEK && p.up_count > 0)).slice(0, 10), bestLabel = '이번 주';
+if (best.length < 3) { best = rank(posts.filter((p) => p.up_count > 0)).slice(0, 10); bestLabel = '지금까지'; }
+if (best.length < 3) { best = posts.slice(0, 10); bestLabel = '최근'; }
+const bestTitle = bestLabel === '최근' ? '최근 올라온 AI 결과물' : `${bestLabel}의 보석 TOP ${best.length}`;
+mkdirSync(`${OUT}/best`, { recursive: true });
+writeFileSync(`${OUT}/best/index.html`, page({ title: bestTitle, desc: clip(`Slop Lab 사람들이 판정한 ${bestLabel} 가장 좋은 AI 결과물: ${best.slice(0, 3).map((p) => p.title).join(' · ')}`, 180),
+  image: abs(best.find((p) => p.kind === 'image')?.images?.[0] || ''), url: `${SITE}best/`, appHash: '/gems', type: 'website', redirect: false,
+  body: `<p><a href="${SITE}">SLOP.LAB</a> · AI가 만든 것들 속에서 보석을 캐는 곳</p><h1>${esc(bestTitle)}</h1>
+<p>사람들이 직접 써 보고 ▲보석 / ▼슬롭으로 판정한 결과예요. 3시간마다 갱신돼요.</p>
+<ol style="padding-left:22px">${best.map((p) => `<li style="margin:0 0 14px"><a href="${SITE}#/p/${p.id}" style="font-weight:700;font-size:17px">${esc(p.title)}</a><br><span style="color:#5d645b;font-size:14px">${esc(p.community_name)} · 보석 ${p.up_count} · 슬롭 ${p.down_count} · 의견 ${p.comment_count}${p.tool ? ' · ' + esc(p.tool) : ''}</span>${p.excerpt ? `<br><span style="font-size:14px">${esc(clip(p.excerpt, 120))}</span>` : ''}</li>`).join('')}</ol>
+<p><a href="${SITE}#/judge">나도 판정하러 가기 →</a></p>` }));
+
+// RSS: newest 50 posts
+const rssDate = (d) => new Date(d).toUTCString();
+writeFileSync(`${OUT}/rss.xml`, `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel>
+<title>Slop Lab 새 글</title><link>${SITE}</link><description>AI가 만든 것들 속에서 보석을 캐는 곳</description><language>ko</language>
+<atom:link href="${SITE}rss.xml" rel="self" type="application/rss+xml"/>
+${posts.slice(0, 50).map((p) => `<item><title>${esc(p.title)}</title><link>${SITE}p/${p.id}/</link><guid isPermaLink="true">${SITE}p/${p.id}/</guid><category>${esc(p.community_name)}</category><pubDate>${rssDate(p.created_at)}</pubDate><description>${esc(clip(p.excerpt, 300))}</description></item>`).join('\n')}
+</channel></rss>`);
+
 const day = (d) => new Date(d).toISOString().slice(0, 10);
 writeFileSync(`${OUT}/sitemap.xml`, `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 <url><loc>${SITE}</loc><changefreq>hourly</changefreq></url>
+<url><loc>${SITE}best/</loc><changefreq>daily</changefreq></url>
 ${comms.map((c) => `<url><loc>${SITE}c/${c.slug}/</loc><lastmod>${day(c.created_at)}</lastmod></url>`).join('\n')}
 ${posts.map((p) => `<url><loc>${SITE}p/${p.id}/</loc><lastmod>${day(p.updated_at)}</lastmod></url>`).join('\n')}
 </urlset>`);
 writeFileSync(`${OUT}/robots.txt`, `User-agent: *\nAllow: /\nSitemap: ${SITE}sitemap.xml\n`);
-console.log(`share pages: ${posts.length} posts, ${comms.length} communities → ${OUT}/p, ${OUT}/c, sitemap.xml`);
+console.log(`share pages: ${posts.length} posts, ${comms.length} communities, best (${best.length}), rss.xml, sitemap.xml`);

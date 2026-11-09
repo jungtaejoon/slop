@@ -7,6 +7,7 @@ import { renderCompose, closeCompose } from './views/compose.js';
 import { renderLogin, renderSettings, renderProfile, renderInbox } from './views/pages.js';
 import { renderMod, modAction } from './views/mod.js';
 import { renderDirectory, renderCommunityForm } from './views/communities.js';
+import { renderJudge } from './views/judge.js';
 
 /* ---------- router
    #/ (home: followed)  #/popular  #/gems  #/saved  #/c/<slug>  #/c/<slug>/settings  #/communities  #/communities/new
@@ -24,7 +25,7 @@ function parse() {
   if (a === 'edit' && b) return { name: 'compose', mode: 'edit', id: b };
   if (a === 'remix' && b) return { name: 'compose', mode: 'remix', id: b, n: c ? +c : null };
   if (a === 'u' && b) return { name: 'profile', username: b };
-  if (['login', 'settings', 'inbox', 'mod'].includes(a)) return { name: a };
+  if (['login', 'settings', 'inbox', 'mod', 'judge'].includes(a)) return { name: a };
   return { name: 'feed', special: 'home' };
 }
 
@@ -45,6 +46,7 @@ async function route() {
   if (v.name === 'inbox') return renderInbox();
   if (v.name === 'mod') return renderMod();
   if (v.name === 'communities') return renderDirectory();
+  if (v.name === 'judge') return renderJudge();
   if (v.name === 'cform') return renderCommunityForm(v);
 }
 
@@ -52,7 +54,7 @@ export function renderBoards() {
   const v = S.view;
   const cur = v.name === 'feed' ? (v.slug ? 'c:' + v.slug : v.special) : v.name === 'post' ? 'c:' + (S.cache.get(v.id)?.community?.slug || '') : v.name === 'cform' && v.slug ? 'c:' + v.slug : v.name;
   const followed = [...S.my.keys()].map((id) => S.comms.get(id)).filter(Boolean).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
-  const items = [['home', '홈', '#/'], ['popular', '인기', '#/popular'], ['gems', '보석함', '#/gems'], ['communities', '커뮤니티 찾기', '#/communities'],
+  const items = [['home', '홈', '#/'], ['popular', '인기', '#/popular'], ['judge', '판정하기', '#/judge'], ['gems', '보석함', '#/gems'], ['communities', '커뮤니티 찾기', '#/communities'],
     ...followed.map((c) => ['c:' + c.slug, c.name, '#/c/' + c.slug]),
     ...(api.me ? [['saved', '저장함', '#/saved']] : []), ...(anyCommunityMod() ? [['mod', '운영', '#/mod']] : [])];
   $('#boards').innerHTML = items.map(([k, l, h]) => `<a href="${h}" aria-current="${cur === k}">${esc(l)}</a>`).join('');
@@ -88,6 +90,7 @@ document.addEventListener('click', (e) => {
   else if (act === 'save') { e.preventDefault(); toggleSave(id); }
   else if (act === 'report') { e.preventDefault(); report(t.dataset.t, id); }
   else if (act === 'share') { e.preventDefault(); share(id, t.dataset.title || ''); }
+  else if (act === 'sharebest') { e.preventDefault(); openShare('best/', '이번 주 보석 TOP 10', '이번 주 가장 많이 보석 판정을 받은 글 모음이에요. 링크를 붙이면 순위가 미리보기로 나와요.'); }
   else if (act === 'sharec') { e.preventDefault(); openShare(`c/${t.dataset.slug}/`, t.dataset.title || '', '이 커뮤니티에 친구를 초대해 보세요. 링크를 붙이면 커뮤니티 소개가 미리보기로 나와요.'); }
   else if (act === 'tool') { e.preventDefault(); S.filters = { ...S.filters, tool: S.filters?.tool === t.dataset.v ? null : t.dataset.v }; S.view.name === 'feed' ? renderFeed() : go('/popular'); }
   else if (act === 'tag') { e.preventDefault(); S.filters = { ...S.filters, tag: t.dataset.v }; S.view.name === 'feed' ? renderFeed() : go('/popular'); }
