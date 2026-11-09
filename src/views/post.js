@@ -1,5 +1,5 @@
 import { api, S, $, app, KINDS, FLAIRS, voteBox, verdictInner, who, avatarHtml, sandboxFrame, savePrefs, loadMyVotes, canWrite, isMod, isCommunityMod, remember, commLink, requireLogin, toast, errMsg, go } from '../core.js';
-import { esc, md, safeUrl, domain, ago, diffHtml } from '../text.js';
+import { esc, md, safeUrl, safeImgs, domain, ago, diffHtml } from '../text.js';
 
 export function closePost() { S.d?.unsub?.(); S.d = null; }
 
@@ -39,7 +39,8 @@ function drawArticle() {
   const mine = api.me && p.authorId === api.me.id, canMod = isCommunityMod(p.communityId);
   let main = '';
   if (p.kind === 'link' && safeUrl(v.url)) main += `<a class="linkcard" href="${esc(v.url)}" target="_blank" rel="noopener noreferrer"><span class="d">${esc(domain(v.url))} ↗</span><span>${esc(v.url)}</span></a>`;
-  if (p.kind === 'image' && v.images?.length) main += `<div class="gallery${v.images.length === 1 ? ' one' : ''}">${v.images.map((u) => `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="" loading="lazy"></a>`).join('')}</div>`;
+  const imgs = safeImgs(v.images);
+  if (p.kind === 'image' && imgs.length) main += `<div class="gallery${imgs.length === 1 ? ' one' : ''}">${imgs.map((u) => `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="" loading="lazy"></a>`).join('')}</div>`;
   if (p.kind === 'html' || p.kind === 'code') {
     const tabs = p.kind === 'html' ? [['run', '실행'], ['code', '코드']] : [['code', '코드']]; if (prev) tabs.push(['diff', `v${prev.n} 대비 변경점`]);
     if (!tabs.some((t) => t[0] === d.tab)) d.tab = tabs[0][0];

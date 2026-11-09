@@ -2,7 +2,7 @@
 // optional one-line reason. The fastest way for a newcomer to take part,
 // and it keeps the "waiting for a verdict" queue short.
 import { api, S, $, app, KINDS, who, sandboxFrame, loadMyVotes, requireLogin, commLink, remember, toast, errMsg, vote, followIds } from '../core.js';
-import { esc, md, safeUrl, domain } from '../text.js';
+import { esc, md, safeUrl, safeImgs, domain } from '../text.js';
 import { getCode } from './feed.js';
 
 let J = null;
@@ -36,7 +36,7 @@ function draw() {
   }
   let preview = '';
   if (p.kind === 'html') preview = '<div class="runner judge-run" id="jRun"><div class="ph muted" style="display:grid;place-items:center;height:100%">불러오는 중…</div></div>';
-  else if (p.kind === 'image' && p.images.length) preview = `<div class="gallery${p.images.length === 1 ? ' one' : ''}">${p.images.slice(0, 4).map((u) => `<img src="${esc(u)}" alt="" loading="lazy">`).join('')}</div>`;
+  else if (p.kind === 'image' && safeImgs(p.images).length) preview = `<div class="gallery${safeImgs(p.images).length === 1 ? ' one' : ''}">${safeImgs(p.images).slice(0, 4).map((u) => `<img src="${esc(u)}" alt="" loading="lazy">`).join('')}</div>`;
   else if (p.kind === 'link' && safeUrl(p.url)) preview = `<a class="linkcard" href="${esc(p.url)}" target="_blank" rel="noopener noreferrer"><span class="d">${esc(domain(p.url))} ↗</span><span>${esc(p.url)}</span></a>`;
   else if (p.kind === 'code' && p.codeHead) preview = `<pre class="code">${esc(p.codeHead)}</pre>`;
   app.innerHTML = `<div class="judge">

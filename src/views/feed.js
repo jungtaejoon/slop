@@ -1,6 +1,6 @@
 import { api, S, $, app, KINDS, voteBox, who, sandboxFrame, savePrefs, loadMyVotes, canWrite, isCommunityMod, followIds, remember, commBySlug, commLink, followBtn, icon, gradFor, cav } from '../core.js';
 import { md } from '../text.js';
-import { esc, safeUrl, domain, ago } from '../text.js';
+import { esc, safeUrl, safeImgs, domain, ago } from '../text.js';
 
 const PAGE = 30;
 let feedToken = 0;
@@ -99,8 +99,8 @@ export function postRow(p) {
 }
 
 function previewHtml(p) {
-  if (p.kind === 'image' && p.images.length > 1) return `<a class="prev gallery3" href="#/p/${p.id}">${p.images.slice(0, 3).map((u) => `<img src="${esc(u)}" alt="" loading="lazy">`).join('')}</a>`;
-  if (p.kind === 'image' && p.images.length) return `<a class="prev" href="#/p/${p.id}"><img src="${esc(p.images[0])}" alt="" loading="lazy"></a>`;
+  if (p.kind === 'image' && safeImgs(p.images).length > 1) return `<a class="prev gallery3" href="#/p/${p.id}">${safeImgs(p.images).slice(0, 3).map((u) => `<img src="${esc(u)}" alt="" loading="lazy">`).join('')}</a>`;
+  if (p.kind === 'image' && safeImgs(p.images).length) return `<a class="prev" href="#/p/${p.id}"><img src="${esc(safeImgs(p.images)[0])}" alt="" loading="lazy"></a>`;
   if (p.kind === 'html') return `<a class="prev frame" href="#/p/${p.id}" data-frame="${p.id}"><span class="ph">미리보기 준비 중…</span><span class="playhint">▶ 눌러서 실행</span></a>`;
   if (p.kind === 'link' && safeUrl(p.url)) return `<a class="prev linkp" href="${esc(p.url)}" target="_blank" rel="noopener noreferrer"><span class="fav">${icon('link')}</span><span class="d">${esc(domain(p.url))}</span><span class="muted" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.url)}</span><span>↗</span></a>`;
   return '';
@@ -113,7 +113,7 @@ function coverHtml(p) {
   return `<a class="cover${p.kind === 'code' ? ' code' : ''}" href="#/p/${p.id}" style="--cv:${gradFor(p.community?.slug || p.id)}"><span class="k">${icon(kind[0])}<span>${kind[1]}</span></span><span class="q" data-ugc>${esc(body.slice(0, 300))}</span></a>`;
 }
 function thumbHtml(p) {
-  if (p.kind === 'image' && p.images.length) return `<a class="thumb" href="#/p/${p.id}"><img src="${esc(p.images[0])}" alt="" loading="lazy"></a>`;
+  if (p.kind === 'image' && safeImgs(p.images).length) return `<a class="thumb" href="#/p/${p.id}"><img src="${esc(safeImgs(p.images)[0])}" alt="" loading="lazy"></a>`;
   return `<a class="thumb" href="#/p/${p.id}" style="--cv:${gradFor(p.community?.slug || p.id)}">${icon({ text: 'text', link: 'link', html: 'play', code: 'code' }[p.kind] || 'text')}</a>`;
 }
 
