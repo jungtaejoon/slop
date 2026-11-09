@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>모임 정산 계산기</title>
+<style>
+  html,body{margin:0;background:#f8fafc;color:#0f172a;font-family:system-ui,-apple-system,"Apple SD Gothic Neo",sans-serif}
+  main{max-width:560px;margin:0 auto;padding:16px;box-sizing:border-box}
+  h1{font-size:22px;margin:4px 0} p.sub{margin:0 0 12px;color:#64748b;font-size:14px;line-height:1.5}
+  .card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:12px;margin-bottom:12px}
+  .item{display:grid;grid-template-columns:1fr 110px 92px 32px;gap:6px;margin-bottom:6px}
+  input,select{font:inherit;padding:9px;border:1px solid #cbd5e1;border-radius:9px;min-width:0;background:#fff}
+  button{font:inherit;cursor:pointer;border:0;border-radius:9px;padding:9px 12px;background:#e2e8f0;font-weight:700}
+  .x{background:none;color:#94a3b8;padding:0}
+  h2{font-size:15px;margin:2px 0 8px} .muted{color:#64748b;font-size:13px}
+  #people{width:100%;box-sizing:border-box}
+  .tx{display:flex;align-items:center;gap:8px;padding:10px 0;border-top:1px solid #f1f5f9;font-size:16px}
+  .tx:first-child{border-top:0} .tx b{font-variant-numeric:tabular-nums;margin-left:auto}
+  .arrow{color:#94a3b8}
+  .copy{width:100%;margin-top:8px;background:#0f172a;color:#fff;padding:12px}
+</style></head><body><main>
+<h1>모임 정산 계산기</h1>
+<p class="sub">누가 얼마를 냈는지만 적으면, <b>송금 횟수가 가장 적게</b> 누가 누구에게 얼마 보내면 되는지 알려 줘요. 1원 단위는 내림해서 맞춰요.</p>
+<div class="card"><h2>함께한 사람 <span class="muted">(쉼표로 구분)</span></h2><input id="people" value="민지, 준호, 서연, 태우"></div>
+<div class="card"><h2>결제 내역</h2><div id="items"></div><button id="add">+ 결제 추가</button></div>
+<div class="card"><h2>이렇게 보내면 끝나요</h2><div id="out"></div><button class="copy" id="copy">결과 복사하기</button></div>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+let items = [{ what: '1차 고깃집', who: '민지', amt: 186000 }, { what: '2차 카페', who: '준호', amt: 27400 }, { what: '택시', who: '서연', amt: 15800 }];
+const people = () => [...new Set($('people').value.split(',').map((s) => s.trim()).filter(Boolean))];
+const won = (n) => n.toLocaleString('ko-KR') + '원';
+const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+function renderItems() {
+  const ps = people();
+  $('items').innerHTML = items.map((it, i) => `<div class="item"><input data-i="${i}" data-k="what" value="${esc(it.what)}" placeholder="내용"><select data-i="${i}" data-k="who">${ps.map((p) => `<option${p === it.who ? ' selected' : ''}>${esc(p)}</option>`).join('')}</select><input data-i="${i}" data-k="amt" inputmode="numeric" value="${it.amt || ''}" placeholder="금액"><button class="x" data-del="${i}" aria-label="삭제">✕</button></div>`).join('');
+  calc();
+}
+// greedy: the person who owes most pays the person owed most, until everyone is even
+function calc() {
+  const ps = people(); if (!ps.length) { $('out').innerHTML = '<p class="muted">사람 이름을 적어 주세요.</p>'; return; }
+  const paid = Object.fromEntries(ps.map((p) => [p, 0]));
+  items.forEach((it) => { if (paid[it.who] !== undefined) paid[it.who] += +it.amt || 0; });
+  const total = Object.values(paid).reduce((a, b) => a + b, 0), share = Math.floor(total / ps.length);
+  const bal = ps.map((p) => ({ p, v: paid[p] - share }));
+  const tx = [];
+  for (let guard = 0; guard < 100; guard++) {
+    bal.sort((a, b) => a.v - b.v); const d = bal[0], c = bal[bal.length - 1];
+    if (-d.v < 10 || c.v < 10) break;
+    const m = Math.min(-d.v, c.v); tx.push([d.p, c.p, m]); d.v += m; c.v -= m;
+  }
+  $('out').innerHTML = `<p class="muted">총 ${won(total)} · 1인당 ${won(share)}</p>` + (tx.length ? tx.map(([a, b, m]) => `<div class="tx">${esc(a)} <span class="arrow">→</span> ${esc(b)} <b>${won(m)}</b></div>`).join('') : '<p class="muted">보낼 돈이 없어요. 이미 딱 맞아요!</p>');
+  $('out').dataset.text = `[정산] 총 ${won(total)}, 1인당 ${won(share)}\n` + tx.map(([a, b, m]) => `${a} → ${b} ${won(m)}`).join('\n');
+}
+$('items').addEventListener('input', (e) => { const { i, k } = e.target.dataset; if (i === undefined) return; items[i][k] = k === 'amt' ? +e.target.value.replace(/[^\d]/g, '') : e.target.value; calc(); });
+$('items').addEventListener('click', (e) => { const d = e.target.dataset.del; if (d !== undefined) { items.splice(+d, 1); renderItems(); } });
+$('add').onclick = () => { items.push({ what: '', who: people()[0] || '', amt: 0 }); renderItems(); $('items').lastElementChild.querySelector('input').focus(); };
+$('people').addEventListener('change', renderItems);
+$('copy').onclick = async () => { try { await navigator.clipboard.writeText($('out').dataset.text); $('copy').textContent = '복사했어요!'; } catch { $('copy').textContent = '복사가 막혀 있어요. 직접 선택해 주세요'; } setTimeout(() => ($('copy').textContent = '결과 복사하기'), 1500); };
+renderItems();
+</script>
+</body></html>

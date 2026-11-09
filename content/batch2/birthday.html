@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>생일 문제 시뮬레이터</title>
+<style>
+  html,body{margin:0;background:#0f172a;color:#e2e8f0;font-family:system-ui,-apple-system,"Apple SD Gothic Neo",sans-serif}
+  main{max-width:640px;margin:0 auto;padding:16px;box-sizing:border-box}
+  h1{font-size:22px;margin:4px 0} p{margin:6px 0;color:#94a3b8;font-size:14px;line-height:1.5}
+  .big{font-size:40px;font-weight:800;color:#fbbf24;font-variant-numeric:tabular-nums}
+  label{display:flex;align-items:center;gap:10px;margin:12px 0;font-weight:700} input[type=range]{flex:1}
+  #grid{display:grid;grid-template-columns:repeat(31,1fr);gap:2px;margin:12px 0}
+  #grid i{aspect-ratio:1;background:#1e293b;border-radius:2px}
+  #grid i.one{background:#38bdf8} #grid i.two{background:#f43f5e;box-shadow:0 0 0 1px #fda4af}
+  .row{display:flex;gap:8px;flex-wrap:wrap} button{padding:11px 14px;border-radius:10px;border:0;font:inherit;font-weight:700;cursor:pointer;background:#334155;color:#fff}
+  button.pri{background:#fbbf24;color:#111}
+  #out{min-height:22px;margin-top:10px;font-size:15px;color:#e2e8f0}
+  canvas{width:100%;height:120px;display:block;margin-top:14px}
+</style></head><body><main>
+<h1>생일 문제: 몇 명이면 생일 같은 사람이 있을까?</h1>
+<p>한 반에 23명만 모여도 생일이 같은 두 사람이 있을 확률이 50%를 넘어요. 믿기 어렵다면 직접 뽑아 보세요.</p>
+<label>사람 수 <input type="range" id="n" min="2" max="80" value="23"> <span id="nv"></span></label>
+<div class="big" id="p"></div>
+<p id="pdesc"></p>
+<div class="row"><button class="pri" id="once">한 반 뽑아 보기</button><button id="many">1000반 뽑기</button></div>
+<div id="grid" aria-label="1년 365일, 칸마다 하루"></div>
+<div id="out"></div>
+<canvas id="c" width="1200" height="240" aria-label="사람 수에 따른 확률 그래프"></canvas>
+<p>왜 이렇게 높을까요? 23명이면 두 사람씩 짝지을 수 있는 경우가 253쌍이에요. 그중 한 쌍만 겹쳐도 되니까요.</p>
+</main>
+<script>
+const $ = (id) => document.getElementById(id), grid = $('grid');
+for (let d = 0; d < 365; d++) grid.append(document.createElement('i'));
+// exact probability that at least two of n people share a birthday (365 equally likely days)
+const prob = (n) => { let none = 1; for (let k = 0; k < n; k++) none *= (365 - k) / 365; return 1 - none; };
+const pct = (x) => (x * 100).toFixed(x < 0.995 ? 1 : 2) + '%';
+function draw() {
+  const n = +$('n').value; $('nv').textContent = n + '명';
+  $('p').textContent = pct(prob(n));
+  $('pdesc').textContent = `${n}명 중 생일이 같은 사람이 적어도 한 쌍 있을 확률 (짝지을 수 있는 쌍: ${n * (n - 1) / 2}개)`;
+  const c = $('c'), g = c.getContext('2d'), W = c.width, H = c.height; g.clearRect(0, 0, W, H);
+  g.strokeStyle = '#334155'; g.lineWidth = 2; g.beginPath(); g.moveTo(0, H / 2); g.lineTo(W, H / 2); g.stroke();
+  g.fillStyle = '#64748b'; g.font = '24px system-ui'; g.fillText('50%', 8, H / 2 - 8);
+  g.strokeStyle = '#fbbf24'; g.lineWidth = 5; g.beginPath();
+  for (let k = 2; k <= 80; k++) { const x = ((k - 2) / 78) * W, y = H - prob(k) * (H - 10) - 5; k === 2 ? g.moveTo(x, y) : g.lineTo(x, y); }
+  g.stroke();
+  const x = ((n - 2) / 78) * W, y = H - prob(n) * (H - 10) - 5; g.fillStyle = '#fff'; g.beginPath(); g.arc(x, y, 10, 0, 7); g.fill();
+}
+const sample = (n) => Array.from({ length: n }, () => Math.floor(Math.random() * 365));
+const MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+const dayName = (d) => { let m = 0; while (d >= MONTH[m]) d -= MONTH[m++]; return `${m + 1}월 ${d + 1}일`; };
+$('once').onclick = () => {
+  const n = +$('n').value, days = sample(n), cnt = new Array(365).fill(0); days.forEach((d) => cnt[d]++);
+  grid.querySelectorAll('i').forEach((el, d) => (el.className = cnt[d] > 1 ? 'two' : cnt[d] ? 'one' : ''));
+  const dup = cnt.map((c, d) => [c, d]).filter(([c]) => c > 1);
+  $('out').textContent = dup.length ? `겹쳤어요! ${dup.map(([c, d]) => `${dayName(d)}에 ${c}명`).join(', ')}` : '이번 반은 모두 생일이 달라요.';
+};
+$('many').onclick = () => {
+  const n = +$('n').value; let hit = 0;
+  for (let t = 0; t < 1000; t++) { const s = new Set(); for (const d of sample(n)) { if (s.has(d)) { hit++; break; } s.add(d); } }
+  $('out').textContent = `1000반 중 ${hit}반에서 생일이 겹쳤어요 (${(hit / 10).toFixed(1)}%). 계산값은 ${pct(prob(n))}예요.`;
+};
+$('n').oninput = draw; draw(); $('once').onclick();
+</script>
+</body></html>

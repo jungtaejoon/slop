@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Paint Mixing Puzzle</title>
+<style>
+  :root{color-scheme:light}
+  html,body{margin:0;min-height:100%;background:#f6f3ee;font-family:system-ui,-apple-system,"Apple SD Gothic Neo",sans-serif;color:#222}
+  main{max-width:520px;margin:0 auto;padding:16px;box-sizing:border-box}
+  h1{font-size:22px;margin:4px 0 2px} .sub{margin:0 0 12px;color:#666;font-size:14px}
+  .bar{display:flex;justify-content:space-between;font-size:14px;color:#555;margin-bottom:8px;font-variant-numeric:tabular-nums}
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .sw{border-radius:16px;height:150px;display:flex;align-items:flex-end;padding:10px;box-sizing:border-box;font-weight:700;font-size:14px;box-shadow:inset 0 0 0 1px rgb(0 0 0 / .08)}
+  .sw span{background:rgb(255 255 255 / .85);border-radius:8px;padding:3px 8px}
+  .paints{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:14px 0 8px}
+  .paints button{aspect-ratio:1;border-radius:50%;border:3px solid #fff;box-shadow:0 1px 4px rgb(0 0 0 / .25);cursor:pointer;position:relative;font:inherit}
+  .paints button b{position:absolute;right:-4px;top:-4px;background:#222;color:#fff;border-radius:999px;font-size:12px;min-width:20px;height:20px;line-height:20px}
+  .paints button b:empty{display:none}
+  .names{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;text-align:center;font-size:12px;color:#555;margin-bottom:12px}
+  .row{display:flex;gap:8px} .row button{flex:1;padding:12px;border-radius:12px;border:0;font:inherit;font-weight:700;cursor:pointer;background:#e7e2da}
+  .row button.pri{background:#222;color:#fff}
+  #msg{min-height:44px;margin:12px 0 0;font-size:15px;text-align:center}
+</style></head><body><main>
+<h1>Paint Mixing Puzzle</h1>
+<p class="sub">Drop paint to match the color on the left. Fewer drops, closer color.</p>
+<div class="bar"><span id="round"></span><span id="total"></span></div>
+<div class="pair"><div class="sw" id="target"><span>Target</span></div><div class="sw" id="mix"><span id="mixLabel">Your mix</span></div></div>
+<div class="paints" id="paints"></div>
+<div class="names" id="names"></div>
+<div class="row"><button id="undo">Undo drop</button><button id="clear">Empty</button><button class="pri" id="go">Submit</button></div>
+<p id="msg"></p>
+</main>
+<script>
+// Paint mixing is approximated by averaging in a "subtractive" space: each paint's
+// absorbance (−log reflectance) is averaged by drop count, so blue + yellow → green.
+const PAINTS = [['Red', [0.87, 0.12, 0.13]], ['Yellow', [0.98, 0.84, 0.10]], ['Blue', [0.10, 0.28, 0.75]], ['White', [0.97, 0.97, 0.96]], ['Black', [0.09, 0.09, 0.10]]];
+const ROUNDS = 5;
+let drops = [], history = [], round = 1, total = 0, target;
+const $ = (id) => document.getElementById(id);
+const A = (r) => -Math.log(Math.max(r, 0.002));
+function mixColor(counts) {
+  const n = counts.reduce((a, b) => a + b, 0); if (!n) return null;
+  return [0, 1, 2].map((ch) => Math.exp(-counts.reduce((s, c, i) => s + c * A(PAINTS[i][1][ch]), 0) / n));
+}
+const css = (c) => `rgb(${c.map((v) => Math.round(v * 255)).join(',')})`;
+// distance in CIELAB, which follows how different colors look to people
+function lab(c) {
+  const lin = c.map((v) => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+  const X = (0.4124 * lin[0] + 0.3576 * lin[1] + 0.1805 * lin[2]) / 0.9505, Y = 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2], Z = (0.0193 * lin[0] + 0.1192 * lin[1] + 0.9505 * lin[2]) / 1.089;
+  const f = (t) => (t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116);
+  return [116 * f(Y) - 16, 500 * (f(X) - f(Y)), 200 * (f(Y) - f(Z))];
+}
+const dist = (a, b) => { const p = lab(a), q = lab(b); return Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]); };
+function newTarget() {
+  // the target is always reachable: a random recipe of 2–6 drops
+  let counts; do { counts = PAINTS.map(() => (Math.random() < 0.55 ? Math.floor(Math.random() * 3) : 0)); } while (counts.reduce((a, b) => a + b, 0) < 2 || counts.filter(Boolean).length < 2);
+  target = mixColor(counts); target.recipe = counts.reduce((a, b) => a + b, 0);
+}
+function draw() {
+  const counts = PAINTS.map((_, i) => drops.filter((d) => d === i).length), m = mixColor(counts);
+  $('target').style.background = css(target);
+  $('mix').style.background = m ? css(m) : 'repeating-linear-gradient(45deg,#eee 0 10px,#f8f8f8 10px 20px)';
+  $('mixLabel').textContent = m ? `Your mix · ${drops.length} drop${drops.length === 1 ? '' : 's'}` : 'Empty so far';
+  $('paints').querySelectorAll('b').forEach((b, i) => (b.textContent = counts[i] || ''));
+  $('round').textContent = `Round ${Math.min(round, ROUNDS)} / ${ROUNDS}`;
+  $('total').textContent = `Score ${total}`;
+  $('go').disabled = !m;
+}
+PAINTS.forEach(([name, c], i) => {
+  const b = document.createElement('button'); b.style.background = css(c); b.setAttribute('aria-label', 'One drop of ' + name.toLowerCase()); b.innerHTML = '<b></b>';
+  b.onclick = () => { if (drops.length < 20) { drops.push(i); draw(); } }; $('paints').append(b);
+  const s = document.createElement('span'); s.textContent = name; $('names').append(s);
+});
+$('undo').onclick = () => { drops.pop(); draw(); };
+$('clear').onclick = () => { drops = []; draw(); };
+$('go').onclick = () => {
+  if (round > ROUNDS) { round = 1; total = 0; drops = []; newTarget(); $('go').textContent = 'Submit'; $('msg').textContent = ''; draw(); return; }
+  const m = mixColor(PAINTS.map((_, i) => drops.filter((d) => d === i).length)), d = dist(m, target);
+  const match = Math.round(100 / (1 + (d / 25) ** 1.5)) /* ΔE 2 ≈ 98%, 10 ≈ 80%, 25 = 50% */, bonus = match >= 90 ? Math.max(0, 10 - drops.length) : 0, pts = match + bonus;
+  total += pts;
+  const word = match >= 97 ? 'Nearly identical!' : match >= 90 ? 'Very close' : match >= 75 ? 'Pretty close' : 'A bit off';
+  $('msg').textContent = `Match ${match}% · ${word}${bonus ? ` · drops saved bonus +${bonus}` : ''} (the answer used ${target.recipe} drops)`;
+  round++; drops = [];
+  if (round > ROUNDS) { $('msg').textContent += ` · Final score ${total}!`; $('go').textContent = 'New game'; draw(); $('go').disabled = false; return; }
+  newTarget(); draw();
+};
+newTarget(); draw();
+</script>
+</body></html>
