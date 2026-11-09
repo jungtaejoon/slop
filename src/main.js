@@ -7,7 +7,7 @@ import { esc } from './text.js';
 import { renderFeed } from './views/feed.js';
 import { renderPost, closePost } from './views/post.js';
 import { renderCompose, closeCompose } from './views/compose.js';
-import { renderLogin, renderSettings, renderProfile, renderInbox } from './views/pages.js';
+import { renderLogin, renderSettings, renderProfile, renderInbox, renderLegal } from './views/pages.js';
 import { renderMod, modAction } from './views/mod.js';
 import { renderDirectory, renderCommunityForm } from './views/communities.js';
 import { renderJudge } from './views/judge.js';
@@ -29,6 +29,7 @@ function parse() {
   if (a === 'remix' && b) return { name: 'compose', mode: 'remix', id: b, n: c ? +c : null };
   if (a === 'u' && b) return { name: 'profile', username: b };
   if (['login', 'settings', 'inbox', 'mod', 'judge'].includes(a)) return { name: a };
+  if (a === 'terms' || a === 'privacy') return { name: 'legal', doc: a };
   return { name: 'feed', special: 'home' };
 }
 
@@ -36,7 +37,7 @@ async function route() {
   const v = parse(), prev = S.view;
   if (prev.name === 'post' && !(v.name === 'post' && v.id === prev.id)) closePost();
   if (prev.name === 'compose' && location.hash !== S.c?.hash) closeCompose();
-  S.view = v; renderBoards();
+  S.view = v; renderBoards(); trackView(v);
   if (v.name !== 'post') document.title = 'Slop Lab';
   const samePage = prev.name === v.name && prev.id === v.id && prev.slug === v.slug && prev.special === v.special;
   if (!samePage) scrollTo(0, 0);
@@ -51,6 +52,17 @@ async function route() {
   if (v.name === 'communities') return renderDirectory();
   if (v.name === 'judge') return renderJudge();
   if (v.name === 'cform') return renderCommunityForm(v);
+  if (v.name === 'legal') return renderLegal(v.doc);
+}
+
+// privacy-friendly visit counts: one count per page per browser session, nothing about the visitor
+function trackView(v) {
+  const key = v.name === 'feed' ? (v.slug ? 'c/' + v.slug : v.special === 'home' ? 'home' : v.special)
+    : v.name === 'post' ? 'p/' + v.id : v.name === 'profile' ? 'u/' + v.username
+    : v.name === 'legal' ? v.doc : ['judge', 'communities'].includes(v.name) ? v.name : null;
+  if (!key || navigator.webdriver || /bot|crawl|spider|slurp|headless|preview/i.test(navigator.userAgent)) return;
+  try { const seen = JSON.parse(sessionStorage.getItem('slop-seen') || '[]'); if (seen.includes(key)) return; seen.push(key); sessionStorage.setItem('slop-seen', JSON.stringify(seen.slice(-300))); } catch { /* count anyway */ }
+  api.trackView?.(key);
 }
 
 export function renderBoards() {

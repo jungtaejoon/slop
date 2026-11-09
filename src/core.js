@@ -64,8 +64,8 @@ export const BASE_PATH = new URL(document.baseURI).pathname.replace(/[^/]*$/, ''
 export function currentHash() {
   if (location.hash.replace(/^#\/?/, '')) return location.hash;
   const rest = location.pathname.startsWith(BASE_PATH) ? location.pathname.slice(BASE_PATH.length) : '';
-  const m = rest.match(/^(p|c|u)\/([^/]+)\/?$/);
-  return m ? `#/${m[1]}/${m[2]}` : location.hash || '#/';
+  const m = rest.match(/^(p|c|u)\/([^/]+)\/?$/), doc = rest.match(/^(terms|privacy)\/?$/);
+  return m ? `#/${m[1]}/${m[2]}` : doc ? `#/${doc[1]}` : location.hash || '#/';
 }
 // before navigating away from a path page, give the address the app's own form, so hash links stay in this page
 export function toAppUrl() { if (location.pathname !== BASE_PATH) history.replaceState(history.state, '', BASE_PATH + location.search + currentHash()); }

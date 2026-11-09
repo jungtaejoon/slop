@@ -207,6 +207,13 @@ const D = {
   '어디가 보석인가요? 이유를 남기면 "가치 발견" 댓글이 돼요.': 'What makes it a gem? Your reason becomes a "Found value" comment.',
   '무엇이 아쉬웠나요? 이유를 남기면 "개선 제안" 댓글이 돼요.': 'What fell short? Your reason becomes a "Suggestion" comment.',
   '스레드': 'Threads', '페이스북': 'Facebook', '레딧': 'Reddit', '실행할 코드가 없어요': 'No code to run',
+  // legal, account deletion, visits
+  '이용약관': 'Terms', '개인정보 처리방침': 'Privacy', '가입하면 이용약관과 개인정보 처리방침에 동의하는 것으로 봐요.': 'By signing up you agree to the Terms and the Privacy Policy.',
+  '계정 삭제': 'Delete account', '계정을 지우면 프로필, 판정, 저장한 글, 알림, 팔로우가 바로 사라지고 되돌릴 수 없어요.': 'Deleting your account removes your profile, votes, saved posts, notifications and follows right away. This cannot be undone.',
+  '내가 쓴 글과 댓글도 모두 지우기': 'Also delete all my posts and comments', '고르지 않으면 글과 댓글은 "탈퇴한 사용자"가 쓴 것으로 남아요.': 'If you leave this unchecked, your posts and comments stay, shown as written by "Deleted user".',
+  '확인을 위해 아이디를 입력해 주세요': 'Type your username to confirm', '지우는 중…': 'Deleting…', '계정을 삭제했어요': 'Account deleted',
+  '사이트의 마지막 관리자는 계정을 지울 수 없어요.': "The site's last admin can't delete their account.", '계정을 삭제하지 못했어요. 잠시 후 다시 시도해 주세요.': "Couldn't delete the account. Please try again shortly.",
+  '데모에서는 계정을 지울 수 없어요': "You can't delete accounts in the demo", '방문 통계': 'Visits', '최근 14일': 'Last 14 days', '이번 주 많이 본 페이지': 'Top pages this week', '방문 기록이 아직 없어요.': 'No visits recorded yet.',
   '첫 버전': 'first version', '예시 게시물': 'example post', '언어': 'Language', '글 언어': 'Post language', '콘텐츠 언어': 'Content language', '모든 언어': 'All languages',
 };
 
@@ -249,7 +256,7 @@ const R = [
   [/^오늘 (\d+)개 · 남은 글 (\d+)개$/, 'Today $1 · $2 left'], [/^(\d+)명 팔로우 · 글 (\d+)$/, '$1 followers · $2 posts'], [/^· 이 버전에 단 의견 (\d+)$/, '· $1 comments on this version'],
   [/^(.+) · 이 버전에 단 의견 (\d+)$/, '$1 · $2 comments on this version'],
   [/^(.+) 설정$/, (m, c) => `${tr(c)} settings`],
-  [/^알림 (\d+)개$/, '$1 notifications'], [/^… (\d+)줄 동일 …$/, '… $1 unchanged lines …'], [/^(.+) \(나\)$/, '$1 (you)'],
+  [/^알림 (\d+)개$/, '$1 notifications'], [/^· 조회 (\d+)$/, (m, n) => `· ${n} view${n === '1' ? '' : 's'}`], [/^… (\d+)줄 동일 …$/, '… $1 unchanged lines …'], [/^(.+) \(나\)$/, '$1 (you)'],
   [/^(.+) · c\/([a-z0-9-]+)$/, (m, n, s) => `${tr(n)} · c/${s}`],
   [/^아래 개선 제안·질문 중 이번에 반영한 것을 고르면 "v(\d+)에서 반영"으로 표시되고, 쓴 사람에게 알림이 가요\.$/, 'Pick the suggestions and questions this version addresses: they get marked "addressed in v$1" and their authors are notified.'],
 ];

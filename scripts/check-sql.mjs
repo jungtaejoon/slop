@@ -193,5 +193,30 @@ modBurst === 1 ? ok('moderators are not post-limited') : fail('mod limited');
 const ls = (await as(null, `select (board_stats(null, 'ko')->>'posts')::int ko, (board_stats(null, 'en')->>'posts')::int en, (board_stats()->>'posts')::int total`)).rows[0];
 ls.ko + ls.en === ls.total && ls.ko > 0 && ls.en > 0 ? ok(`board_stats by language: ko=${ls.ko} en=${ls.en} total=${ls.total}`) : fail(JSON.stringify(ls));
 
+// ---------------------------------------------------------------- visit counts
+await as(null, `select track_view($1)`, ['p/' + otherP]);
+await as(null, `select track_view($1)`, ['p/' + otherP]);
+await as(null, `select track_view('home')`);
+await as(null, `select track_view('javascript:alert(1)')`);
+const pv = (await db.query(`select path, views from page_views order by path`)).rows;
+const vc = (await db.query(`select view_count from posts where id = $1`, [otherP])).rows[0].view_count;
+pv.length === 2 && vc === 2 ? ok(`track_view counts known pages only (${pv.map((r) => r.path.slice(0, 8) + '=' + r.views).join(', ')}) and post views`) : fail(JSON.stringify({ pv, vc }));
+(await as(U.a, `select * from page_views`)).rows.length === 0 ? ok('members cannot read visit counts') : fail('page_views readable by members');
+(await as(U.m, `select * from page_views`)).rows.length === 2 ? ok('admins read visit counts') : fail('admin cannot read page_views');
+await as(U.a, `update posts set view_count = 9999 where id = $1`, [bp]);
+(await db.query(`select view_count from posts where id = $1`, [bp])).rows[0].view_count === 0 ? ok('community mods cannot edit view counts') : fail('view_count edited');
+
+// ---------------------------------------------------------------- account deletion
+await expectError('visitors cannot call delete_my_account', () => as(null, `select delete_my_account(false)`));
+await expectError('the last admin cannot delete their account', () => as(U.m, `select delete_my_account(false)`));
+await as(U.a, `select delete_my_account(false)`);
+const aLeft = (await db.query(`select (select count(*)::int from profiles where id = $1) profile, (select count(*)::int from auth.users where id = $1) auth,
+  (select count(*)::int from posts where author_id is null and title like 'burst%') kept`, [U.a])).rows[0];
+aLeft.profile === 0 && aLeft.auth === 0 && aLeft.kept === 10 ? ok(`account deleted; its ${aLeft.kept} posts stay as "Deleted user"`) : fail(JSON.stringify(aLeft));
+await as(U.b, `select delete_my_account(true)`);
+const bLeft = (await db.query(`select (select count(*)::int from posts where title in ('룰북', '다른 곳', 'imgs')) posts,
+  (select count(*)::int from comments where text like 'c%' and not deleted) comments, (select count(*)::int from auth.users where id = $1) auth`, [U.b])).rows[0];
+bLeft.posts === 0 && bLeft.comments === 0 && bLeft.auth === 0 ? ok('account deleted together with its posts and comments') : fail(JSON.stringify(bLeft));
+
 console.log(failures ? `\n${failures} check(s) failed` : '\nall checks passed');
 process.exit(failures ? 1 : 0);

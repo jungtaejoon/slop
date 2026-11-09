@@ -474,3 +474,11 @@ footer{background:transparent}
 .judge-more{display:inline-block;margin-top:4px;font-size:14px}
 /* static copies written into /p/<id>/ and /c/<slug>/ pages (shown until the app takes over) */
 .article.prerender,.post.prerender{grid-template-columns:minmax(0,1fr)}
+/* footer links, legal pages, account deletion, visit stats */
+.foot-links{display:flex;gap:14px}.foot-links a{color:var(--muted);text-decoration:none}.foot-links a:hover{color:var(--ink);text-decoration:underline}
+.legal{max-width:72ch;margin:8px auto 40px;line-height:1.7}.legal h1{font-size:30px;margin:0 0 4px}.legal h2{font-size:18px;margin:26px 0 8px}
+.legal ul{padding-left:20px;margin:6px 0}.legal li{margin:4px 0}.legal p{margin:8px 0}
+.danger-zone{border-color:color-mix(in srgb,var(--slop) 45%,var(--line))}.danger-zone h2{color:var(--slop)}
+.check{display:flex;gap:8px;align-items:center;font-size:14px}
+.vstats{display:flex;flex-direction:column;gap:4px;font-size:12.5px}.vrow{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center}
+.vrow i{display:block;height:8px;border-radius:4px;background:var(--grad)}.vrow a{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;grid-column:1/3}

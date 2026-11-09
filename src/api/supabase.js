@@ -227,6 +227,22 @@ export function createSupabaseApi(url, key) {
   api.listModLog = async () => check(await sb.from('mod_log').select('*, actor:profiles!mod_log_actor_id_fkey(id,username,display_name,avatar_url)').order('created_at', { ascending: false }).limit(60))
     .map((r) => ({ id: r.id, action: r.action, type: r.target_type, targetId: r.target_id, label: r.label, reason: r.reason, createdAt: Date.parse(r.created_at), actor: shape.author(r.actor) }));
 
+  // visit counts: one call per page per browser session (see main.js); failures are ignored
+  api.trackView = (path) => { sb.rpc('track_view', { p_path: path }).then(() => {}, () => {}); };
+  api.viewStats = async () => check(await sb.from('page_views').select('day,path,views')
+    .gte('day', new Date(Date.now() - 13 * 864e5).toISOString().slice(0, 10)).order('day'));
+  // deletes the signed-in member's account (and optionally their posts, comments and images)
+  api.deleteAccount = async (deleteContent) => {
+    const uid = api.me?.id; if (!uid) return;
+    if (deleteContent) {
+      try { const { data } = await sb.storage.from('post-images').list(uid, { limit: 1000 }); if (data?.length) await sb.storage.from('post-images').remove(data.map((f) => `${uid}/${f.name}`)); } catch { /* best effort */ }
+    }
+    check(await sb.rpc('delete_my_account', { delete_content: !!deleteContent }));
+    identity = null; api.me = null; api.guest = null;
+    try { await sb.auth.signOut({ scope: 'local' }); } catch { /* the session is gone with the account */ }
+    listeners.forEach((f) => f(null));
+  };
+
   api.ai = async (task, payload) => {
     const { data, error } = await sb.functions.invoke('ai', { body: { task, ...payload } });
     if (error) { const ctx = await error.context?.json?.().catch(() => null); throw Object.assign(new Error(ctx?.error || error.message), { code: ctx?.code || 'ai_failed' }); }

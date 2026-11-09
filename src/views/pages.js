@@ -1,6 +1,8 @@
 import { api, S, $, app, avatarHtml, toast, errMsg, go, replaceTo, loadMyVotes } from '../core.js';
 import { esc, ago } from '../text.js';
 import { postRow, setupPreviews } from './feed.js';
+import { LEGAL, EFFECTIVE } from '../legal-content.js';
+import { lang } from '../i18n.js';
 
 export function renderLogin() {
   if (api.me) { replaceTo('/'); return; }
@@ -21,6 +23,7 @@ export function renderLogin() {
     <div class="seg" role="tablist" style="align-self:flex-start">${[['signup', '가입'], ['login', '로그인']].map(([k, l]) => `<button type="button" data-mode="${k}" aria-pressed="${st.mode === k}">${l}</button>`).join('')}</div>
     <div class="field"><label for="email">이메일</label><input type="email" id="email" autocomplete="email" required placeholder="you@example.com" value="${esc(st.email)}"></div>
     ${st.mode === 'signup' || st.mode === 'login' ? `<div class="field"><label for="pw">비밀번호</label><input type="password" id="pw" autocomplete="${st.mode === 'signup' ? 'new-password' : 'current-password'}" minlength="8" required placeholder="8자 이상">${st.mode === 'signup' ? '<span class="hint" id="pwHint">가입하면 확인 메일이 가요. 메일의 링크를 누르면 가입이 끝나요.</span>' : ''}</div>` : ''}
+    ${st.mode === 'signup' ? '<p class="hint" style="margin:0">가입하면 이용약관과 개인정보 처리방침에 동의하는 것으로 봐요. <a href="#/terms">이용약관</a> · <a href="#/privacy">개인정보 처리방침</a></p>' : ''}
     <button class="btn pri block" type="submit" id="sendBtn">${st.mode === 'signup' ? '가입하기' : st.mode === 'login' ? '로그인' : st.mode === 'link' ? '로그인 링크 받기' : '재설정 메일 받기'}</button>
     <p class="hint" id="loginSt" role="status" style="margin:0"></p>
     <div class="row" style="justify-content:space-between">${st.mode !== 'link' ? '<button type="button" class="linkbtn" data-mode="link">비밀번호 없이 메일 링크로</button>' : '<button type="button" class="linkbtn" data-mode="login">비밀번호로 로그인</button>'}${st.mode === 'login' ? '<button type="button" class="linkbtn" data-mode="reset">비밀번호를 잊었어요</button>' : ''}</div></form>`;
@@ -63,10 +66,26 @@ export function renderSettings() {
     <div class="row"><button class="btn pri" type="submit">저장</button><span class="hint" id="setSt" role="status"></span></div></form>
     ${api.mode === 'supabase' ? `<form class="form narrow" id="pwForm" style="margin-top:14px"><h2>${api.recovering ? '새 비밀번호 정하기' : '비밀번호 바꾸기'}</h2>
       <div class="field"><label for="newPw">새 비밀번호</label><input type="password" id="newPw" autocomplete="new-password" minlength="8" placeholder="8자 이상"></div>
-      <div class="row"><button class="btn" type="submit">비밀번호 저장</button><span class="hint" id="pwSt" role="status"></span></div></form>` : ''}`;
+      <div class="row"><button class="btn" type="submit">비밀번호 저장</button><span class="hint" id="pwSt" role="status"></span></div></form>
+    <form class="form narrow danger-zone" id="delForm" style="margin-top:14px"><h2>계정 삭제</h2>
+      <p class="hint" style="margin:0">계정을 지우면 프로필, 판정, 저장한 글, 알림, 팔로우가 바로 사라지고 되돌릴 수 없어요.</p>
+      <label class="check"><input type="checkbox" id="delContent"> <span>내가 쓴 글과 댓글도 모두 지우기</span></label>
+      <p class="hint" style="margin:0">고르지 않으면 글과 댓글은 "탈퇴한 사용자"가 쓴 것으로 남아요.</p>
+      <div class="field"><label for="delConfirm">확인을 위해 아이디를 입력해 주세요</label><input type="text" id="delConfirm" autocomplete="off" spellcheck="false" placeholder="${esc(m.username)}"></div>
+      <div class="row"><button class="btn danger" type="submit" id="delBtn" disabled>계정 삭제</button><span class="hint" id="delSt" role="status"></span></div></form>` : ''}`;
   const pf = $('#pwForm');
   if (pf) { if (api.recovering) $('#newPw').focus(); pf.onsubmit = async (e) => { e.preventDefault(); const pw = $('#newPw').value, out = $('#pwSt'); if (pw.length < 8) { out.textContent = '8자 이상이어야 해요.'; return; }
     try { await api.updatePassword(pw); api.recovering = false; $('#newPw').value = ''; out.textContent = ''; toast('비밀번호를 바꿨어요'); } catch { out.textContent = '바꾸지 못했어요. 더 안전한 비밀번호를 써 보세요.'; } }; }
+  const df = $('#delForm');
+  if (df) {
+    const inp = $('#delConfirm'), btn = $('#delBtn');
+    inp.oninput = () => (btn.disabled = inp.value.trim().toLowerCase() !== m.username);
+    df.onsubmit = async (e) => {
+      e.preventDefault(); if (btn.disabled) return; btn.disabled = true; $('#delSt').textContent = '지우는 중…';
+      try { await api.deleteAccount($('#delContent').checked); toast('계정을 삭제했어요'); replaceTo('/'); }
+      catch (err) { btn.disabled = false; $('#delSt').textContent = err.code === 'SL409' ? '사이트의 마지막 관리자는 계정을 지울 수 없어요.' : errMsg(err, '계정을 삭제하지 못했어요. 잠시 후 다시 시도해 주세요.'); }
+    };
+  }
   $('#setForm').onsubmit = async (e) => {
     e.preventDefault(); const st = $('#setSt'), username = $('#sUser').value.trim().toLowerCase();
     if (!/^[a-z0-9_]{3,20}$/.test(username)) { st.textContent = '아이디는 영문 소문자, 숫자, 밑줄로 3~20자여야 해요.'; return; }
@@ -106,4 +125,13 @@ export async function renderInbox() {
       <div class="q">${esc(n.postTitle)}${n.commentText ? ` · “${esc(n.commentText.slice(0, 80))}”` : ''}</div></div></a>`).join('')}</div>`
       : '<div class="banner">아직 알림이 없어요. 누군가 내 글에 의견을 남기거나, 내 댓글에 답하거나, 내 제안이 반영되면 여기에 떠요.</div>'}`;
   if (list.some((n) => !n.read)) { try { await api.markAllRead(); } catch { /* */ } window.dispatchEvent(new Event('slop:unread')); }
+}
+
+// Terms of Service / Privacy Policy, in the interface language (text lives in legal-content.js)
+export function renderLegal(doc) {
+  const L = lang === 'ko' ? 'ko' : 'en', d = LEGAL[doc]?.[L], other = doc === 'terms' ? 'privacy' : 'terms';
+  if (!d) { replaceTo('/'); return; }
+  app.innerHTML = `<article class="legal" data-ugc lang="${L}"><h1>${d.title}</h1><p class="muted">${L === 'ko' ? '시행일' : 'Effective'}: ${EFFECTIVE[L]}</p>${d.body}
+    <p class="muted" style="margin-top:28px"><a href="#/${other}">${LEGAL[other][L].title} →</a></p></article>`;
+  document.title = `${d.title} · Slop Lab`;
 }

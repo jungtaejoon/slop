@@ -71,6 +71,26 @@ export async function renderMod() {
   </div><aside class="side">
     ${isMod() ? `<section class="panel"><h2>작성 제한 <span class="mono muted">${bans.length}</span></h2>${bans.length ? bans.map((b) => `<div class="mq">${who(b)}<div class="hint">${esc(b.banReason || '')}</div><div class="row"><button class="btn sm" data-act="mod" data-op="unban" data-t="u" data-id="${b.id}" data-name="${esc(b.name)}">제한 해제</button></div></div>`).join('') : '<p>제한된 사람이 없어요.</p>'}</section>` : ''}
     <section class="panel"><h2>운영 기록</h2>${log.length ? log.slice(0, 40).map((l) => `<div class="logrow"><b>${esc(ACT[l.action] || l.action)}</b> ${l.type === 'post' && l.action !== 'delete' ? `<a href="#/p/${l.targetId}">${esc(l.label || '글')}</a>` : `<span class="muted">${esc(l.label || (l.type === 'comment' ? '댓글' : l.type === 'user' ? '사용자' : '글'))}</span>`}${l.reason ? ` <span class="muted">· ${esc(l.reason)}</span>` : ''}<div class="hint">${esc(l.actor?.name || '')} · ${ago(l.createdAt)}</div></div>`).join('') : '<p>아직 기록이 없어요.</p>'}</section>
+    ${api.me?.role === 'admin' ? '<section class="panel" id="viewStats"><h2>방문 통계</h2><p class="muted">불러오는 중…</p></section>' : ''}
     <section class="panel"><h2>운영자 지정</h2><p>커뮤니티 운영자는 각 커뮤니티의 <b>설정</b>에서 아이디로 추가해요. 사이트 전체 운영자는 관리자가 따로 지정해요.</p></section>
   </aside></div>`;
+  if (api.me?.role === 'admin') drawViewStats();
+}
+
+// admins: page views per day (last 14 days) and the most viewed pages this week
+async function drawViewStats() {
+  const el = $('#viewStats'); if (!el) return;
+  let rows = []; try { rows = await api.viewStats(); } catch { /* shown as empty */ }
+  if (!$('#viewStats')) return;
+  if (!rows.length) { el.innerHTML = '<h2>방문 통계</h2><p class="muted">방문 기록이 아직 없어요.</p>'; return; }
+  const byDay = new Map(); rows.forEach((r) => byDay.set(r.day, (byDay.get(r.day) || 0) + r.views));
+  const days = [...byDay.entries()].sort((a, b) => a[0].localeCompare(b[0])), max = Math.max(...days.map((d) => d[1]));
+  const weekAgo = new Date(Date.now() - 6 * 864e5).toISOString().slice(0, 10), byPath = new Map();
+  rows.filter((r) => r.day >= weekAgo).forEach((r) => byPath.set(r.path, (byPath.get(r.path) || 0) + r.views));
+  const top = [...byPath.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
+  const label = (p) => (p.startsWith('p/') ? esc(S.cache.get(p.slice(2))?.title || p) : esc(p));
+  el.innerHTML = `<h2>방문 통계</h2><p class="hint" style="margin:0 0 6px">최근 14일</p>
+    <div class="vstats">${days.map(([d, n]) => `<div class="vrow"><span class="mono">${d.slice(5)}</span><i style="width:${Math.max(4, Math.round((n / max) * 100))}%"></i><b class="mono">${n}</b></div>`).join('')}</div>
+    <p class="hint" style="margin:12px 0 6px">이번 주 많이 본 페이지</p>
+    <div class="vstats">${top.map(([p, n]) => `<div class="vrow"><a href="#/${esc(p)}" data-ugc>${label(p)}</a><b class="mono">${n}</b></div>`).join('')}</div>`;
 }

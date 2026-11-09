@@ -14,6 +14,7 @@
 import { mkdirSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
 import { toEnglish } from '../src/i18n.js';
 import { createCardRenderer, postCardSvg, communityCardSvg, isKorean } from './og-card.mjs';
+import { LEGAL, EFFECTIVE } from '../src/legal-content.js';
 
 const URL_ = process.env.VITE_SUPABASE_URL, KEY = process.env.VITE_SUPABASE_ANON_KEY;
 const SITE = (process.env.SITE_URL || 'https://jungtaejoon.github.io/slop-lab').replace(/\/?$/, '/');
@@ -133,6 +134,14 @@ for (const c of comms) {
   writeFileSync(`${OUT}/c/${c.slug}/index.html`, appPage({ lang, title: `${name} (c/${c.slug})`, desc, image, url: `${SITE}c/${c.slug}/`, type: 'website', content }));
 }
 
+// ---------------------------------------------------------------- terms and privacy (English copy; the app shows the visitor's language)
+for (const doc of ['terms', 'privacy']) {
+  const d = LEGAL[doc].en;
+  mkdirSync(`${OUT}/${doc}`, { recursive: true });
+  writeFileSync(`${OUT}/${doc}/index.html`, appPage({ lang: 'en', title: d.title, desc: `${d.title} of Slop Lab, effective ${EFFECTIVE.en}.`, image: OG, url: `${SITE}${doc}/`, type: 'website',
+    content: `<article class="legal" data-ugc lang="en"><h1>${d.title}</h1><p class="muted">Effective: ${EFFECTIVE.en}</p>${d.body}</article>` }));
+}
+
 // ---------------------------------------------------------------- home: recent posts as plain links (crawlers find every post page)
 const home = TEMPLATE.replace('<main class="wrap" id="app"></main>', `<main class="wrap" id="app"><h1>Slop Lab</h1><p>Find the gems in AI-made stuff. Try them, vote ▲ gem or ▼ slop, and say why.</p>
 <div class="list">${posts.slice(0, 40).map((p) => `<article class="post prerender"><div style="min-width:0"><a class="ptitle" href="${SITE}p/${p.id}/">${esc(p.title)}</a></div></article>`).join('')}</div></main>`)
@@ -180,6 +189,8 @@ writeFileSync(`${OUT}/sitemap.xml`, `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 <url><loc>${SITE}</loc><changefreq>hourly</changefreq></url>
 <url><loc>${SITE}best/</loc><changefreq>daily</changefreq></url>
+<url><loc>${SITE}terms/</loc></url>
+<url><loc>${SITE}privacy/</loc></url>
 ${comms.map((c) => `<url><loc>${SITE}c/${c.slug}/</loc><lastmod>${day(c.created_at)}</lastmod></url>`).join('\n')}
 ${posts.map((p) => `<url><loc>${SITE}p/${p.id}/</loc><lastmod>${day(p.updated_at)}</lastmod></url>`).join('\n')}
 </urlset>`);

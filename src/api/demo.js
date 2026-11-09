@@ -45,6 +45,9 @@ export function createDemoApi() {
   api.uid = () => api.me?.id || null;
   api.signInGuest = async () => false; // the demo has no guest mode
   api.authSettings = async () => ({ autoConfirm: true, guests: false });
+  api.trackView = () => {};
+  api.viewStats = async () => [];
+  api.deleteAccount = async () => { throw Object.assign(new Error('데모에서는 계정을 지울 수 없어요'), { code: 'demo' }); };
   const prof = (id) => db.profiles[id] || null;
   const isMod = () => ['mod', 'admin'].includes(api.me?.role);
   const need = () => { if (!api.me) throw Object.assign(new Error('로그인이 필요해요'), { code: '42501' }); if (api.me.banned) throw Object.assign(new Error('작성이 제한된 계정이에요'), { code: '42501' }); };
