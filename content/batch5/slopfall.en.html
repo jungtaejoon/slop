@@ -577,7 +577,8 @@ function recycle(e) {
 function hurt(e, dmg, kx = 0, ky = 0, kb = 1) {
   if (e.dead) return;
   const tgt = e.seg ? e.parent : e; if (tgt.dead) return;
-  dmg = Math.round(dmg * rnd(0.9, 1.1) * (e.seg ? 0.2 : 1)); tgt.hp -= dmg; // tail segments share the head's health: a wide hit across the tail shouldn't count 16 times e.flash = 0.1; if (e.seg) tgt.flash = 0.1;
+  // tail segments share the head's health: a wide hit across the tail shouldn't count 16 times
+  dmg = Math.round(dmg * rnd(0.9, 1.1) * (e.seg ? 0.2 : 1)); tgt.hp -= dmg; e.flash = 0.1; if (e.seg) tgt.flash = 0.1;
   if (!tgt.boss && !tgt.heavy) { const k = kb * (FOES[tgt.type]?.heavy ? 0.4 : 1) * (tgt.elite ? 0.3 : 1); e.kx += kx * 70 * k; e.ky += ky * 70 * k; }
   if (nums.length < 120 && !e.seg) nums.push({ x: e.x + rnd(-3, 3), y: e.y - e.r - 2, v: dmg, t: 0, big: dmg >= 60 });
   sfx('hit');
@@ -964,7 +965,7 @@ function drawWorld(t) {
   g.restore();
 }
 function drawPlayer(t) {
-  for (const f of fx) if (f.k === 'ghost') { g.globalAlpha = 0.35 * (1 - f.t / f.max); spr(CHAR_ART[pl.ci][f.fr].f, f.x, f.y - 8, f.f < 0); g.globalAlpha = 1; }
+  for (const f of fx) if (f.k === 'ghost') { g.globalAlpha = 0.35 * (1 - f.t / f.max); spr(CHAR_ART[pl.ci][f.fr], f.x, f.y - 8, f.f < 0, true); g.globalAlpha = 1; }
   shadow(pl.x, pl.y, 6);
   if (pl.inv > 0 && Math.floor(t * 20) % 2 && pl.hurtFlash <= 0) return;
   const fr = pl.moving ? Math.floor(pl.anim) % 2 : 0, bob = pl.moving ? 0 : Math.round(Math.sin(t * 3) * 0.6);
@@ -1142,7 +1143,7 @@ function drawChest() {
 let state = 'title', stT = 0, gt = 0, introI = 0, selI = 0, seenIntro = false, endWin = false, resultT = 0;
 function setState(s) { state = s; stT = 0; ui = []; }
 function pauseGame() { if (state === 'play') setState('pause'); }
-function startRun() { newRun(selI); setState('play'); sfx('lvl'); }
+function startRun() { newRun(selI); winT = 0; setState('play'); sfx('lvl'); }
 function endRun(win) { endWin = win; resultT = 0; setState('result'); music(-1); }
 function chooseOffer(i) { const o = offer[i]; if (!o) return; applyChoice(o); sfx('pick'); pendingLv--; offer = null; setState('play'); }
 function doReroll() { if (pl.rerolls <= 0) return; pl.rerolls--; offer = rollOffer(); offerSel = 0; sfx('ui'); }

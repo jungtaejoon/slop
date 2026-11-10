@@ -2,7 +2,7 @@
 let state = 'title', stT = 0, gt = 0, introI = 0, selI = 0, seenIntro = false, endWin = false, resultT = 0;
 function setState(s) { state = s; stT = 0; ui = []; }
 function pauseGame() { if (state === 'play') setState('pause'); }
-function startRun() { newRun(selI); setState('play'); sfx('lvl'); }
+function startRun() { newRun(selI); winT = 0; setState('play'); sfx('lvl'); }
 function endRun(win) { endWin = win; resultT = 0; setState('result'); music(-1); }
 function chooseOffer(i) { const o = offer[i]; if (!o) return; applyChoice(o); sfx('pick'); pendingLv--; offer = null; setState('play'); }
 function doReroll() { if (pl.rerolls <= 0) return; pl.rerolls--; offer = rollOffer(); offerSel = 0; sfx('ui'); }

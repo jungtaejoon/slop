@@ -81,7 +81,8 @@ function recycle(e) {
 function hurt(e, dmg, kx = 0, ky = 0, kb = 1) {
   if (e.dead) return;
   const tgt = e.seg ? e.parent : e; if (tgt.dead) return;
-  dmg = Math.round(dmg * rnd(0.9, 1.1) * (e.seg ? 0.2 : 1)); tgt.hp -= dmg; // tail segments share the head's health: a wide hit across the tail shouldn't count 16 times e.flash = 0.1; if (e.seg) tgt.flash = 0.1;
+  // tail segments share the head's health: a wide hit across the tail shouldn't count 16 times
+  dmg = Math.round(dmg * rnd(0.9, 1.1) * (e.seg ? 0.2 : 1)); tgt.hp -= dmg; e.flash = 0.1; if (e.seg) tgt.flash = 0.1;
   if (!tgt.boss && !tgt.heavy) { const k = kb * (FOES[tgt.type]?.heavy ? 0.4 : 1) * (tgt.elite ? 0.3 : 1); e.kx += kx * 70 * k; e.ky += ky * 70 * k; }
   if (nums.length < 120 && !e.seg) nums.push({ x: e.x + rnd(-3, 3), y: e.y - e.r - 2, v: dmg, t: 0, big: dmg >= 60 });
   sfx('hit');

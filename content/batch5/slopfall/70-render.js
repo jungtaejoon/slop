@@ -72,7 +72,7 @@ function drawWorld(t) {
   g.restore();
 }
 function drawPlayer(t) {
-  for (const f of fx) if (f.k === 'ghost') { g.globalAlpha = 0.35 * (1 - f.t / f.max); spr(CHAR_ART[pl.ci][f.fr].f, f.x, f.y - 8, f.f < 0); g.globalAlpha = 1; }
+  for (const f of fx) if (f.k === 'ghost') { g.globalAlpha = 0.35 * (1 - f.t / f.max); spr(CHAR_ART[pl.ci][f.fr], f.x, f.y - 8, f.f < 0, true); g.globalAlpha = 1; }
   shadow(pl.x, pl.y, 6);
   if (pl.inv > 0 && Math.floor(t * 20) % 2 && pl.hurtFlash <= 0) return;
   const fr = pl.moving ? Math.floor(pl.anim) % 2 : 0, bob = pl.moving ? 0 : Math.round(Math.sin(t * 3) * 0.6);
