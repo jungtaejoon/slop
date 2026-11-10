@@ -89,3 +89,6 @@
 제목: `[1인개발] AI가 만든 결과물을 써 보고 "보석/슬롭"으로 판정하는 커뮤니티를 클로드 코드로 만들었습니다`
 
 본문: 위 디시 초안과 같은 내용을 존댓말로 바꾸고, 사이트 링크와 소스 링크를 넣어요. (클리앙 계정이 생기면 다시 보여 드릴게요)
+- 디시 특이점이 온다 갤러리: 올림 → https://gall.dcinside.com/mgallery/board/view/?id=thesingularity&no=1519231 (말머리 [일반], 소스 링크 빠짐 → 수정 필요)
+- 스레드(새 글 소개): https://www.threads.com/@jungtaejoon82/post/Dfiv2eOEzCdiWpBkAP-2pPNgjo_RDYDxHtL6QU0
+- X(영어, 새 글 소개): https://x.com/jungtaejoon/status/2119968506041311421
