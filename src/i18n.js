@@ -144,7 +144,7 @@ const D = {
   '▲ 보석': '▲ Gem', ': 쓸모 있거나, 재미있거나, 영감을 줘요.': ': useful, fun or inspiring.', '▼ 슬롭': '▼ Slop', ': 시간이 아까웠어요.': ': a waste of time.',
   '댓글로 어디가 좋은지 짚어 주면 다른 사람이 찾는 데 큰 도움이 돼요.': 'comments pointing out what is good help others a lot.',
   'AI가 만들었다는 이유만으로 내리지 말아 주세요.': "Please don't downvote just because AI made it.", '스팸, 악성 코드, 괴롭힘, 개인정보 노출은': 'Spam, malicious code, harassment and doxxing:',
-  '신고': 'Report', '많이 쓰인 태그': 'Popular tags', '인기 커뮤니티': 'Popular communities', '전체 보기': 'See all', '글을 불러오지 못했어요. 새로고침해 주세요.': "Couldn't load the post. Please refresh.",
+  '신고': 'Report', '많이 쓰인 태그': 'Popular tags', '인기 커뮤니티': 'Popular communities', '내 커뮤니티': 'My communities', '더 찾기': 'Find more', '+ 더 찾기': '+ Find more', '전체 보기': 'See all', '글을 불러오지 못했어요. 새로고침해 주세요.': "Couldn't load the post. Please refresh.",
   '게시글': 'posts', '의견 수': 'comments', '운영자 지정': 'Adding moderators',
   // judge
   '판정할 글을 다 봤어요 🎉': "You've judged everything 🎉", '보석함 보기': 'See gems', '내가 만든 것 올리기': 'Post your own',

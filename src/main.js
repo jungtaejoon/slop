@@ -71,11 +71,9 @@ function trackView(v) {
 
 export function renderBoards() {
   const v = S.view;
-  const cur = v.name === 'feed' ? (v.slug ? 'c:' + v.slug : v.special) : v.name === 'post' ? 'c:' + (S.cache.get(v.id)?.community?.slug || '') : v.name === 'cform' && v.slug ? 'c:' + v.slug : v.name;
-  const followed = [...S.my.keys()].map((id) => S.comms.get(id)).filter(Boolean).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
-  const items = [['home', '홈', '#/'], ['popular', '인기', '#/popular'], ['shorts', '넘겨보기', '#/shorts'], ['judge', '판정하기', '#/judge'], ['gems', '보석함', '#/gems'], ['communities', '커뮤니티 찾기', '#/communities'],
-    ...followed.map((c) => ['c:' + c.slug, c.name, '#/c/' + c.slug]),
-    ...(api.me ? [['saved', '저장함', '#/saved']] : []), ...(anyCommunityMod() ? [['mod', '운영', '#/mod']] : [])];
+  // site sections only: followed communities live under 커뮤니티 (and the home sidebar), saved and mod in the account menu
+  const cur = v.name === 'feed' ? (v.slug ? 'communities' : v.special) : v.name === 'post' ? '' : v.name === 'cform' ? 'communities' : v.name;
+  const items = [['home', '홈', '#/'], ['popular', '인기', '#/popular'], ['shorts', '넘겨보기', '#/shorts'], ['judge', '판정하기', '#/judge'], ['gems', '보석함', '#/gems'], ['communities', '커뮤니티', '#/communities']];
   $('#boards').innerHTML = items.map(([k, l, h]) => `<a href="${h}" aria-current="${cur === k}">${esc(l)}</a>`).join('');
   // installed app: there is no browser back button, so show our own away from home
   const hb = $('#hBack'); if (hb) hb.hidden = !(isStandalone() && S.lastHash && !(v.name === 'feed' && v.special === 'home'));
@@ -169,7 +167,7 @@ async function boot() {
 async function afterAuth() {
   renderAuth();
   const [saves, reports] = await Promise.all([api.mySaves().catch(() => new Set()), api.myReports().catch(() => new Set()), loadMyCommunities(), api.loadBlocks()]);
-  renderBoards();
+  window.dispatchEvent(new Event('slop:follows')); // redraws the nav and any "내 커뮤니티" list
   S.saves = saves; S.reports = reports;
   await refreshUnread();
   S.unsubNotes?.(); S.unsubNotes = api.subscribeNotifications(refreshUnread);

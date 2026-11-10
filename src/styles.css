@@ -570,3 +570,15 @@ body.sw-mode:has(.sw-card.reading) .sw-top{display:none}
 .verpick{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-size:13px;color:var(--muted)}
 .verpick select{font:inherit;font-size:13px;padding:3px 8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
 .oldver+.oldver,.edrow+.oldver{margin-top:6px}
+
+/* followed communities: sidebar list on wide screens, chip row above the feed on narrow ones */
+.mclist{display:flex;flex-direction:column;gap:2px}
+.mclist a{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;text-decoration:none;color:var(--ink);font-size:14px}
+.mclist a:hover{background:var(--sunk)}
+.mclist .cav{width:22px;height:22px;font-size:11px;flex:none}
+.mycomms-row{display:none;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 0 12px}
+.mycomms-row a{flex:none;font-size:13px;padding:5px 12px;border-radius:999px;border:1px solid var(--line);text-decoration:none;color:var(--ink)}
+.mycomms-row a.more{color:var(--muted)}
+#dirBody{margin-top:0}.panel.mine{margin:0 0 12px}
+@media (max-width:980px){.mycomms-row{display:flex}.mycomms-panel{display:none}}
+@media (max-width:640px){.boards{gap:0}.boards a{padding:6px 9px;font-size:13px}}

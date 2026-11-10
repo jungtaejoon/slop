@@ -35,6 +35,7 @@ export const canWrite = () => !!(api.me && !api.me.banned);
 export const isCommunityMod = (cid) => isMod() || S.my.get(cid) === 'mod';
 export const anyCommunityMod = () => isMod() || [...S.my.values()].includes('mod');
 export const followIds = () => [...S.my.keys()];
+export const followedComms = () => followIds().map((id) => S.comms.get(id)).filter(Boolean).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
 export const remember = (c) => { if (c) S.comms.set(c.id, Object.assign(S.comms.get(c.id) || {}, c)); return c && S.comms.get(c.id); };
 export const commBySlug = (slug) => [...S.comms.values()].find((c) => c.slug === slug) || null;
 export const commLink = (c) => (c ? `<a class="cat" href="#/c/${esc(c.slug)}">${cav(c)}${esc(c.name)}</a>` : '<span class="cat">알 수 없는 커뮤니티</span>');

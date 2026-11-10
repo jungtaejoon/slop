@@ -1,5 +1,5 @@
 // Community directory, create form and settings (moderators).
-import { api, S, $, app, KINDS, canWrite, isCommunityMod, remember, commBySlug, followBtn, who, toast, errMsg, go, requireLogin } from '../core.js';
+import { api, S, $, app, KINDS, followedComms, canWrite, isCommunityMod, remember, commBySlug, followBtn, who, toast, errMsg, go, requireLogin } from '../core.js';
 import { esc, ago } from '../text.js';
 import { t as tr } from '../i18n.js'; // not `t`: draw() has a timer variable named t
 
@@ -7,8 +7,9 @@ let dirToken = 0;
 export async function renderDirectory() {
   const my = ++dirToken, st = (S.dir ??= { q: '', sort: 'members' });
   app.innerHTML = `<div class="layout"><div style="min-width:0">
-    <div class="fhead"><div><h1>커뮤니티 찾기</h1><p>관심 있는 주제를 팔로우하면 홈에 그 글들이 모여요. 원하는 주제가 없으면 직접 만들어요.</p></div>
+    <div class="fhead"><div><h1>커뮤니티</h1><p>관심 있는 주제를 팔로우하면 홈에 그 글들이 모여요. 원하는 주제가 없으면 직접 만들어요.</p></div>
       ${canWrite() ? '<a class="btn pri" href="#/communities/new">커뮤니티 만들기</a>' : ''}</div>
+    ${api.me && followedComms().length ? `<section class="panel mine"><h2>팔로우 중</h2><div class="chips">${followedComms().map((x) => `<a class="chip" href="#/c/${esc(x.slug)}">${esc(tr(x.name))}</a>`).join('')}</div></section>` : ''}
     <div class="sortbar"><input type="search" id="cq" placeholder="커뮤니티 이름이나 주제로 검색" value="${esc(st.q)}" style="flex:1;min-width:180px;border:0;background:none">
       <div class="seg" role="group" aria-label="정렬">${[['members', '팔로워 많은 순'], ['new', '새로 생긴 순']].map(([k, l]) => `<button data-csort="${k}" aria-pressed="${st.sort === k}">${l}</button>`).join('')}</div></div>
     <div id="dirBody"><div class="skel"></div></div></div>

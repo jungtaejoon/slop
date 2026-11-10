@@ -1,4 +1,4 @@
-import { api, S, $, app, KINDS, voteBox, who, sandboxFrame, savePrefs, loadMyVotes, canWrite, isCommunityMod, followIds, remember, commBySlug, commLink, followBtn, icon, gradFor, cav, isStandalone, seenPosts, REC_SEED, REC_REASONS } from '../core.js';
+import { api, S, $, app, KINDS, voteBox, who, sandboxFrame, savePrefs, loadMyVotes, canWrite, isCommunityMod, followIds, followedComms, remember, commBySlug, commLink, followBtn, icon, gradFor, cav, isStandalone, seenPosts, REC_SEED, REC_REASONS } from '../core.js';
 import { md } from '../text.js';
 import { t as tr } from '../i18n.js';
 import { esc, safeUrl, safeImgs, domain, ago } from '../text.js';
@@ -32,6 +32,7 @@ export async function renderFeed() {
   app.innerHTML = `${welcome}<div class="layout"><div style="min-width:0">
     <div class="fhead"><div class="chead">${c ? cav(c, true) : ''}<div><h1>${esc(title)}</h1><p${c ? ' class="mono"' : ''}>${esc(sub)}</p>${c?.description ? `<p>${esc(c.description)}</p>` : ''}</div></div>
       <div class="row">${c ? followBtn(c) : ''}${v.special === 'gems' ? '<button class="btn" data-act="sharebest">이번 주 보석 공유</button>' : ''}${v.special !== 'saved' ? `<a class="btn${c ? '' : ' pri'}" href="#/submit${c ? '/' + esc(c.slug) : ''}">글쓰기</a>` : ''}</div></div>
+    ${!c && v.special !== 'saved' ? myCommsRow() : ''}
     ${v.special === 'gems' ? '' : `<div class="sortbar"><div class="seg" role="group" aria-label="정렬">${sorts.map(([k, l]) => `<button data-sort="${k}" aria-pressed="${S.prefs.sort === k}">${l}</button>`).join('')}</div>
       ${S.prefs.sort === 'top' ? `<select class="inline" id="win" aria-label="기간">${[['day', '오늘'], ['week', '이번 주'], ['month', '이번 달'], ['all', '전체 기간']].map(([k, l]) => `<option value="${k}"${S.prefs.win === k ? ' selected' : ''}>${l}</option>`).join('')}</select>` : ''}
       <span class="sp"></span><select class="inline" id="clang" aria-label="콘텐츠 언어">${[['all', '모든 언어'], ['en', 'English'], ['ko', '한국어']].map(([k, l]) => `<option value="${k}"${S.prefs.clang === k ? ' selected' : ''}>${l}</option>`).join('')}</select><div class="seg" role="group" aria-label="보기">${[['card', '카드'], ['compact', '목록']].map(([k, l]) => `<button data-layout="${k}" aria-pressed="${S.prefs.layout === k}">${l}</button>`).join('')}</div></div>`}
@@ -142,6 +143,23 @@ async function loadPreview(el) {
   const f = sandboxFrame(code, '미리보기'); f.tabIndex = -1; f.setAttribute('aria-hidden', 'true'); el.prepend(f); ph?.remove();
 }
 
+// followed communities: a sidebar panel on wide screens, a chip row above the feed on narrow ones
+function myCommsPanel() {
+  const my = api.me ? followedComms() : []; if (!my.length) return '<div id="myCommsPanel" hidden></div>';
+  return `<section class="panel mycomms-panel" id="myCommsPanel"><h2>내 커뮤니티</h2><div class="mclist">${my.map((x) => `<a href="#/c/${esc(x.slug)}">${cav(x)}<span>${esc(tr(x.name))}</span></a>`).join('')}</div>
+    <a class="btn sm ghost" href="#/communities" style="margin-top:8px">더 찾기</a></section>`;
+}
+function myCommsRow() {
+  const my = api.me ? followedComms() : []; if (!my.length) return '<div id="myCommsRow" hidden></div>';
+  return `<nav class="mycomms-row" id="myCommsRow" aria-label="내 커뮤니티">${my.map((x) => `<a href="#/c/${esc(x.slug)}">${esc(tr(x.name))}</a>`).join('')}<a href="#/communities" class="more">+ 더 찾기</a></nav>`;
+}
+
+// follows load after sign-in and change on follow / unfollow: refresh both in place
+window.addEventListener('slop:follows', () => {
+  const p = $('#myCommsPanel'), r = $('#myCommsRow');
+  if (p) p.outerHTML = myCommsPanel(); if (r) r.outerHTML = myCommsRow();
+});
+
 async function renderSide(c) {
   const el = $('#side'); if (!el) return; const v = S.view, F = S.filters || {};
   const draw = (st, ps, mods) => {
@@ -150,7 +168,7 @@ async function renderSide(c) {
         <div class="row">${followBtn(c, true)}${canWrite() ? `<a class="btn sm" href="#/submit/${esc(c.slug)}">글쓰기</a>` : ''}<button class="btn sm ghost" data-act="sharec" data-slug="${esc(c.slug)}" data-title="${esc(c.name)}">공유</button>${isCommunityMod(c.id) ? `<a class="btn sm ghost" href="#/c/${esc(c.slug)}/settings">커뮤니티 설정</a>` : ''}</div></section>
       ${c.rules ? `<section class="panel"><h2>규칙</h2><div class="md" style="font-size:13.5px">${md(c.rules)}</div></section>` : ''}
       ${mods?.length ? `<section class="panel"><h2>운영자</h2><div class="chips" style="flex-direction:column;align-items:flex-start;gap:6px">${mods.map((m) => who(m)).join('')}</div></section>` : ''}`
-      : `<section class="panel"><h2>Slop</h2><p>AI가 만든 결과물을 그냥 넘기지 말고, 써 보고, 판정하고, 이유를 남기는 커뮤니티예요. 주제별 커뮤니티를 팔로우하고, 없으면 직접 만들어요.</p>
+      : myCommsPanel() + `<section class="panel"><h2>Slop</h2><p>AI가 만든 결과물을 그냥 넘기지 말고, 써 보고, 판정하고, 이유를 남기는 커뮤니티예요. 주제별 커뮤니티를 팔로우하고, 없으면 직접 만들어요.</p>
         <div class="statrow"><div><b>${st ? st.posts : '–'}</b><span>게시글</span></div><div><b>${st ? st.gems : '–'}</b><span>보석</span></div>${ps ? `<div><b>${ps.karma}</b><span>내 판정 점수</span></div>` : ''}</div>
         <a class="btn gem block" href="#/judge" style="margin-bottom:8px">판정하기: 한 장씩 넘기며 판정</a>
       ${canWrite() ? '<div class="row"><a class="btn pri sm" href="#/submit">글쓰기</a><a class="btn sm" href="#/communities/new">커뮤니티 만들기</a></div>' : !api.me ? '<a class="btn block" href="#/login">로그인하고 참여하기</a>' : ''}</section>`)
