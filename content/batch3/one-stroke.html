@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>한 붓 그리기</title>
+<style>
+  html,body{margin:0;height:100%;background:#fdf6ec;color:#3b2f2a;font-family:system-ui,-apple-system,"Apple SD Gothic Neo",sans-serif;user-select:none;-webkit-user-select:none;overflow:hidden}
+  main{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:12px;box-sizing:border-box}
+  h1{margin:0;font-size:22px}.sub{margin:0;color:#8a7466;font-size:14px;text-align:center}
+  .bar{display:flex;gap:10px;align-items:center;font-weight:800}
+  canvas{touch-action:none;border-radius:18px;box-shadow:0 10px 30px rgb(120 80 40/.18);background:#fff}
+  button{font:inherit;font-weight:800;border:0;border-radius:999px;padding:10px 18px;background:#3b2f2a;color:#fff;cursor:pointer}
+  button.ghost{background:#efe3d3;color:#3b2f2a}
+  .win{font-weight:900;color:#c2410c;min-height:24px}
+</style></head><body><main>
+<h1 id="h"></h1><p class="sub" id="sub"></p>
+<div class="bar"><span id="lv"></span><span id="left"></span></div>
+<canvas id="c"></canvas>
+<div class="win" id="win"></div>
+<div class="bar"><button class="ghost" id="reset"></button><button id="next" hidden></button></div>
+</main><script>
+// One stroke: start on the glowing cell and pass through every open cell exactly once.
+// Drag back over your path to undo. Levels are generated, so they never run out.
+const LANG = 'ko';
+const T = { ko: { title: '한 붓 그리기', sub: '빛나는 칸에서 시작해 모든 칸을 한 번씩만 지나가세요. 지나온 길로 되돌아가면 지워져요.', lv: (n) => `${n}단계`, left: (n) => `남은 칸 ${n}`, reset: '처음부터', next: '다음 단계 ▶', win: ['완벽해요!', '한 붓에 끝!', '깔끔하네요!', '천재인가요?'] }, en: { title: 'One Stroke', sub: 'Start on the glowing cell and pass through every open cell exactly once. Drag back along your path to undo.', lv: (n) => `Level ${n}`, left: (n) => `${n} cells left`, reset: 'Restart', next: 'Next level ▶', win: ['Perfect!', 'One stroke!', 'Clean!', 'Genius?'] } }[LANG];
+document.documentElement.lang = LANG; document.title = T.title;
+const $ = (id) => document.getElementById(id);
+$('h').textContent = T.title; $('sub').textContent = T.sub; $('reset').textContent = T.reset; $('next').textContent = T.next;
+const cv = $('c'), g = cv.getContext('2d');
+const store = { get(k) { try { return +localStorage.getItem(k) || 0; } catch { return store[k] || 0; } }, set(k, v) { try { localStorage.setItem(k, v); } catch { store[k] = v; } } };
+let level = Math.max(1, store.get('onestroke-level')), N, open, start, path, cell, done;
+const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+
+// build a level: a long self-avoiding walk (Warnsdorff's rule); cells it skips become walls
+function build() {
+  N = level < 4 ? 5 : level < 8 ? 6 : 7;
+  const need = Math.floor(N * N * (level < 3 ? 0.72 : 0.82));
+  for (let tries = 0; tries < 400; tries++) {
+    const seen = new Set(), walk = [[Math.floor(Math.random() * N), Math.floor(Math.random() * N)]];
+    seen.add(walk[0].join());
+    const nbrs = ([x, y]) => DIRS.map(([dx, dy]) => [x + dx, y + dy]).filter(([a, b]) => a >= 0 && b >= 0 && a < N && b < N && !seen.has(a + ',' + b));
+    for (;;) {
+      const opts = nbrs(walk[walk.length - 1]); if (!opts.length) break;
+      opts.sort((a, b) => nbrs(a).length - nbrs(b).length + (Math.random() - 0.5) * 1.2);
+      walk.push(opts[0]); seen.add(opts[0].join());
+    }
+    if (walk.length >= need) { open = seen; start = walk[0]; break; }
+  }
+  path = [start]; done = false; $('win').textContent = ''; $('next').hidden = true; layout(); draw();
+}
+function layout() {
+  const size = Math.min(innerWidth - 32, innerHeight - 230, 460), dpr = Math.min(devicePixelRatio || 1, 2);
+  cell = size / N; cv.style.width = cv.style.height = size + 'px'; cv.width = cv.height = size * dpr; g.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+const key = (p) => p.join();
+const ctr = ([x, y]) => [x * cell + cell / 2, y * cell + cell / 2];
+function draw() {
+  const size = cell * N; g.clearRect(0, 0, size, size);
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    const o = open.has(x + ',' + y), inPath = path.some((p) => p[0] === x && p[1] === y);
+    g.fillStyle = !o ? '#3b2f2a' : inPath ? '#fde4cf' : '#f6ece0';
+    g.beginPath(); g.roundRect(x * cell + 3, y * cell + 3, cell - 6, cell - 6, cell * 0.22); g.fill();
+  }
+  // the stroke
+  const grad = g.createLinearGradient(0, 0, size, size); grad.addColorStop(0, '#f97316'); grad.addColorStop(1, '#db2777');
+  g.strokeStyle = grad; g.lineWidth = cell * 0.36; g.lineCap = g.lineJoin = 'round';
+  g.beginPath(); path.forEach((p, i) => { const [cx, cy] = ctr(p); i ? g.lineTo(cx, cy) : g.moveTo(cx, cy); }); g.stroke();
+  const [sx, sy] = ctr(start); g.fillStyle = '#f97316'; g.beginPath(); g.arc(sx, sy, cell * 0.28, 0, 7); g.fill();
+  if (!done) { g.strokeStyle = 'rgba(249,115,22,.35)'; g.lineWidth = 4; g.beginPath(); g.arc(sx, sy, cell * 0.38 + Math.sin(performance.now() / 300) * 3, 0, 7); g.stroke(); }
+  const [ex, ey] = ctr(path[path.length - 1]); g.fillStyle = '#fff'; g.beginPath(); g.arc(ex, ey, cell * 0.12, 0, 7); g.fill();
+  $('lv').textContent = T.lv(level); $('left').textContent = done ? '' : T.left(open.size - path.length);
+}
+function at(e) { const r = cv.getBoundingClientRect(); const x = Math.floor((e.clientX - r.left) / cell), y = Math.floor((e.clientY - r.top) / cell); return x >= 0 && y >= 0 && x < N && y < N ? [x, y] : null; }
+function step(c) {
+  if (!c || done || !open.has(key(c))) return;
+  const i = path.findIndex((p) => key(p) === key(c));
+  if (i >= 0) { if (i < path.length - 1) { path = path.slice(0, i + 1); draw(); } return; }
+  const [lx, ly] = path[path.length - 1];
+  if (Math.abs(lx - c[0]) + Math.abs(ly - c[1]) !== 1) return;
+  path.push(c); tone(300 + path.length * 18); draw();
+  if (path.length === open.size) win();
+}
+function win() {
+  done = true; $('win').textContent = T.win[Math.floor(Math.random() * T.win.length)]; $('next').hidden = false;
+  [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, 0.18), i * 90)); store.set('onestroke-level', level + 1); draw();
+}
+let drag = false;
+cv.addEventListener('pointerdown', (e) => { drag = true; cv.setPointerCapture(e.pointerId); step(at(e)); });
+cv.addEventListener('pointermove', (e) => { if (drag) step(at(e)); });
+addEventListener('pointerup', () => (drag = false));
+$('reset').onclick = () => { path = [start]; done = false; $('win').textContent = ''; $('next').hidden = true; draw(); };
+$('next').onclick = () => { level++; build(); };
+addEventListener('resize', () => { layout(); draw(); });
+let ac; function tone(f, t = 0.06) { try { ac ??= new AudioContext(); const o = ac.createOscillator(), v = ac.createGain(); o.frequency.value = f; v.gain.setValueAtTime(0.04, ac.currentTime); v.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + t); o.connect(v).connect(ac.destination); o.start(); o.stop(ac.currentTime + t); } catch { /* */ } }
+(function pulse() { if (!done && open) draw(); setTimeout(() => requestAnimationFrame(pulse), 80); })();
+build();
+</script></body></html>

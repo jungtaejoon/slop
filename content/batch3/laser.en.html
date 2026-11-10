@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Laser Mirrors</title>
+<style>
+  html,body{margin:0;height:100%;background:#0b1020;color:#e0e7ff;font-family:system-ui,-apple-system,"Apple SD Gothic Neo",sans-serif;user-select:none;-webkit-user-select:none;overflow:hidden}
+  main{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:12px;box-sizing:border-box}
+  h1{margin:0;font-size:22px}.sub{margin:0;color:#94a3b8;font-size:14px;text-align:center;max-width:440px}
+  .bar{display:flex;gap:12px;font-weight:800;font-variant-numeric:tabular-nums}
+  canvas{touch-action:manipulation;border-radius:16px;box-shadow:0 0 40px rgb(99 102 241/.25);cursor:pointer}
+  button{font:inherit;font-weight:800;border:0;border-radius:999px;padding:10px 18px;background:#6366f1;color:#fff;cursor:pointer}
+  .win{min-height:24px;font-weight:900;color:#f0abfc}
+</style></head><body><main>
+<h1 id="h"></h1><p class="sub" id="sub"></p>
+<div class="bar"><span id="lv"></span><span id="mv"></span></div>
+<canvas id="c"></canvas><div class="win" id="win"></div><button id="next" hidden></button>
+</main><script>
+// Laser mirrors: tap a mirror to flip it (/ ↔ \). Bounce the laser into the crystal.
+// Each level is built by walking a random path backwards from the answer, then
+// scrambling the mirrors and adding decoys, so every level has a solution.
+const LANG = 'en';
+const T = { ko: { title: '레이저 거울', sub: '거울을 눌러 방향을 바꾸세요. 레이저를 반사시켜 보석에 맞히면 성공!', lv: (n) => `${n}단계`, mv: (n) => `${n}번 돌림`, next: '다음 단계 ▶', win: (n, p) => `명중! ${n}번 만에 (목표 ${p}번)` }, en: { title: 'Laser Mirrors', sub: 'Tap a mirror to flip it. Bounce the laser into the gem to win!', lv: (n) => `Level ${n}`, mv: (n) => `${n} flips`, next: 'Next level ▶', win: (n, p) => `Hit! ${n} flips (target: ${p})` } }[LANG];
+document.documentElement.lang = LANG; document.title = T.title;
+const $ = (id) => document.getElementById(id);
+$('h').textContent = T.title; $('sub').textContent = T.sub; $('next').textContent = T.next;
+const cv = $('c'), g = cv.getContext('2d');
+const store = { get(k) { try { return +localStorage.getItem(k) || 0; } catch { return store[k] || 0; } }, set(k, v) { try { localStorage.setItem(k, v); } catch { store[k] = v; } } };
+let level = Math.max(1, store.get('laser-level')), N, grid, src, target, moves, par, solved, cell;
+const reflect = (m, [dx, dy]) => (m === '/' ? [-dy, -dx] : [dy, dx]);
+
+function build() {
+  N = Math.min(8, 5 + Math.floor(level / 3));
+  for (let tries = 0; tries < 500; tries++) {
+    grid = Array.from({ length: N }, () => Array(N).fill(null));
+    // source on the left edge, shooting right
+    let x = 0, y = Math.floor(Math.random() * N), d = [1, 0]; src = { x: -1, y };
+    const used = new Set(); let turns = 0; const want = 2 + Math.floor(level / 2);
+    let ok = true;
+    for (let guard = 0; guard < 60; guard++) {
+      if (x < 0 || y < 0 || x >= N || y >= N || used.has(x + ',' + y)) { ok = false; break; }
+      used.add(x + ',' + y);
+      if (turns >= want && Math.random() < 0.5) { target = { x, y }; break; }
+      if (Math.random() < 0.45 && turns < want + 1) {
+        const nd = Math.random() < 0.5 ? [d[1], d[0]] : [-d[1], -d[0]];
+        const m = reflect('/', d)[0] === nd[0] && reflect('/', d)[1] === nd[1] ? '/' : '\\';
+        grid[y][x] = { m, fixed: false }; d = nd; turns++;
+      }
+      x += d[0]; y += d[1];
+    }
+    if (!ok || !target || turns < want) { target = null; continue; }
+    // remember the answer, then scramble every mirror and add decoys
+    const answer = grid.flat().filter(Boolean).map((c) => c.m);
+    let wrong = 0;
+    grid.flat().forEach((c) => { if (c && Math.random() < 0.7) { c.m = c.m === '/' ? '\\' : '/'; wrong++; } });
+    if (!wrong) { const c = grid.flat().find(Boolean); c.m = c.m === '/' ? '\\' : '/'; wrong = 1; }
+    par = wrong;
+    for (let k = 0; k < Math.min(level + 1, 8); k++) {
+      const a = Math.floor(Math.random() * N), b = Math.floor(Math.random() * N);
+      if (!grid[b][a] && !used.has(a + ',' + b) && !(a === target.x && b === target.y)) grid[b][a] = { m: Math.random() < 0.5 ? '/' : '\\' };
+    }
+    if (trace().hit) continue; // must not already be solved
+    void answer; break;
+  }
+  moves = 0; solved = false; $('win').textContent = ''; $('next').hidden = true; layout(); draw();
+}
+function trace() {
+  let x = src.x + 1, y = src.y, d = [1, 0]; const pts = [[src.x + 0.5, src.y + 0.5]];
+  for (let i = 0; i < 200; i++) {
+    if (x < 0 || y < 0 || x >= N || y >= N) { pts.push([x + 0.5 - d[0] * 0.5, y + 0.5 - d[1] * 0.5]); return { pts, hit: false }; }
+    if (x === target.x && y === target.y) { pts.push([x + 0.5, y + 0.5]); return { pts, hit: true }; }
+    const c = grid[y][x]; if (c) { pts.push([x + 0.5, y + 0.5]); d = reflect(c.m, d); }
+    x += d[0]; y += d[1];
+  }
+  return { pts, hit: false };
+}
+function layout() {
+  const size = Math.min(innerWidth - 28, innerHeight - 220, 480), dpr = Math.min(devicePixelRatio || 1, 2);
+  cell = size / (N + 1); cv.style.width = cv.style.height = size + 'px'; cv.width = cv.height = size * dpr; g.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+const P = (gx, gy) => [(gx + 1) * cell, gy * cell + cell / 2];
+function draw() {
+  const size = cell * (N + 1), t = performance.now() / 1000;
+  g.fillStyle = '#0f172a'; g.fillRect(0, 0, size, size);
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { g.fillStyle = (x + y) % 2 ? '#141c33' : '#111831'; g.fillRect((x + 1) * cell, y * cell + cell / 2, cell, cell); }
+  // emitter
+  const [ex, ey] = P(-1, src.y); g.fillStyle = '#ef4444'; g.beginPath(); g.roundRect(ex + cell * 0.2, ey + cell * 0.25, cell * 0.6, cell * 0.5, 6); g.fill();
+  // target gem
+  const [tx, ty] = P(target.x, target.y), r = cell * 0.28;
+  g.save(); g.translate(tx + cell / 2, ty + cell / 2); g.rotate(Math.sin(t * 2) * 0.1);
+  g.fillStyle = solved ? '#f0abfc' : '#a78bfa'; g.beginPath(); g.moveTo(0, -r); g.lineTo(r, 0); g.lineTo(0, r); g.lineTo(-r, 0); g.closePath(); g.fill(); g.restore();
+  // laser
+  const tr = trace();
+  g.save(); g.globalCompositeOperation = 'lighter'; g.lineCap = g.lineJoin = 'round';
+  for (const [w, a] of [[cell * 0.32, 0.12], [cell * 0.14, 0.35], [cell * 0.05, 1]]) {
+    g.strokeStyle = `rgba(255,${tr.hit ? 120 : 70},${tr.hit ? 200 : 80},${a})`; g.lineWidth = w; g.beginPath();
+    tr.pts.forEach(([px, py], i) => { const X = (px + 1) * cell, Y = py * cell + cell / 2; i ? g.lineTo(X, Y) : g.moveTo(X, Y); }); g.stroke();
+  }
+  g.restore();
+  // mirrors
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    const c = grid[y][x]; if (!c) continue; const [mx, my] = P(x, y), pad = cell * 0.18;
+    g.strokeStyle = '#e0e7ff'; g.lineWidth = cell * 0.09; g.lineCap = 'round'; g.beginPath();
+    if (c.m === '/') { g.moveTo(mx + pad, my + cell - pad); g.lineTo(mx + cell - pad, my + pad); } else { g.moveTo(mx + pad, my + pad); g.lineTo(mx + cell - pad, my + cell - pad); }
+    g.stroke();
+  }
+  $('lv').textContent = T.lv(level); $('mv').textContent = T.mv(moves);
+}
+cv.addEventListener('click', (e) => {
+  if (solved) return; const r = cv.getBoundingClientRect();
+  const x = Math.floor((e.clientX - r.left) / cell) - 1, y = Math.floor((e.clientY - r.top - cell / 2) / cell);
+  const c = grid[y]?.[x]; if (!c) return;
+  c.m = c.m === '/' ? '\\' : '/'; moves++; tone(500 + Math.random() * 200);
+  if (trace().hit) { solved = true; $('win').textContent = T.win(moves, par); $('next').hidden = false; store.set('laser-level', level + 1); [660, 880, 1320].forEach((f, i) => setTimeout(() => tone(f, 0.2), i * 100)); }
+  draw();
+});
+$('next').onclick = () => { level++; build(); };
+addEventListener('resize', () => { layout(); draw(); });
+let ac; function tone(f, t = 0.05) { try { ac ??= new AudioContext(); const o = ac.createOscillator(), v = ac.createGain(); o.type = 'triangle'; o.frequency.value = f; v.gain.setValueAtTime(0.05, ac.currentTime); v.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + t); o.connect(v).connect(ac.destination); o.start(); o.stop(ac.currentTime + t); } catch { /* */ } }
+build();
+(function loop() { draw(); setTimeout(() => requestAnimationFrame(loop), 60); })();
+</script></body></html>

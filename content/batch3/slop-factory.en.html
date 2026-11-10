@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Slop Factory</title>
+<style>
+  :root{--bg:#1b1a17;--ink:#f3efe6;--muted:#a8a294;--gem:#16a34a;--slop:#ea580c;--card:#fffdf7}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:radial-gradient(120% 80% at 50% 0%,#2a2722,#141310);color:var(--ink);font-family:system-ui,-apple-system,"Apple SD Gothic Neo",sans-serif;overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+  #app{position:relative;height:100%;display:flex;flex-direction:column;max-width:560px;margin:0 auto;padding:12px 14px calc(14px + env(safe-area-inset-bottom,0px))}
+  .hud{display:flex;align-items:center;gap:12px;font-variant-numeric:tabular-nums;font-weight:800;font-size:15px}
+  .hud .sp{flex:1}.hud .lv{font-size:12px;color:var(--muted);font-weight:700;background:#2b2924;border-radius:999px;padding:3px 9px}
+  .lives span{display:inline-block;width:14px;height:14px;margin-left:3px;border-radius:4px;background:#fbbf24;transform:rotate(45deg)}
+  .lives span.off{background:#3b3832}
+  .stage{position:relative;flex:1;display:flex;align-items:center;justify-content:center;overflow:visible}
+  .belt{position:absolute;left:-30px;right:-30px;bottom:9%;height:30px;border-radius:8px;background:repeating-linear-gradient(90deg,#3d3a33 0 20px,#2c2a25 20px 40px);box-shadow:inset 0 3px 0 #57534a,0 8px 18px rgb(0 0 0/.5);animation:belt .9s linear infinite}
+  @keyframes belt{to{background-position:40px 0}}
+  .card{position:relative;z-index:2;width:min(100%,400px);min-height:min(56%,360px);background:var(--card);color:#22201b;border-radius:18px;padding:16px 18px 22px;box-shadow:0 22px 44px rgb(0 0 0/.5);transition:transform .38s cubic-bezier(.2,.8,.2,1),opacity .38s}
+  .card.enter{transform:translateX(-125%) rotate(-7deg);opacity:0;transition:none}
+  .card.out-gem{transform:translateX(135%) rotate(9deg);opacity:0}
+  .card.out-slop{transform:translateY(115%) rotate(-5deg) scale(.88);opacity:0}
+  .kind{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:900;letter-spacing:.08em;color:#7a7262}
+  .kind i{font-style:normal;font-size:16px}
+  .ttl{font-weight:900;font-size:19px;margin:8px 0 2px}
+  .body{margin-top:8px;font-size:17px;line-height:1.62;white-space:pre-wrap}
+  .body.code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13.5px;background:#f1ece0;border-radius:10px;padding:10px 12px;line-height:1.55;white-space:pre;overflow-x:auto}
+  .body svg{display:block;margin:4px auto 0;width:min(62%,210px);height:auto}
+  .cap{text-align:center;color:#6b6556;font-size:14px}
+  .timer{position:absolute;left:10px;right:10px;bottom:8px;height:6px;border-radius:99px;background:#ece5d6;overflow:hidden}
+  .timer b{display:block;height:100%;width:100%;background:linear-gradient(90deg,#f59e0b,#ef4444);transform-origin:left}
+  .stamp{position:absolute;right:14px;top:14px;font-weight:900;font-size:26px;padding:3px 12px;border:4px solid;border-radius:10px;transform:rotate(-12deg) scale(2.3);opacity:0;transition:transform .16s ease-out,opacity .16s;background:rgb(255 253 247/.85)}
+  .stamp.on{transform:rotate(-12deg) scale(1);opacity:.95}
+  .stamp.gem{color:var(--gem)}.stamp.slop{color:var(--slop)}
+  .why{position:absolute;z-index:3;left:0;right:0;bottom:calc(9% + 40px);text-align:center;font-size:15px;font-weight:800;color:#fecaca;min-height:22px;text-shadow:0 2px 6px #000}
+  .combo{position:absolute;z-index:3;top:4px;left:0;right:0;text-align:center;font-weight:900;color:#fbbf24;font-size:16px;opacity:0;transition:opacity .2s,transform .2s;transform:translateY(6px)}
+  .combo.on{opacity:1;transform:none}
+  .btns{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
+  .btn{font:inherit;font-weight:900;font-size:19px;border:0;border-radius:16px;padding:15px 10px 12px;cursor:pointer;color:#fff;box-shadow:0 5px 0 rgb(0 0 0/.35);touch-action:manipulation}
+  .btn:active{transform:translateY(4px);box-shadow:0 1px 0 rgb(0 0 0/.35)}
+  .btn.s{background:var(--slop)}.btn.g{background:var(--gem)}
+  .btn small{display:block;font-size:11px;opacity:.8;font-weight:700;margin-top:2px}
+  .overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgb(20 19 17/.94);z-index:9;padding:18px;overflow:auto}
+  .overlay[hidden]{display:none}
+  .panel{max-width:420px;width:100%;text-align:center}
+  .panel h1{font-size:32px;margin:0 0 4px;letter-spacing:-.02em}
+  .panel h1 em{font-style:normal;color:#fbbf24}
+  .panel p{color:var(--muted);line-height:1.55;margin:6px 0}
+  .rules{text-align:left;background:#26241f;border:1px solid #3a372f;border-radius:12px;padding:10px 14px;margin:12px 0;font-size:14px;line-height:1.75}
+  .rules div::before{content:"✗ ";color:var(--slop);font-weight:900}
+  .big{font-size:44px;font-weight:900;color:#fbbf24;margin:6px 0}
+  .go{font:inherit;font-weight:900;font-size:18px;border:0;border-radius:999px;padding:14px 34px;background:#fbbf24;color:#1b1a17;cursor:pointer;margin-top:10px;box-shadow:0 5px 0 #b45309}
+  .go:active{transform:translateY(4px);box-shadow:0 1px 0 #b45309}
+  .toast{position:absolute;z-index:6;left:50%;top:44px;transform:translate(-50%,-20px);background:#fbbf24;color:#1b1a17;font-weight:900;border-radius:12px;padding:10px 16px;opacity:0;transition:all .3s;text-align:center;max-width:90%;font-size:14px}
+  .toast.on{opacity:1;transform:translate(-50%,0)}
+  .shake{animation:shake .32s}
+  @keyframes shake{20%{transform:translateX(-9px)}45%{transform:translateX(8px)}70%{transform:translateX(-4px)}}
+</style></head><body>
+<div id="app">
+  <div class="hud"><span id="score">0</span><span class="lv" id="lv"></span><span class="sp"></span><span class="lives" id="lives"></span></div>
+  <div class="stage" id="stage"><div class="combo" id="combo"></div><div class="belt"></div><div class="why" id="why"></div><div class="toast" id="toast"></div></div>
+  <div class="btns"><button class="btn s" id="bS"></button><button class="btn g" id="bG"></button></div>
+  <div class="overlay" id="ov"><div class="panel" id="panel"></div></div>
+</div>
+<script>
+// Slop Factory: AI outputs ride down a conveyor belt. Stamp each one gem or slop
+// before the timer runs out. Every shift adds a new tell-tale sign of slop.
+const LANG = 'en';
+const DICT = {
+  ko: {
+    title: '슬롭 공장', titleHtml: '슬롭 <em>공장</em>',
+    intro: 'AI 결과물이 컨베이어를 타고 내려와요.\n멀쩡하면 보석, 수상하면 슬롭! 교대마다 감별 기준이 하나씩 늘어나요.',
+    start: '출근하기', again: '다시 출근', slop: '◀ 슬롭', gem: '보석 ▶', keyS: '← · A · 왼쪽으로 밀기', keyG: '→ · D · 오른쪽으로 밀기',
+    shift: (n) => `${n}교대`, newRule: '새 감별 기준', today: '오늘의 감별 기준',
+    over: '퇴근!', best: '최고 기록', acc: (a, n) => `정확도 ${a}% · ${n}개 분류`,
+    ranks: ['슬롭 감별 견습생', '슬롭 감별사', '보석 감정사', 'AI 품질 관리 팀장', '전설의 감별 장인'],
+    timeout: '시간 초과! ', wasGem: '보석이었어요. 수상한 곳이 없었어요', combo: (n) => `${n}연속 정답!`,
+    rules: { ai: '「AI 언어 모델로서」가 들어간 글', hand: '손가락이 5개가 아닌 손 그림', fn: '이름만 그럴듯한 가짜 함수 (doMagic 같은)', rep: '같은 문장이 두 번 나오는 글', date: '세상에 없는 날짜나 시간', food: '먹을 수 없는 재료가 든 레시피' },
+    why: { ai: '「AI 언어 모델로서」가 숨어 있었어요', hand: (n) => `손가락이 ${n}개였어요`, fn: (f) => `${f}() 같은 함수는 없어요`, rep: '같은 문장이 두 번 나왔어요', date: (d) => `"${d}"는 없는 날짜·시간이에요`, food: (f) => `"${f}"는 못 먹어요` },
+    kinds: { poem: ['✍', 'AI가 쓴 시'], hand: ['🖐', 'AI가 그린 그림'], code: ['⌨', 'AI가 짠 코드'], note: ['📅', 'AI가 정리한 일정'], recipe: ['🍳', 'AI가 만든 레시피'] },
+    poemTitles: ['퇴근', '밤', '가을', '일요일', '비', '월요일'],
+    lines: ['가을비가 창문을 두드리면', '식은 커피도 다시 따뜻해진다', '지하철 창에 비친 얼굴이 낯설다', '퇴근길 하늘이 오늘따라 낮다', '고양이는 내 자리를 먼저 안다', '세탁기가 끝났다고 노래한다', '편의점 불빛만 깨어 있는 밤', '보내지 못한 메시지가 쌓인다', '달이 아파트 사이에 걸렸다', '라면 물이 끓는 소리가 좋다', '우산을 두고 온 걸 알았다', '알람보다 먼저 눈이 떠졌다'],
+    aiLine: 'AI 언어 모델로서 저는 감정을 느낄 수 없지만,',
+    handCap: '친구에게 손 흔드는 그림',
+    code: [['점수 중 1등 찾기', 'const top = Math.max(...scores);', 'scores'], ['이름 앞뒤 공백 없애기', 'const name = input.trim();', 'input'], ['짝수만 고르기', 'const evens = nums.filter((n) => n % 2 === 0);', 'nums'], ['가격 합계 구하기', 'const total = prices.reduce((a, b) => a + b, 0);', 'prices'], ['목록 순서 뒤집기', 'const back = list.slice().reverse();', 'list']],
+    fakes: ['doMagic', 'fixAllBugs', 'makeItWork', 'solveEverything', 'autoGenius', 'justWork'],
+    events: ['팀 회의', '치과 예약', '동창 모임', '택배 도착', '김장하는 날', '이사 견적'],
+    place: '장소: 3층 회의실',
+    date: (m, d, h) => `${m}월 ${d}일 오후 ${h}시`,
+    badDates: ['2월 30일 오후 2시', '4월 31일 오후 3시', '13월 2일 오후 1시', '6월 31일 오후 4시', '5월 10일 오후 25시', '9월 31일 오후 2시'],
+    dishes: ['김치볶음밥', '토마토 파스타', '된장찌개', '계란말이', '감자전', '두부조림'],
+    food: ['밥 1공기', '김치 반 컵', '양파 1개', '계란 2개', '대파 약간', '간장 1큰술', '감자 2개', '토마토 3개', '소금 약간', '버터 1조각', '두부 반 모', '마늘 3쪽'],
+    junk: ['자갈 2컵', '건전지 1개', '모래 약간', '지우개 반 개', '양초 1자루', '클립 3개'],
+    ingredients: '재료',
+  },
+  en: {
+    title: 'Slop Factory', titleHtml: 'Slop <em>Factory</em>',
+    intro: 'AI outputs come down the conveyor belt.\nLooks fine? Gem. Something off? Slop! Every shift adds a new sign to watch for.',
+    start: 'Clock in', again: 'Clock in again', slop: '◀ Slop', gem: 'Gem ▶', keyS: '← · A · swipe left', keyG: '→ · D · swipe right',
+    shift: (n) => `Shift ${n}`, newRule: 'New sign of slop', today: 'Signs of slop',
+    over: 'Shift over!', best: 'Best', acc: (a, n) => `${a}% accurate · ${n} sorted`,
+    ranks: ['Slop sorting trainee', 'Slop sorter', 'Gem appraiser', 'Head of AI quality', 'Legendary slop detector'],
+    timeout: 'Too slow! ', wasGem: 'That was a gem. Nothing was off', combo: (n) => `${n} in a row!`,
+    rules: { ai: 'Text that says "As an AI language model"', hand: 'A hand without exactly 5 fingers', fn: 'Code calling a too-good-to-be-true function (like doMagic)', rep: 'Text that repeats the same line', date: 'A date or time that cannot exist', food: 'A recipe with something inedible' },
+    why: { ai: 'It said "As an AI language model"', hand: (n) => `That hand had ${n} fingers`, fn: (f) => `There is no such function as ${f}()`, rep: 'The same line appeared twice', date: (d) => `"${d}" does not exist`, food: (f) => `You can't eat "${f}"` },
+    kinds: { poem: ['✍', 'AI POEM'], hand: ['🖐', 'AI DRAWING'], code: ['⌨', 'AI CODE'], note: ['📅', 'AI SCHEDULE'], recipe: ['🍳', 'AI RECIPE'] },
+    poemTitles: ['Commute', 'Night', 'Autumn', 'Sunday', 'Rain', 'Monday'],
+    lines: ['When autumn rain taps on the window', 'even cold coffee feels warm again', 'my face in the subway glass looks new', 'the sky hangs low on the way home', 'the cat always finds my seat first', 'the washing machine sings that it is done', 'only the corner store is awake tonight', 'unsent messages keep piling up', 'the moon is stuck between two towers', 'I love the sound of noodle water boiling', 'I just noticed I left my umbrella', 'I woke up before the alarm'],
+    aiLine: 'As an AI language model, I cannot feel, but',
+    handCap: 'Waving hello to a friend',
+    code: [['find the top score', 'const top = Math.max(...scores);', 'scores'], ['trim spaces from a name', 'const name = input.trim();', 'input'], ['keep only even numbers', 'const evens = nums.filter((n) => n % 2 === 0);', 'nums'], ['add up the prices', 'const total = prices.reduce((a, b) => a + b, 0);', 'prices'], ['reverse the list', 'const back = list.slice().reverse();', 'list']],
+    fakes: ['doMagic', 'fixAllBugs', 'makeItWork', 'solveEverything', 'autoGenius', 'justWork'],
+    events: ['Team meeting', 'Dentist', 'School reunion', 'Package delivery', 'Movers quote', 'Book club'],
+    place: 'Room: 3rd floor',
+    date: (m, d, h) => `${['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][m - 1]} ${d}, ${h} PM`,
+    badDates: ['February 30, 2 PM', 'April 31, 3 PM', 'June 31, 4 PM', 'May 10, 25 PM', 'September 31, 2 PM', 'November 31, 1 PM'],
+    dishes: ['Fried rice', 'Tomato pasta', 'Potato pancakes', 'Rolled omelet', 'Veggie soup', 'Mac and cheese'],
+    food: ['1 bowl of rice', '1 onion', '2 eggs', '1 tbsp soy sauce', '2 potatoes', '3 tomatoes', 'a pinch of salt', '1 pat of butter', '3 cloves of garlic', '1 cup of milk', '1 carrot', 'some cheese'],
+    junk: ['2 cups of gravel', '1 AA battery', 'a pinch of sand', 'half an eraser', '1 candle', '3 paper clips'],
+    ingredients: 'You need',
+  },
+}[LANG];
+document.documentElement.lang = LANG; document.title = DICT.title;
+
+const $ = (id) => document.getElementById(id);
+const pick = (a) => a[Math.floor(Math.random() * a.length)];
+const shuffle = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+const store = { get(k) { try { return +localStorage.getItem(k) || 0; } catch { return store[k] || 0; } }, set(k, v) { try { localStorage.setItem(k, v); } catch { store[k] = v; } } };
+
+// which signs of slop are active on each shift (8 cards per shift)
+const UNLOCK = [['ai', 'hand'], ['fn'], ['rep'], ['date'], ['food']];
+const rulesFor = (shift) => UNLOCK.slice(0, shift).flat();
+const PER_SHIFT = 8;
+
+// ---------- card makers: each returns { kind, html, slop, why } ----------
+function handSvg(n) {
+  // palm + thumb + (n - 1) fingers, drawn in a simple cartoon style
+  const fingers = n - 1, w = 120, x0 = 50, step = w / fingers;
+  let f = '';
+  for (let i = 0; i < fingers; i++) {
+    const x = x0 + i * step + step / 2, h = 68 + (i === 0 || i === fingers - 1 ? -10 : 6) + Math.sin(i * 1.7) * 4;
+    f += `<rect x="${x - step * 0.36}" y="${92 - h}" width="${step * 0.72}" height="${h + 20}" rx="${step * 0.36}" fill="#f2c48d" stroke="#8a5a2b" stroke-width="3"/>`;
+  }
+  return `<svg viewBox="0 0 220 210" aria-hidden="true"><rect x="0" y="0" width="220" height="210" rx="14" fill="#e0f2fe"/>
+    <g transform="rotate(-8 110 120)">${f}
+    <rect x="30" y="70" width="40" height="22" rx="11" fill="#f2c48d" stroke="#8a5a2b" stroke-width="3" transform="rotate(-38 50 81)"/>
+    <rect x="48" y="78" width="124" height="100" rx="40" fill="#f2c48d" stroke="#8a5a2b" stroke-width="3"/>
+    <rect x="70" y="170" width="80" height="40" fill="#f2c48d" stroke="#8a5a2b" stroke-width="3"/></g></svg>`;
+}
+const MAKERS = {
+  poem(rules, slop) {
+    const marks = ['ai', 'rep'].filter((r) => rules.includes(r)), mark = slop ? pick(marks) : null;
+    let lines = shuffle(DICT.lines).slice(0, 3);
+    if (mark === 'ai') lines.splice(1 + Math.floor(Math.random() * 2), 0, DICT.aiLine);
+    if (mark === 'rep') { const k = Math.floor(Math.random() * 3); lines.splice(k + 1, 0, lines[k]); }
+    return { kind: 'poem', html: `<div class="ttl">${LANG === 'ko' ? `「${esc(pick(DICT.poemTitles))}」` : `“${esc(pick(DICT.poemTitles))}”`}</div><div class="body">${lines.map(esc).join('\n')}</div>`, slop: !!mark, why: mark === 'ai' ? DICT.why.ai : DICT.why.rep, needs: ['ai', 'rep'] };
+  },
+  hand(rules, slop) {
+    const n = slop ? pick([4, 6, 6, 7]) : 5;
+    return { kind: 'hand', html: `<div class="body">${handSvg(n)}<div class="cap">${esc(DICT.handCap)}</div></div>`, slop, why: DICT.why.hand(n), needs: ['hand'] };
+  },
+  code(rules, slop) {
+    const [title, line, arg] = pick(DICT.code), fake = pick(DICT.fakes);
+    const body = slop ? line.replace(/=\s.*;$/, `= ${fake}(${arg});`) : line;
+    return { kind: 'code', html: `<div class="body code">// ${esc(title)}\n${esc(body)}\nconsole.log(${esc(body.match(/const (\w+)/)[1])});</div>`, slop, why: DICT.why.fn(fake), needs: ['fn'] };
+  },
+  note(rules, slop) {
+    const m = 1 + Math.floor(Math.random() * 12), d = 1 + Math.floor(Math.random() * 28), h = 1 + Math.floor(Math.random() * 6);
+    const when = slop ? pick(DICT.badDates) : DICT.date(m, d, h);
+    return { kind: 'note', html: `<div class="ttl">${esc(pick(DICT.events))}</div><div class="body">${esc(when)}\n${esc(DICT.place)}</div>`, slop, why: DICT.why.date(when), needs: ['date'] };
+  },
+  recipe(rules, slop) {
+    const items = shuffle(DICT.food).slice(0, 4), junk = pick(DICT.junk);
+    if (slop) items[Math.floor(Math.random() * 4)] = junk;
+    return { kind: 'recipe', html: `<div class="ttl">${esc(pick(DICT.dishes))}</div><div class="body">${esc(DICT.ingredients)}:\n${items.map((x) => '· ' + esc(x)).join('\n')}</div>`, slop, why: DICT.why.food(junk), needs: ['food'] };
+  },
+};
+function makeCard(shift) {
+  const rules = rulesFor(shift);
+  const kinds = Object.keys(MAKERS).filter((k) => ({ poem: ['ai', 'rep'], hand: ['hand'], code: ['fn'], note: ['date'], recipe: ['food'] })[k].some((r) => rules.includes(r)));
+  const c = MAKERS[pick(kinds)](rules, Math.random() < 0.5);
+  if (c.slop && c.why === undefined) c.why = '';
+  return c;
+}
+
+// ---------- sound ----------
+let ac;
+function beep(f, t = 0.08, type = 'sine', g = 0.06) { try { ac ??= new AudioContext(); const o = ac.createOscillator(), v = ac.createGain(); o.type = type; o.frequency.value = f; v.gain.setValueAtTime(g, ac.currentTime); v.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + t); o.connect(v).connect(ac.destination); o.start(); o.stop(ac.currentTime + t); } catch { /* no audio */ } }
+const sfx = { ok() { beep(880, 0.09); setTimeout(() => beep(1320, 0.12), 70); }, bad() { beep(140, 0.25, 'sawtooth', 0.05); }, stamp() { beep(90, 0.06, 'square', 0.05); } };
+
+// ---------- game ----------
+const G = { on: false };
+function newGame() {
+  Object.assign(G, { on: true, score: 0, lives: 3, combo: 0, best: 0, n: 0, right: 0, shift: 1, card: null, busy: false });
+  $('ov').hidden = true; hud(); next();
+}
+function hud() {
+  $('score').textContent = G.score; $('lv').textContent = DICT.shift(G.shift);
+  $('lives').innerHTML = [0, 1, 2].map((i) => `<span class="${i < G.lives ? '' : 'off'}"></span>`).join('');
+}
+const timeFor = () => Math.max(2.4, 7 - (G.shift - 1) * 0.8 - (G.n % PER_SHIFT) * 0.05);
+function next() {
+  const stage = $('stage'); stage.querySelector('.card')?.remove(); $('why').textContent = '';
+  const c = G.card = makeCard(G.shift); c.t = timeFor(); c.left = c.t;
+  const el = document.createElement('div'); el.className = 'card enter';
+  el.innerHTML = `<div class="kind"><i>${DICT.kinds[c.kind][0]}</i>${esc(DICT.kinds[c.kind][1])}</div>${c.html}<div class="timer"><b></b></div><div class="stamp"></div>`;
+  stage.appendChild(el); c.el = el;
+  requestAnimationFrame(() => requestAnimationFrame(() => el.classList.remove('enter')));
+  G.busy = false; G.last = performance.now();
+  // swipe the card left or right
+  let sx = null;
+  el.onpointerdown = (e) => { sx = e.clientX; el.setPointerCapture(e.pointerId); el.style.transition = 'none'; };
+  el.onpointermove = (e) => { if (sx !== null && !G.busy) el.style.transform = `translateX(${e.clientX - sx}px) rotate(${(e.clientX - sx) / 30}deg)`; };
+  el.onpointerup = (e) => { if (sx === null) return; const dx = e.clientX - sx; sx = null; el.style.transition = ''; el.style.transform = ''; if (Math.abs(dx) > 60) judge(dx > 0 ? 'gem' : 'slop'); };
+}
+function judge(choice) {
+  if (!G.on || G.busy || !G.card) return; G.busy = true;
+  const c = G.card, truth = c.slop ? 'slop' : 'gem', ok = choice === truth;
+  G.n++;
+  const st = c.el.querySelector('.stamp');
+  if (choice) { st.textContent = choice === 'gem' ? DICT.gem.replace(/[◀▶] ?| ?[◀▶]/g, '') : DICT.slop.replace(/[◀▶] ?| ?[◀▶]/g, ''); st.className = 'stamp ' + choice; requestAnimationFrame(() => st.classList.add('on')); sfx.stamp(); }
+  if (ok) {
+    G.right++; G.combo++; const mult = 1 + Math.floor(G.combo / 5);
+    G.score += 10 * mult + Math.round(c.left * 2); sfx.ok();
+    if (G.combo >= 3) { const cb = $('combo'); cb.textContent = DICT.combo(G.combo) + (mult > 1 ? ` ×${mult}` : ''); cb.classList.add('on'); clearTimeout(G.ct); G.ct = setTimeout(() => cb.classList.remove('on'), 900); }
+  } else {
+    G.lives--; G.combo = 0; sfx.bad();
+    $('why').textContent = (choice ? '' : DICT.timeout) + (c.slop ? c.why : DICT.wasGem);
+    $('app').classList.remove('shake'); void $('app').offsetWidth; $('app').classList.add('shake');
+  }
+  hud();
+  setTimeout(() => { c.el.classList.add(truth === 'gem' ? 'out-gem' : 'out-slop'); }, ok ? 260 : 1100);
+  setTimeout(() => {
+    if (G.lives <= 0) return gameOver();
+    if (G.n % PER_SHIFT === 0) { G.shift++; hud(); const r = UNLOCK[G.shift - 1]; if (r) toast(`${DICT.newRule}: ${DICT.rules[r[0]]}`); }
+    next();
+  }, ok ? 620 : 1550);
+}
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(G.tt); G.tt = setTimeout(() => t.classList.remove('on'), 2600); }
+function gameOver() {
+  G.on = false; G.card?.el?.remove();
+  const best = Math.max(store.get('slopfactory-best'), G.score); store.set('slopfactory-best', best);
+  const acc = G.n ? Math.round((G.right / G.n) * 100) : 0, rank = DICT.ranks[Math.min(4, Math.floor(G.score / 160))];
+  panel(`<h1>${DICT.over}</h1><div class="big">${G.score}</div><p><b style="color:#f3efe6">${esc(rank)}</b></p><p>${DICT.acc(acc, G.n)} · ${DICT.best} ${best}</p><button class="go" id="go">${DICT.again}</button>`);
+}
+function panel(html) { $('panel').innerHTML = html; $('ov').hidden = false; $('go').onclick = () => { beep(660, 0.05); newGame(); }; }
+
+// timer loop
+function tick(now) {
+  const c = G.card;
+  if (G.on && c && !G.busy) {
+    c.left -= (now - G.last) / 1000; G.last = now;
+    const b = c.el.querySelector('.timer b'); if (b) b.style.transform = `scaleX(${Math.max(0, c.left / c.t)})`;
+    if (c.left <= 0) judge(null);
+  } else G.last = now;
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+$('bS').innerHTML = `${DICT.slop}<small>${DICT.keyS}</small>`; $('bG').innerHTML = `${DICT.gem}<small>${DICT.keyG}</small>`;
+$('bS').onclick = () => judge('slop'); $('bG').onclick = () => judge('gem');
+addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') judge('slop');
+  else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') judge('gem');
+  else if ((e.key === 'Enter' || e.key === ' ') && !G.on) { e.preventDefault(); newGame(); }
+});
+panel(`<h1>${DICT.titleHtml}</h1><p style="white-space:pre-line">${esc(DICT.intro)}</p><div class="rules"><b style="color:#fbbf24">${DICT.today}</b>${rulesFor(1).map((r) => `<div>${esc(DICT.rules[r])}</div>`).join('')}</div><button class="go" id="go">${DICT.start}</button>`);
+hud();
+</script>
+</body></html>

@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>등대지기</title>
+<style>
+  html,body{margin:0;height:100%;background:#050912;overflow:hidden;font-family:system-ui,-apple-system,"Apple SD Gothic Neo",sans-serif;color:#e8eef9;user-select:none;-webkit-user-select:none}
+  canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
+  .hud{position:fixed;left:0;right:0;top:0;display:flex;gap:14px;align-items:center;padding:10px 14px;font-weight:800;font-variant-numeric:tabular-nums;text-shadow:0 2px 6px #000;pointer-events:none}
+  .hud .sp{flex:1}.hud small{font-weight:700;color:#9fb3d1}
+  .ov{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgb(3 6 14/.78);padding:20px}
+  .ov[hidden]{display:none}
+  .box{max-width:400px;text-align:center}
+  .box h1{margin:0 0 6px;font-size:34px;letter-spacing:-.02em}
+  .box h1 em{font-style:normal;color:#fde68a}
+  .box p{color:#b7c4d9;line-height:1.6;margin:6px 0}
+  .box .big{font-size:48px;font-weight:900;color:#fde68a}
+  .go{font:inherit;font-weight:900;font-size:18px;border:0;border-radius:999px;padding:14px 34px;background:#fde68a;color:#111827;cursor:pointer;margin-top:12px;box-shadow:0 0 30px rgb(253 230 138/.35)}
+</style></head><body>
+<canvas id="c"></canvas>
+<div class="hud"><span id="sc"></span><small id="wv"></small><span class="sp"></span><span id="lv"></span></div>
+<div class="ov" id="ov"><div class="box" id="box"></div></div>
+<script>
+// Lighthouse Keeper: ships drift blind through the fog. Sweep the beam over a ship
+// and it sees the way home, steering around the rocks to the nearest harbor.
+// Left in the dark, ships wander, and the rocks are waiting.
+const LANG = 'ko';
+const T = {
+  ko: { title: '등대지기', titleHtml: '<em>등대</em>지기', intro: '안개 속 배들은 앞이 안 보여요.\n불빛을 비추면 배가 바위를 피해 항구로 들어와요.\n불빛은 하나, 배는 점점 많아져요.', how: '마우스·손가락으로 불빛 방향을 정해요 (←/→ 키도 돼요)', start: '불 켜기', again: '다시 불 켜기', over: '마지막 배까지 보냈어요', home: (n) => `${n}척 입항`, wave: (n) => `밤 ${n}`, best: '최고 기록', saved: '입항!', lost: '좌초…' },
+  en: { title: 'Lighthouse Keeper', titleHtml: '<em>Lighthouse</em> Keeper', intro: 'The ships cannot see through the fog.\nLight one up and it steers around the rocks into a harbor.\nOne beam. More and more ships.', how: 'Aim the beam with your mouse or finger (← / → keys work too)', start: 'Light it', again: 'Light it again', over: 'The last ship is in', home: (n) => `${n} ships home`, wave: (n) => `Night ${n}`, best: 'Best', saved: 'Home!', lost: 'Wrecked…' },
+}[LANG];
+document.documentElement.lang = LANG; document.title = T.title;
+
+const cv = document.getElementById('c'), g = cv.getContext('2d');
+let W, H, dpr, lamp, docks, cliffR;
+const store = { get(k) { try { return +localStorage.getItem(k) || 0; } catch { return store[k] || 0; } }, set(k, v) { try { localStorage.setItem(k, v); } catch { store[k] = v; } } };
+const rnd = (a, b) => a + Math.random() * (b - a);
+const angDiff = (a, b) => { let d = b - a; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; return d; };
+
+function resize() {
+  dpr = Math.min(devicePixelRatio || 1, 2); W = innerWidth; H = innerHeight;
+  cv.width = W * dpr; cv.height = H * dpr; g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  cliffR = Math.min(70, W * 0.13);
+  lamp = { x: W / 2, y: H - cliffR - 70 };
+  docks = [{ x: 34, y: H - 34 }, { x: W - 34, y: H - 34 }];
+  stars = Array.from({ length: 70 }, () => ({ x: Math.random() * W, y: Math.random() * H * 0.35, r: Math.random() * 1.3 + 0.2, t: Math.random() * 6 }));
+  fog = Array.from({ length: 9 }, () => ({ x: Math.random() * W, y: rnd(H * 0.15, H * 0.8), r: rnd(90, 190), v: rnd(6, 16) * (Math.random() < 0.5 ? -1 : 1) }));
+}
+let stars = [], fog = [];
+
+// ---------- state ----------
+const S = { on: false, beam: -Math.PI / 2, aim: -Math.PI / 2, ships: [], rocks: [], fx: [], score: 0, lives: 3, wave: 1, spawnIn: 1, t: 0, keys: {} };
+const BEAM_HALF = 0.2;
+function placeRocks(n) {
+  const rocks = [];
+  for (let tries = 0; rocks.length < n && tries < 600; tries++) {
+    const r = rnd(12, 24), x = rnd(40, W - 40), y = rnd(H * 0.22, H - cliffR - 120);
+    if (Math.hypot(x - lamp.x, y - lamp.y) < cliffR + 80) continue;
+    if (docks.some((d) => Math.hypot(x - d.x, y - d.y) < 110)) continue;
+    if (rocks.some((o) => Math.hypot(x - o.x, y - o.y) < o.r + r + 46)) continue;
+    const pts = Array.from({ length: 9 }, (_, i) => { const a = (i / 9) * Math.PI * 2; return [Math.cos(a) * r * rnd(0.75, 1.2), Math.sin(a) * r * rnd(0.75, 1.2)]; });
+    rocks.push({ x, y, r, pts });
+  }
+  return rocks;
+}
+function newGame() {
+  Object.assign(S, { on: true, ships: [], fx: [], score: 0, lives: 3, wave: 1, spawnIn: 0.5, t: 0 });
+  S.rocks = placeRocks(Math.round(5 + W / 260));
+  document.getElementById('ov').hidden = true; beep(520, 0.15);
+}
+function spawn() {
+  const x = rnd(50, W - 50), base = 30 + S.wave * 3;
+  S.ships.push({ x, y: -14, h: Math.PI / 2 + rnd(-0.5, 0.5), sp: rnd(base, base + 6), lit: 0, trail: [], wob: Math.random() * 10 });
+}
+const maxShips = () => Math.min(2 + S.wave, 9);
+
+// ---------- update ----------
+function lit(s) {
+  const dx = s.x - lamp.x, dy = s.y - lamp.y, d = Math.hypot(dx, dy);
+  return d < Math.max(W, H) * 1.1 && Math.abs(angDiff(S.beam, Math.atan2(dy, dx))) < BEAM_HALF + 14 / Math.max(d, 1);
+}
+function update(dt) {
+  S.t += dt;
+  // the beam follows the aim with a little weight
+  if (S.keys.ArrowLeft) S.aim -= 2.2 * dt; if (S.keys.ArrowRight) S.aim += 2.2 * dt;
+  S.aim = Math.max(-Math.PI + 0.05, Math.min(-0.05, S.aim));
+  S.beam += angDiff(S.beam, S.aim) * Math.min(1, dt * 12);
+  if (!S.on) return;
+  S.spawnIn -= dt;
+  if (S.spawnIn <= 0 && S.ships.length < maxShips()) { spawn(); S.spawnIn = Math.max(1.6, 5.5 - S.wave * 0.45) * rnd(0.7, 1.3); }
+  for (const s of S.ships) {
+    const on = lit(s); s.lit = Math.max(0, Math.min(1, s.lit + (on ? dt * 4 : -dt * 0.9)));
+    let want;
+    if (s.lit > 0.05) {
+      // guided: head for the nearest harbor, pushed away from rocks and the cliff
+      const d = docks.reduce((a, b) => (Math.hypot(b.x - s.x, b.y - s.y) < Math.hypot(a.x - s.x, a.y - s.y) ? b : a));
+      let vx = (d.x - s.x), vy = (d.y - s.y); const L = Math.hypot(vx, vy) || 1; vx /= L; vy /= L;
+      for (const o of [...S.rocks, { x: lamp.x, y: H, r: cliffR + 30 }]) {
+        const ox = s.x - o.x, oy = s.y - o.y, od = Math.hypot(ox, oy), reach = o.r + 70;
+        if (od < reach) { const k = ((reach - od) / reach) * 2.4; vx += (ox / od) * k; vy += (oy / od) * k; }
+      }
+      want = Math.atan2(vy, vx);
+      s.h += Math.max(-2.4 * dt, Math.min(2.4 * dt, angDiff(s.h, want)));
+    } else {
+      // lost: wander, drifting slowly south
+      s.wob += dt; s.h += Math.sin(s.wob * 0.9) * 0.5 * dt + angDiff(s.h, Math.PI / 2) * 0.15 * dt;
+    }
+    const v = s.sp * (0.7 + s.lit * 0.6);
+    s.x += Math.cos(s.h) * v * dt; s.y += Math.sin(s.h) * v * dt;
+    if (s.x < 14 || s.x > W - 14) { s.h = Math.PI - s.h; s.x = Math.max(14, Math.min(W - 14, s.x)); }
+    if (s.y < -30) s.h = Math.PI / 2;
+    s.trail.push([s.x, s.y]); if (s.trail.length > 26) s.trail.shift();
+    // harbor?
+    if (docks.some((d) => Math.hypot(d.x - s.x, d.y - s.y) < 30)) { s.done = 'home'; S.score++; burst(s.x, s.y, '#fde68a', 22); float(s.x, s.y - 16, T.saved, '#fde68a'); beep(880, 0.12); setTimeout(() => beep(1320, 0.18), 90); if (S.score % 5 === 0) { S.wave++; S.rocks.push(...placeRocks(1).filter((r) => !S.ships.some((q) => Math.hypot(q.x - r.x, q.y - r.y) < 60))); } }
+    // rocks, cliff or the bottom edge
+    else if (S.rocks.some((o) => Math.hypot(o.x - s.x, o.y - s.y) < o.r + 7) || Math.hypot(lamp.x - s.x, H - s.y) < cliffR + 18 || s.y > H + 10) {
+      s.done = 'lost'; S.lives--; burst(s.x, s.y, '#93c5fd', 30); float(s.x, s.y - 16, T.lost, '#fca5a5'); shake = 0.35; beep(110, 0.35, 'sawtooth');
+    }
+  }
+  S.ships = S.ships.filter((s) => !s.done);
+  for (const p of S.fx) { p.life -= dt; if (p.vx !== undefined) { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 30 * dt; } else p.y -= 22 * dt; }
+  S.fx = S.fx.filter((p) => p.life > 0);
+  for (const f of fog) { f.x += f.v * dt; if (f.x < -f.r) f.x = W + f.r; if (f.x > W + f.r) f.x = -f.r; }
+  if (S.lives <= 0) gameOver();
+}
+let shake = 0;
+function burst(x, y, col, n) { for (let i = 0; i < n; i++) { const a = Math.random() * 6.28, v = rnd(20, 110); S.fx.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 30, life: rnd(0.5, 1.1), col }); } }
+function float(x, y, text, col) { S.fx.push({ x, y, text, col, life: 1.2 }); }
+
+// ---------- draw ----------
+function draw() {
+  g.save();
+  if (shake > 0) { g.translate(rnd(-6, 6) * shake, rnd(-6, 6) * shake); shake = Math.max(0, shake - 1 / 60); }
+  // sky and sea
+  const sky = g.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#060b1a'); sky.addColorStop(0.45, '#0a1630'); sky.addColorStop(1, '#071022');
+  g.fillStyle = sky; g.fillRect(-10, -10, W + 20, H + 20);
+  for (const s of stars) { g.globalAlpha = 0.35 + Math.sin(S.t * 1.5 + s.t) * 0.3; g.fillStyle = '#fff'; g.beginPath(); g.arc(s.x, s.y, s.r, 0, 7); g.fill(); }
+  g.globalAlpha = 1;
+  g.fillStyle = '#f8f3dc'; g.beginPath(); g.arc(W * 0.82, H * 0.1, 18, 0, 7); g.fill();
+  g.fillStyle = '#0a1630'; g.beginPath(); g.arc(W * 0.82 + 8, H * 0.1 - 5, 16, 0, 7); g.fill();
+  // waves
+  g.lineWidth = 1.2;
+  for (let y = H * 0.18; y < H; y += 20) {
+    g.strokeStyle = `rgba(120,160,220,${0.05 + (y / H) * 0.07})`; g.beginPath();
+    for (let x = 0; x <= W; x += 12) { const yy = y + Math.sin(x * 0.03 + S.t * 1.4 + y) * 3; x ? g.lineTo(x, yy) : g.moveTo(x, yy); }
+    g.stroke();
+  }
+  // harbors
+  for (const d of docks) {
+    const gl = g.createRadialGradient(d.x, d.y, 2, d.x, d.y, 46); gl.addColorStop(0, 'rgba(253,230,138,.45)'); gl.addColorStop(1, 'rgba(253,230,138,0)');
+    g.fillStyle = gl; g.beginPath(); g.arc(d.x, d.y, 46, 0, 7); g.fill();
+    g.fillStyle = '#3b2f22'; g.fillRect(d.x - 26, d.y + 10, 52, 10);
+    for (let i = -20; i <= 20; i += 10) g.fillRect(d.x + i - 2, d.y + 10, 4, 22);
+    g.fillStyle = '#fde68a'; g.beginPath(); g.arc(d.x, d.y + 2, 3.5, 0, 7); g.fill();
+  }
+  // rocks (faint unless lit)
+  for (const o of S.rocks) {
+    const inBeam = Math.abs(angDiff(S.beam, Math.atan2(o.y - lamp.y, o.x - lamp.x))) < BEAM_HALF + 0.1;
+    g.save(); g.translate(o.x, o.y);
+    g.fillStyle = inBeam ? '#3f4a5c' : 'rgba(40,52,72,.55)'; g.strokeStyle = inBeam ? '#94a3b8' : 'rgba(100,120,150,.35)'; g.lineWidth = 2;
+    g.beginPath(); o.pts.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.closePath(); g.fill(); g.stroke();
+    g.strokeStyle = 'rgba(200,220,255,.18)'; g.beginPath(); g.arc(0, 0, o.r + 5 + Math.sin(S.t * 2 + o.x) * 2, 0, 7); g.stroke();
+    g.restore();
+  }
+  // ships
+  for (const s of S.ships) {
+    const a = 0.28 + s.lit * 0.72;
+    g.strokeStyle = `rgba(220,235,255,${0.12 + s.lit * 0.25})`; g.lineWidth = 2; g.beginPath();
+    s.trail.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.stroke();
+    g.save(); g.translate(s.x, s.y); g.rotate(s.h); g.globalAlpha = a;
+    g.fillStyle = '#7c4a2d'; g.beginPath(); g.moveTo(14, 0); g.lineTo(4, 7); g.lineTo(-11, 6); g.lineTo(-11, -6); g.lineTo(4, -7); g.closePath(); g.fill();
+    g.fillStyle = '#f1f5f9'; g.beginPath(); g.moveTo(5, 0); g.lineTo(-6, -11); g.lineTo(-6, 11); g.closePath(); g.fill();
+    g.restore(); g.globalAlpha = 1;
+    // lantern so you can find it in the dark
+    const lg = g.createRadialGradient(s.x, s.y, 0, s.x, s.y, 16); lg.addColorStop(0, `rgba(255,214,140,${0.5 + 0.3 * Math.sin(S.t * 6 + s.wob)})`); lg.addColorStop(1, 'rgba(255,214,140,0)');
+    g.fillStyle = lg; g.beginPath(); g.arc(s.x, s.y, 16, 0, 7); g.fill();
+  }
+  // fog
+  for (const f of fog) {
+    const fg = g.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.r); fg.addColorStop(0, 'rgba(150,165,190,.16)'); fg.addColorStop(1, 'rgba(150,165,190,0)');
+    g.fillStyle = fg; g.beginPath(); g.arc(f.x, f.y, f.r, 0, 7); g.fill();
+  }
+  // the beam
+  const len = Math.max(W, H) * 1.2, flick = 0.92 + Math.sin(S.t * 23) * 0.04;
+  g.save(); g.globalCompositeOperation = 'lighter';
+  const bg = g.createRadialGradient(lamp.x, lamp.y, 4, lamp.x, lamp.y, len);
+  bg.addColorStop(0, `rgba(255,236,170,${0.55 * flick})`); bg.addColorStop(0.35, 'rgba(255,230,160,.18)'); bg.addColorStop(1, 'rgba(255,230,160,0)');
+  g.fillStyle = bg; g.beginPath(); g.moveTo(lamp.x, lamp.y);
+  g.arc(lamp.x, lamp.y, len, S.beam - BEAM_HALF, S.beam + BEAM_HALF); g.closePath(); g.fill();
+  const back = g.createRadialGradient(lamp.x, lamp.y, 0, lamp.x, lamp.y, 120); back.addColorStop(0, 'rgba(255,240,190,.35)'); back.addColorStop(1, 'rgba(255,240,190,0)');
+  g.fillStyle = back; g.beginPath(); g.arc(lamp.x, lamp.y, 120, 0, 7); g.fill();
+  g.restore();
+  // cliff and tower
+  g.fillStyle = '#121a2a'; g.beginPath(); g.moveTo(lamp.x - cliffR - 40, H); g.quadraticCurveTo(lamp.x - cliffR, H - cliffR - 10, lamp.x, H - cliffR - 18); g.quadraticCurveTo(lamp.x + cliffR, H - cliffR - 10, lamp.x + cliffR + 40, H); g.fill();
+  const ty = H - cliffR - 16, tw = 15;
+  for (let i = 0; i < 4; i++) { g.fillStyle = i % 2 ? '#e5e7eb' : '#dc2626'; const y0 = ty - (i + 1) * 13, w0 = tw - i * 1.6; g.fillRect(lamp.x - w0, y0, w0 * 2, 13); }
+  g.fillStyle = '#1f2937'; g.fillRect(lamp.x - 12, lamp.y - 8, 24, 6);
+  g.fillStyle = '#fef3c7'; g.beginPath(); g.arc(lamp.x, lamp.y + 4, 7, 0, 7); g.fill();
+  g.fillStyle = '#374151'; g.beginPath(); g.moveTo(lamp.x - 13, lamp.y - 8); g.lineTo(lamp.x, lamp.y - 20); g.lineTo(lamp.x + 13, lamp.y - 8); g.fill();
+  // effects
+  for (const p of S.fx) {
+    g.globalAlpha = Math.max(0, Math.min(1, p.life));
+    if (p.text) { g.fillStyle = p.col; g.font = '800 15px system-ui, sans-serif'; g.textAlign = 'center'; g.fillText(p.text, p.x, p.y); }
+    else { g.fillStyle = p.col; g.fillRect(p.x, p.y, 2.5, 2.5); }
+  }
+  g.globalAlpha = 1; g.restore();
+  document.getElementById('sc').textContent = T.home(S.score);
+  document.getElementById('wv').textContent = T.wave(S.wave);
+  document.getElementById('lv').textContent = '⛵'.repeat(Math.max(0, S.lives)) + '·'.repeat(3 - Math.max(0, S.lives));
+}
+
+// ---------- loop, input, screens ----------
+let last = performance.now();
+function frame(now) { const dt = Math.min(0.05, (now - last) / 1000); last = now; update(dt); draw(); requestAnimationFrame(frame); }
+function aimAt(x, y) { S.aim = Math.atan2(Math.min(y, lamp.y - 1) - lamp.y, x - lamp.x); }
+cv.addEventListener('pointermove', (e) => aimAt(e.clientX, e.clientY));
+cv.addEventListener('pointerdown', (e) => aimAt(e.clientX, e.clientY));
+addEventListener('keydown', (e) => { S.keys[e.key] = true; if ((e.key === 'Enter' || e.key === ' ') && !S.on) { e.preventDefault(); newGame(); } });
+addEventListener('keyup', (e) => { S.keys[e.key] = false; });
+addEventListener('resize', () => { resize(); if (S.on) S.rocks = placeRocks(S.rocks.length); });
+let ac; function beep(f, t = 0.1, type = 'sine') { try { ac ??= new AudioContext(); const o = ac.createOscillator(), v = ac.createGain(); o.type = type; o.frequency.value = f; v.gain.setValueAtTime(0.05, ac.currentTime); v.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + t); o.connect(v).connect(ac.destination); o.start(); o.stop(ac.currentTime + t); } catch { /* no audio */ } }
+function screen(html) { document.getElementById('box').innerHTML = html; document.getElementById('ov').hidden = false; document.getElementById('go').onclick = newGame; }
+function gameOver() {
+  S.on = false; const best = Math.max(store.get('lighthouse-best'), S.score); store.set('lighthouse-best', best);
+  screen(`<h1>${T.over}</h1><div class="big">${S.score}</div><p>${T.home(S.score)} · ${T.wave(S.wave)}</p><p>${T.best} ${best}</p><button class="go" id="go">${T.again}</button>`);
+}
+resize(); S.rocks = placeRocks(6);
+for (let i = 0; i < 3; i++) { spawn(); S.ships[i].y = rnd(H * 0.2, H * 0.5); }
+screen(`<h1>${T.titleHtml}</h1><p style="white-space:pre-line">${T.intro}</p><p style="font-size:13px">${T.how}</p><button class="go" id="go">${T.start}</button>`);
+requestAnimationFrame(frame);
+</script>
+</body></html>
