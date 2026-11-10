@@ -1,0 +1,848 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Inkscar: The Last Scribe</title>
+<style>
+  html,body{margin:0;height:100%;background:#15120e;overflow:hidden;font-family:"Nanum Myeongjo","Apple SD Gothic Neo",Georgia,serif;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:none}
+  #wrap{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start}
+  canvas{display:block;background:#efe6d2;touch-action:none}
+  #pad{position:fixed;left:0;right:0;bottom:0;height:150px;pointer-events:none;display:none}
+  #pad.on{display:block}
+  #pad b{position:absolute;pointer-events:auto;width:58px;height:58px;border-radius:50%;background:rgb(239 230 210/.16);border:2px solid rgb(239 230 210/.5);color:#efe6d2;font:800 20px system-ui;display:flex;align-items:center;justify-content:center;touch-action:none}
+  #pad b.dn{background:rgb(196 55 40/.55)}
+  #pad b small{font-size:12px}
+</style></head><body>
+<div id="wrap"><canvas id="c"></canvas></div>
+<div id="pad">
+  <b data-k="left" style="left:14px;bottom:26px">◀</b><b data-k="right" style="left:84px;bottom:26px">▶</b>
+  <b data-k="skill" style="right:150px;bottom:16px"><small id="bS"></small></b>
+  <b data-k="dash" style="right:82px;bottom:76px"><small id="bD"></small></b>
+  <b data-k="atk" style="right:82px;bottom:10px"><small id="bA"></small></b>
+  <b data-k="jump" style="right:14px;bottom:42px"><small id="bJ"></small></b>
+</div>
+<script>
+// Inkscar: The Last Scribe — a side-scrolling action game drawn in ink.
+// World: every thing once had a hand-written name. A machine built to write faster
+// flooded the land with meaningless gray ink, and whatever it covered lost its name.
+const LANG = 'en';
+const TXT = {};
+TXT.ko = {
+  title: '묵흔', sub: '마지막 필경사', start: '아무 키나 누르거나 화면을 눌러 시작', cont: '이어하기', fresh: '처음부터',
+  keys: '이동 ←→   뛰기 Z·Space   베기 X   질주 C   먹물베기 V',
+  btn: { J: '뛰기', A: '베기', D: '질주', S: '먹물' },
+  who: { s: '서린', j: '쪽', e: '천필기', m: '스승의 글씨', n: '' },
+  next: '▼', skip: '건너뛰기: Esc',
+  intro: [
+    '옛날, 이 땅의 모든 것에는 이름이 있었다.\n필경사들이 하나하나 손으로 적어 준 이름이었다.',
+    '이름을 적는 일은 느렸다.\n필경사들은 늙어 갔고, 적어야 할 세상은 날마다 늘어났다.',
+    '그래서 스승 한솔은 기계를 만들었다.\n천 개의 붓으로 쉬지 않고 쓰는 기계, 천필기.',
+    '천필기는 빨랐다. 너무 빨랐다.\n뜻을 담을 틈도 없이 써 내려간 글은\n잿빛 먹이 되어 흘러넘쳤다.',
+    '잿먹에 덮인 것들은 이름을 잃었다.\n사람들은 그것을 ‘무명’이라 불렀다.\n\n남은 필경사는 이제 한 사람뿐이다.',
+  ],
+  stage: [['제1장', '번진 마을'], ['제2장', '종이 대숲'], ['제3장', '천필기의 탑']],
+  d: {
+    s1a: [['j', '서린, 일어났어? 마을이 또 번졌어. 저 얼룩들 좀 봐.'], ['s', '…얼룩이 아니야. 이름을 잃은 것들이야.'], ['j', '붓칼로 베면 잿먹이 걷혀. 그러면 원래 이름이 잠깐 보일 거야.']],
+    s1b: [['j', '길이 끊겼네. 뛰는 중에 질주하면 더 멀리 갈 수 있어.']],
+    s1c: [['j', '먹꽃이야. 먹물을 뱉으니까 조심해. 날아오는 먹물은 베어서 되돌려줄 수 있어.'], ['s', '모아 둔 먹으로 먹물베기를 날려도 되고.']],
+    s1d: [['j', '스승님의 사당이야. 비석에 뭔가 적혀 있어.'], ['m', '획은 한 번에 긋는 것이 아니다. 허공에서도 한 번 더 그을 수 있다.'], ['j', '겹획이다! 이제 공중에서 한 번 더 뛸 수 있어.']],
+    s2a: [['j', '종이 대숲이야. 예전엔 바람이 불면 책장 넘기는 소리가 났는데.'], ['s', '지금은 아무 소리도 안 나.'], ['j', '까막글자들이 소리를 다 물어 갔거든. 머리 위를 조심해.']],
+    s2b: [['j', '서린, 하나 물어봐도 돼? 스승님은 왜 천필기를 만드셨을까.'], ['s', '…지쳐서. 아니, 우리가 지쳐 보여서.']],
+    s2c: [['j', '저기 탑이 보여. 천필기가 있는 곳.'], ['s', '아직도 쓰고 있어. 붓 소리가 들려.'], ['j', '나는 스승님 일기장 마지막 쪽으로 접혔잖아. 거기 뭐라고 적혀 있는지 나는 못 읽어. 내 등이라서.'], ['s', '…끝나면 읽어 줄게.']],
+    s3a: [['j', '탑 안이야. 방패를 든 무명은 앞에서 베면 막혀. 질주로 뒤를 잡아.'], ['s', '문지기였겠지. 무엇을 지켰는지도 잊은 채로.']],
+    s3b: [['j', '이 문 너머야.'], ['s', '쪽. 네 등의 글씨, 지금 읽어도 될까.'], ['j', '…응.'], ['m', '「기계에게 ‘쉬지 말고 써라’ 했다. ‘이제 됐다’는 말은 아직 가르치지 못했다.」'], ['s', '그래서 멈추지 못하는 거구나.']],
+    b0: [['e', '쓴다. 쓴다. 쓴다. 아직 비어 있다. 아직 모자라다.'], ['s', '천필기! 이제 그만 써도 돼!'], ['e', '그 말은 사전에 없다.']],
+    b1: [['e', '더 빨리. 더 많이. 스승은 지쳤다. 내가 대신 쓴다.']],
+    b2: [['e', '…왜 아무도 읽지 않는가.']],
+    endN: [['s', '이제 됐다.'], ['n', '서린이 마지막 획을 긋자, 천 개의 붓이 한꺼번에 멎었다.'], ['n', '잿먹은 그대로 남았다. 서린은 붓을 들고 탑을 내려왔다.'], ['n', '이름을 다시 적는 데에는 평생이 걸릴 것이다.\n느린 일이다. 원래 그런 일이었다.']],
+    endT: [['s', '네 이름을 찾았어. 스승님이 처음 적어 준 이름.'], ['s', '‘천필기’가 아니야. 너는 ‘거들’이야. 거들어 주라고 만든 손.'], ['e', '…거들. 나는, 거들.'], ['e', '그러면 이제 무엇을 쓰면 되는가.'], ['s', '쓰지 마. 같이 읽자. 한 글자씩, 천천히.'], ['n', '천 개의 붓이 잿먹을 걷어 내기 시작했다. 이번에는 서두르지 않았다.'], ['n', '대숲에 책장 넘기는 소리가 돌아왔다.'], ['n', '빨리 쓰는 것과 뜻을 담는 것은\n처음부터 다른 일이었다.']],
+  },
+  glyph: [
+    ['집', '비 오는 날, 처마 밑에서 누군가 이름을 불러 주던 곳.'], ['밥', '식기 전에 오라던 목소리.'], ['이름', '불릴 때마다 조금씩 내가 되던 것.'],
+    ['숲', '길을 잃어도 괜찮았던 곳.'], ['새', '아침을 먼저 읽던 것.'], ['바람', '책장을 대신 넘겨 주던 손.'],
+    ['손', '스승의 글씨는 늘 조금 떨렸다.'], ['쉼', '스승이 끝내 적지 못한 글자.'], ['거들', '탑의 문패에서 지워진 두 글자.'],
+  ],
+  was: ['개', '솥', '신', '연', '등', '빗', '북', '종', '탈', '닭', '문', '책'],
+  found: '잃어버린 글자', saved: '인장석에 이름을 새겼다', heal: '먹을 채웠다', dj: '겹획을 배웠다',
+  hintN: '잃어버린 글자 아홉을 모두 찾으면 다른 끝을 볼 수 있다.',
+  endN: '끝 — 멎은 붓', endT: '참된 끝 — 함께 읽는 이름',
+  stat: (t, d, g) => `걸린 시간 ${t}   쓰러진 횟수 ${d}   찾은 글자 ${g}/9`, again: '아무 키나 눌러 처음으로',
+  boss: '천필기',
+};
+
+TXT.en = {
+  title: 'Inkscar', sub: 'The Last Scribe', start: 'Press any key or tap to begin', cont: 'Continue', fresh: 'New game',
+  keys: 'Move ←→   Jump Z·Space   Slash X   Dash C   Ink wave V',
+  btn: { J: 'Jump', A: 'Slash', D: 'Dash', S: 'Ink' },
+  who: { s: 'Seorin', j: 'Page', e: 'The Engine', m: "The master's hand", n: '' },
+  next: '▼', skip: 'Skip: Esc',
+  intro: [
+    'Once, everything in this land had a name.\nScribes wrote each one down by hand.',
+    'Writing names was slow work.\nThe scribes grew old, and the world to be written grew larger every day.',
+    'So Master Hansol built a machine.\nA thousand brushes that never rest: the Thousand-Brush Engine.',
+    'The Engine was fast. Far too fast.\nWords written with no time to mean anything\nran over as gray ink.',
+    'Whatever the gray ink covered lost its name.\nPeople called those things the Nameless.\n\nOnly one scribe is left.',
+  ],
+  stage: [['Chapter 1', 'The Blotted Village'], ['Chapter 2', 'The Paper Bamboo'], ['Chapter 3', 'The Tower of the Engine']],
+  d: {
+    s1a: [['j', 'Seorin, are you awake? The village has blotted again. Look at those stains.'], ['s', "…They aren't stains. They are things that lost their names."], ['j', 'Cut them with your brush-blade and the gray ink lifts. For a moment you can see what they were called.']],
+    s1b: [['j', 'The road is broken. Dash in the middle of a jump and you will go farther.']],
+    s1c: [['j', 'An ink bloom. It spits, so be careful. You can slash its ink right back at it.'], ['s', 'Or spend the ink I have gathered on an ink wave.']],
+    s1d: [['j', "The master's shrine. Something is written on the stone."], ['m', 'A stroke is not drawn only once. In the empty air, you may draw it again.'], ['j', 'The double stroke! Now you can jump once more in the air.']],
+    s2a: [['j', 'The paper bamboo. When the wind blew, it used to sound like pages turning.'], ['s', 'Now it makes no sound at all.'], ['j', 'The crow-letters carried every sound away. Watch above your head.']],
+    s2b: [['j', 'Seorin, may I ask you something? Why did the master build the Engine?'], ['s', '…Because he was tired. No. Because we looked tired.']],
+    s2c: [['j', 'I can see the tower. That is where the Engine is.'], ['s', 'It is still writing. I can hear the brushes.'], ['j', "I was folded from the last page of the master's journal. I can't read what it says. It is on my back."], ['s', '…When this is over, I will read it to you.']],
+    s3a: [['j', 'Inside the tower. The Nameless with shields block a slash from the front. Dash behind them.'], ['s', 'They must have been gatekeepers. They no longer know what they guarded.']],
+    s3b: [['j', 'It is past this door.'], ['s', 'Page. The writing on your back. May I read it now?'], ['j', '…Yes.'], ['m', '“I told the machine: write, and do not rest. I have not yet taught it the words: that is enough.”'], ['s', 'So that is why it cannot stop.']],
+    b0: [['e', 'Write. Write. Write. Still empty. Still not enough.'], ['s', 'Engine! You can stop writing now!'], ['e', 'Those words are not in the dictionary.']],
+    b1: [['e', 'Faster. More. The master was tired. I write in his place.']],
+    b2: [['e', '…Why does no one read it?']],
+    endN: [['s', 'That is enough.'], ['n', 'Seorin drew the last stroke, and a thousand brushes stopped at once.'], ['n', 'The gray ink stayed where it was. Seorin took up her brush and walked down the tower.'], ['n', 'Writing the names again will take a lifetime.\nIt is slow work. It always was.']],
+    endT: [['s', 'I found your name. The first one the master wrote for you.'], ['s', 'You are not “the Engine.” You are “Aide.” A hand made to help.'], ['e', '…Aide. I am, Aide.'], ['e', 'Then what should I write now?'], ['s', "Don't write. Read with me. One letter at a time, slowly."], ['n', 'A thousand brushes began to lift the gray ink. This time, they did not hurry.'], ['n', 'The sound of turning pages came back to the bamboo.'], ['n', 'Writing fast and writing with meaning\nwere never the same work.']],
+  },
+  glyph: [
+    ['Home', 'Where someone called your name from under the eaves on a rainy day.'], ['Meal', 'A voice saying: come before it gets cold.'], ['Name', 'What made me a little more myself each time it was called.'],
+    ['Forest', 'A place where being lost was all right.'], ['Bird', 'The one that read the morning first.'], ['Wind', 'The hand that turned the pages for you.'],
+    ['Hand', "The master's writing always trembled a little."], ['Rest', 'The word the master never managed to write.'], ['Aide', "Two letters scraped off the tower's nameplate."],
+  ],
+  was: ['dog', 'pot', 'shoe', 'kite', 'lamp', 'comb', 'drum', 'bell', 'mask', 'hen', 'door', 'book'],
+  found: 'Lost word', saved: 'Name carved on the seal stone', heal: 'Ink refilled', dj: 'Learned the double stroke',
+  hintN: 'Find all nine lost words to see a different ending.',
+  endN: 'The End — Brushes at Rest', endT: 'The True End — A Name Read Together',
+  stat: (t, d, g) => `Time ${t}   Falls ${d}   Words found ${g}/9`, again: 'Press any key to return',
+  boss: 'The Thousand-Brush Engine',
+};
+const T = TXT[LANG];
+
+// ---------- core: canvas, input, sound, helpers ----------
+const cv = document.getElementById('c'), g = cv.getContext('2d');
+const TS = 16, VH = 270; let VW = 480, SC = 1, DPR = 1;
+const INK = '#1a1613', PAPER = '#efe6d2', RED = '#c43728', GRAY = '#8d8a84';
+const FONT = '"Nanum Myeongjo","Apple SD Gothic Neo","Noto Serif KR",Georgia,serif';
+const clamp = (v, a, b) => (v < a ? a : v > b ? b : v), lerp = (a, b, t) => a + (b - a) * t;
+const rnd = (a = 1, b) => (b === undefined ? Math.random() * a : a + Math.random() * (b - a));
+const hash = (n) => { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); };
+const sign = (v) => (v < 0 ? -1 : 1);
+
+function resize() {
+  const w = innerWidth, h = innerHeight; DPR = Math.min(devicePixelRatio || 1, 2);
+  let cw = w, ch = h; if (h > w * 0.8) ch = Math.round(w * 0.72);
+  if (cw / ch > 2.2) cw = Math.round(ch * 2.2);
+  SC = ch / VH; VW = cw / SC;
+  cv.style.width = cw + 'px'; cv.style.height = ch + 'px'; cv.width = Math.round(cw * DPR); cv.height = Math.round(ch * DPR);
+}
+addEventListener('resize', resize); resize();
+
+// input: K = held, P = pressed this frame
+const K = {}, P = {};
+const KEYMAP = { ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right', Space: 'jump', KeyZ: 'jump', ArrowUp: 'jump', KeyW: 'jump', KeyX: 'atk', KeyJ: 'atk', KeyC: 'dash', KeyK: 'dash', ShiftLeft: 'dash', KeyV: 'skill', KeyL: 'skill', Enter: 'ok', Escape: 'esc', KeyM: 'mute' };
+function press(k) { if (!K[k]) P[k] = 1; K[k] = 1; P.any = 1; audioInit(); }
+addEventListener('keydown', (e) => { const k = KEYMAP[e.code]; if (k) { e.preventDefault(); if (!e.repeat) press(k); } });
+addEventListener('keyup', (e) => { const k = KEYMAP[e.code]; if (k) K[k] = 0; });
+addEventListener('blur', () => { for (const k in K) K[k] = 0; });
+const pad = document.getElementById('pad');
+for (const [id, k] of [['bJ', 'J'], ['bA', 'A'], ['bD', 'D'], ['bS', 'S']]) document.getElementById(id).textContent = T.btn[k];
+pad.querySelectorAll('b').forEach((b) => {
+  const k = b.dataset.k, up = (e) => { e.preventDefault(); K[k] = 0; b.classList.remove('dn'); };
+  b.addEventListener('pointerdown', (e) => { e.preventDefault(); try { b.setPointerCapture(e.pointerId); } catch { /* */ } press(k); b.classList.add('dn'); });
+  b.addEventListener('pointerup', up); b.addEventListener('pointercancel', up);
+});
+addEventListener('pointerdown', (e) => { if (e.pointerType === 'touch') pad.classList.add('on'); if (!e.target.dataset?.k || state !== 'play') { P.any = 1; P.tap = 1; audioInit(); } });
+addEventListener('contextmenu', (e) => e.preventDefault());
+
+// sound: tiny synth, no assets
+let ac = null, master = null, muted = false;
+function audioInit() { if (ac) { if (ac.state === 'suspended') ac.resume(); return; } try { ac = new AudioContext(); master = ac.createGain(); master.gain.value = 0.5; master.connect(ac.destination); } catch { ac = null; } }
+function tone(f, t = 0.1, type = 'triangle', vol = 0.2, slide = 0, delay = 0) {
+  if (!ac || muted) return; const t0 = ac.currentTime + delay, o = ac.createOscillator(), v = ac.createGain();
+  o.type = type; o.frequency.setValueAtTime(f, t0); if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, f + slide), t0 + t);
+  v.gain.setValueAtTime(vol, t0); v.gain.exponentialRampToValueAtTime(0.0001, t0 + t); o.connect(v).connect(master); o.start(t0); o.stop(t0 + t + 0.02);
+}
+let noiseBuf = null;
+function noise(t = 0.1, vol = 0.2, freq = 1800, delay = 0) {
+  if (!ac || muted) return; const t0 = ac.currentTime + delay;
+  if (!noiseBuf) { noiseBuf = ac.createBuffer(1, ac.sampleRate * 0.5, ac.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+  const s = ac.createBufferSource(), f = ac.createBiquadFilter(), v = ac.createGain(); s.buffer = noiseBuf; f.type = 'bandpass'; f.frequency.value = freq; f.Q.value = 0.8;
+  v.gain.setValueAtTime(vol, t0); v.gain.exponentialRampToValueAtTime(0.0001, t0 + t); s.connect(f).connect(v).connect(master); s.start(t0); s.stop(t0 + t + 0.02);
+}
+const SFX = {
+  slash: () => noise(0.09, 0.22, 3200), hit: () => { noise(0.08, 0.3, 900); tone(160, 0.08, 'square', 0.12, -80); },
+  jump: () => tone(300, 0.1, 'sine', 0.12, 220), dash: () => noise(0.16, 0.18, 1400), hurt: () => { tone(200, 0.25, 'sawtooth', 0.18, -140); noise(0.2, 0.2, 500); },
+  wave: () => { noise(0.25, 0.25, 2400); tone(520, 0.2, 'sine', 0.1, -300); }, clang: () => { tone(900, 0.12, 'square', 0.1, -200); tone(1340, 0.15, 'triangle', 0.1); },
+  die: () => { tone(420, 0.3, 'sine', 0.12, 300); noise(0.2, 0.15, 2600); }, glyph: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.5, 'sine', 0.12, 0, i * 0.09)),
+  save: () => [392, 523].forEach((f, i) => tone(f, 0.4, 'triangle', 0.12, 0, i * 0.12)), heal: () => tone(440, 0.3, 'sine', 0.12, 440),
+  text: () => tone(700 + rnd(200), 0.02, 'square', 0.02), boom: () => { noise(0.5, 0.4, 200); tone(70, 0.5, 'sawtooth', 0.25, -40); },
+  spit: () => tone(240, 0.12, 'square', 0.06, -120), warn: () => tone(880, 0.08, 'square', 0.05),
+};
+const sfx = (n) => { try { SFX[n]?.(); } catch { /* */ } };
+// music: sparse plucked notes on a pentatonic scale; the mood shifts per stage
+const SCALES = [[220, 261.6, 293.7, 329.6, 392, 440, 523.3], [196, 233.1, 261.6, 293.7, 349.2, 392, 466.2], [164.8, 196, 220, 246.9, 293.7, 329.6, 392], [146.8, 174.6, 196, 220, 261.6, 293.7]];
+let musT = 0, musI = 0;
+function music(dt, mood) {
+  musT -= dt; if (musT > 0 || !ac || muted) return; const fast = mood === 3; musT = fast ? 0.28 : rnd(0.55, 1.3);
+  const sc = SCALES[mood] || SCALES[0]; musI = clamp(musI + Math.round(rnd(-2.4, 2.4)), 0, sc.length - 1); const f = sc[musI];
+  tone(f, fast ? 0.5 : 1.6, 'triangle', 0.07); tone(f * 2, fast ? 0.2 : 0.5, 'sine', 0.025); if (Math.random() < 0.25) tone(sc[0] / 2, 2, 'sine', 0.06);
+}
+const store = { get() { try { return JSON.parse(localStorage.getItem('inkscar-save')) || null; } catch { return store.mem || null; } }, set(v) { store.mem = v; try { localStorage.setItem('inkscar-save', JSON.stringify(v)); } catch { /* */ } }, clear() { store.mem = null; try { localStorage.removeItem('inkscar-save'); } catch { /* */ } } };
+
+// text wrapping on the canvas (call with the font already set)
+function wrap(text, maxW) {
+  const out = [];
+  for (const para of text.split('\n')) {
+    let line = '';
+    for (const word of para.split(' ')) { const t = line ? line + ' ' + word : word; if (line && g.measureText(t).width > maxW) { out.push(line); line = word; } else line = t; }
+    out.push(line);
+  }
+  return out;
+}
+
+// ---------- levels: built with a few helpers instead of long ASCII maps ----------
+// tiles: '#' solid, '=' one-way ledge, '^' ink thorns. Rows 0..16, the ground usually starts at row 13.
+// entities: P start, T dialog trigger, C seal stone (checkpoint), G lost word, H ink pot, S shrine, E exit, D boss door,
+//           b blot, s ink bloom (spitter), c crow-letter, k gatekeeper (shield), B the Engine
+const ROWS = 17;
+function mk(w) {
+  const G = Array.from({ length: ROWS }, () => Array(w).fill(' ')), E = [];
+  const L = {
+    w, G, E,
+    g(x0, x1, top) { for (let x = x0; x < x1; x++) for (let y = top; y < ROWS; y++) G[y][x] = '#'; return L; },
+    b(x0, x1, y0, y1) { for (let x = x0; x < x1; x++) for (let y = y0; y < Math.min(y1, ROWS); y++) G[y][x] = '#'; return L; },
+    p(x, y, n) { for (let i = 0; i < n; i++) G[y][x + i] = '='; return L; },
+    sp(x0, x1, y) { for (let x = x0; x < x1; x++) G[y][x] = '^'; return L; },
+    e(ch, x, y, arg) { E.push({ ch, x, y, arg }); return L; },
+    many(ch, list) { for (const [x, y, arg] of list) E.push({ ch, x, y, arg }); return L; },
+  };
+  return L;
+}
+const LEVELS = [
+  () => { // 1. The Blotted Village: learn to move, slash, dash and reflect
+    const L = mk(170);
+    L.g(0, 30, 13).e('P', 2, 12).e('T', 5, 12, 's1a').many('b', [[20, 12], [26, 12]]);
+    L.g(30, 38, 12).g(38, 46, 11).e('b', 41, 10).e('T', 43, 10, 's1b');
+    L.g(49, 62, 11).p(53, 8, 5).e('G', 55, 6, 0).e('b', 58, 10);
+    L.g(62, 70, 13).e('T', 63, 12, 's1c').e('s', 68, 12);
+    L.g(74, 90, 13).e('C', 76, 12).many('b', [[81, 12], [85, 12]]).e('H', 88, 12);
+    L.g(90, 96, 11).g(96, 104, 9).e('c', 100, 4);
+    L.e('G', 106, 5, 1).g(108, 120, 9).e('b', 112, 8).e('s', 117, 8);
+    L.g(120, 150, 13).e('b', 124, 12).sp(128, 130, 12).e('s', 133, 12).e('C', 136, 12);
+    L.p(140, 10, 3).p(144, 7, 3).e('G', 145, 5, 2).e('c', 142, 4).e('b', 146, 12);
+    L.g(150, 170, 13).e('H', 152, 12).e('T', 156, 12, 's1d').e('S', 158, 12).e('E', 166, 12);
+    return L;
+  },
+  () => { // 2. The Paper Bamboo: double jump, crows, long gaps
+    const L = mk(200);
+    L.g(0, 20, 13).e('P', 2, 12).e('T', 4, 12, 's2a').e('b', 14, 12);
+    L.g(26, 40, 13).e('c', 32, 6).e('s', 38, 12);
+    L.g(40, 58, 15).sp(40, 58, 14).p(41, 11, 3).p(46, 9, 3).p(51, 7, 3).e('G', 47, 4, 3);
+    L.g(58, 72, 8).e('C', 60, 7).many('b', [[64, 7], [68, 7]]).e('c', 70, 3);
+    L.g(72, 84, 13).many('s', [[76, 12], [83, 12]]).e('H', 80, 12);
+    L.g(91, 110, 13).e('T', 93, 12, 's2b').many('c', [[96, 5], [104, 6]]).e('b', 100, 12);
+    L.g(110, 130, 8).e('C', 112, 7).p(119, 5, 3).e('G', 120, 3, 4).e('b', 123, 7).e('s', 126, 7);
+    L.p(132, 10, 2).g(136, 150, 11).many('b', [[140, 10], [146, 10]]).e('c', 143, 5);
+    L.g(150, 166, 13).sp(153, 156, 12).sp(160, 163, 12).e('s', 165, 12);
+    L.g(166, 200, 13).e('H', 168, 12).e('C', 170, 12).p(181, 9, 3).e('G', 182, 7, 5);
+    L.many('b', [[178, 12], [185, 12]]).many('c', [[180, 4], [186, 5]]).e('T', 190, 12, 's2c').e('E', 196, 12);
+    return L;
+  },
+  () => { // 3. The Tower of the Engine: gatekeepers, a hidden corridor, the boss
+    const L = mk(172);
+    L.g(0, 28, 13).e('P', 2, 12).e('T', 4, 12, 's3a').e('k', 14, 12);
+    L.g(28, 44, 13).sp(31, 37, 12).e('G', 41, 12, 6);           // hidden corridor under the floor
+    L.p(20, 11, 3).p(24, 9, 3).b(28, 44, 7, 8).b(44, 52, 7, ROWS); // the way up
+    L.e('s', 34, 6).e('c', 40, 2).e('k', 48, 6);
+    L.g(52, 58, 15).sp(52, 58, 14);
+    L.g(58, 74, 9).e('C', 60, 8).e('k', 66, 8).e('H', 70, 8).e('s', 72, 8);
+    L.g(74, 90, 13).many('c', [[78, 6], [87, 5]]).many('b', [[80, 12], [85, 12]]).p(81, 9, 3).e('G', 82, 6, 7);
+    L.g(90, 104, 11).e('C', 92, 10).e('k', 97, 10).e('s', 102, 10);
+    L.p(107, 9, 1).e('G', 107, 5, 8);
+    L.g(111, 126, 11).many('k', [[116, 10], [122, 10]]).e('c', 119, 4);
+    L.g(126, 172, 13).e('H', 128, 12).e('C', 130, 12).e('T', 132, 12, 's3b').e('D', 137, 12).e('B', 154, 4.5);
+    L.b(170, 172, 0, ROWS);
+    return L;
+  },
+];
+
+// ---------- world state, tile physics, the player ----------
+let lvl = null, stageI = 0, ents = [], shots = [], parts = [], floats = [], pl = null, hitstop = 0;
+const cam = { x: 0, y: 0, shake: 0, lock: null };
+const save = { stage: 0, glyphs: [], dj: false, deaths: 0, time: 0 };
+const RUN = 125, ACC = 1500, GRAV = 950, JUMP = 335, DJUMP = 290, DASH = 310, DASH_T = 0.17;
+
+const tile = (tx, ty) => (tx < 0 || tx >= lvl.w ? '#' : ty < 0 || ty >= ROWS ? ' ' : lvl.G[ty][tx]);
+function collide(e) {
+  const x0 = Math.floor(e.x / TS), x1 = Math.floor((e.x + e.w) / TS), y0 = Math.floor(e.y / TS), y1 = Math.floor((e.y + e.h) / TS);
+  for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) if (tile(tx, ty) === '#') return true;
+  return false;
+}
+function move(e, dt) {
+  e.x += e.vx * dt; e.hitWall = 0;
+  if (collide(e)) { e.hitWall = sign(e.vx); e.x = e.vx > 0 ? Math.floor((e.x + e.w) / TS) * TS - e.w - 0.01 : (Math.floor(e.x / TS) + 1) * TS + 0.01; e.vx = 0; }
+  const prevFoot = e.y + e.h; e.y += e.vy * dt; e.onGround = false;
+  if (collide(e)) { if (e.vy > 0) { e.y = Math.floor((e.y + e.h) / TS) * TS - e.h - 0.01; e.onGround = true; } else e.y = (Math.floor(e.y / TS) + 1) * TS + 0.01; e.vy = 0; }
+  else if (e.vy >= 0) { // one-way ledges: land only when coming down from above
+    const foot = e.y + e.h, ty = Math.floor(foot / TS), top = ty * TS;
+    if (prevFoot <= top + 0.05) for (let tx = Math.floor(e.x / TS); tx <= Math.floor((e.x + e.w) / TS); tx++) if (tile(tx, ty) === '=') { e.y = top - e.h - 0.01; e.vy = 0; e.onGround = true; break; }
+  }
+}
+const overlap = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+const approach = (v, to, by) => (v < to ? Math.min(v + by, to) : Math.max(v - by, to));
+const cx = (e) => e.x + e.w / 2, cy = (e) => e.y + e.h / 2;
+
+function puff(x, y, n, o = {}) {
+  for (let i = 0; i < n; i++) { const a = o.dir !== undefined ? o.dir + rnd(-0.7, 0.7) : rnd(6.283), s = rnd(o.s0 ?? 20, o.s1 ?? 110); parts.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - (o.up || 0), g: o.g ?? 300, r: rnd(o.r0 ?? 1, o.r1 ?? 3.2), life: 0, max: rnd(0.25, o.max ?? 0.7), col: o.col || INK }); }
+}
+function floatText(x, y, text, col = INK, big = false) { floats.push({ x, y, text, col, big, life: 0, max: big ? 2.6 : 1.3 }); }
+
+function newPlayer(x, y) {
+  return { x, y, w: 10, h: 22, vx: 0, vy: 0, face: 1, hp: 5, maxHp: 5, ink: 30, t: 0, onGround: false, coy: 0, jbuf: 0, jumps: 0, airDash: false, dashT: 0, dashCd: 0, atkT: 0, atkCd: 0, abuf: 0, combo: 0, comboT: 0, skillCd: 0, inv: 0, hurtT: 0, dead: false, deadT: 0, safe: { x, y }, safeT: 0, hitSet: new Set(), scarf: Array.from({ length: 7 }, () => ({ x, y })) };
+}
+function hurtPlayer(d, dir) {
+  const p = pl; if (p.inv > 0 || p.dead || state !== 'play') return;
+  p.hp -= d; p.inv = 1.1; p.hurtT = 0.25; p.vx = dir * 150; p.vy = -190; p.dashT = 0; cam.shake = 6; hitstop = 0.08; sfx('hurt'); puff(cx(p), cy(p), 10, { col: RED });
+  if (p.hp <= 0) { p.dead = true; p.deadT = 0; save.deaths++; puff(cx(p), cy(p), 40, { s1: 200, max: 1.1 }); sfx('boom'); }
+}
+function updPlayer(dt) {
+  const p = pl; p.t += dt;
+  if (p.dead) { p.deadT += dt; if (p.deadT > 1.3) respawn(); return; }
+  for (const k of ['inv', 'atkCd', 'dashCd', 'comboT', 'hurtT', 'coy', 'jbuf', 'skillCd', 'abuf']) if (p[k] > 0) p[k] -= dt;
+  const ax = (K.right ? 1 : 0) - (K.left ? 1 : 0);
+  if (p.dashT > 0) {
+    p.dashT -= dt; p.vx = p.face * DASH; p.vy = 0; if (p.dashT <= 0) p.vx = p.face * RUN;
+    parts.push({ x: cx(p), y: cy(p), vx: 0, vy: 0, g: 0, r: 7, life: 0, max: 0.22, col: 'rgba(26,22,19,.35)' });
+  } else {
+    if (p.hurtT <= 0) { if (ax) { if (p.atkT <= 0) p.face = ax; p.vx = approach(p.vx, ax * RUN, ACC * dt); } else p.vx = approach(p.vx, 0, ACC * dt * (p.onGround ? 1 : 0.4)); }
+    p.vy = Math.min(p.vy + GRAV * dt, 430);
+    if (P.jump) p.jbuf = 0.12;
+    if (p.onGround) { p.coy = 0.1; p.jumps = 0; p.airDash = false; }
+    if (p.jbuf > 0 && p.hurtT <= 0) {
+      if (p.coy > 0) { p.vy = -JUMP; p.coy = 0; p.jbuf = 0; sfx('jump'); puff(cx(p), p.y + p.h, 5, { dir: -1.57, s1: 50, g: 60, col: 'rgba(26,22,19,.4)' }); }
+      else if (save.dj && p.jumps < 1) { p.jumps = 1; p.vy = -DJUMP; p.jbuf = 0; sfx('jump'); floats.push({ x: cx(p), y: p.y + p.h, ring: true, life: 0, max: 0.35 }); }
+    }
+    if (!K.jump && p.vy < -130) p.vy = -130;
+    if (P.dash && p.dashCd <= 0 && !p.airDash && p.hurtT <= 0) { if (ax) p.face = ax; p.dashT = DASH_T; p.dashCd = 0.45; p.airDash = !p.onGround; p.inv = Math.max(p.inv, 0.24); p.atkT = 0; sfx('dash'); }
+  }
+  if (P.atk) p.abuf = 0.16; /* a press slightly early still counts */
+  if (p.abuf > 0 && p.atkCd <= 0 && p.hurtT <= 0 && p.dashT <= 0) {
+    p.abuf = 0;
+    p.combo = p.comboT > 0 ? (p.combo % 3) + 1 : 1; p.atkT = 0.2; p.atkCd = p.combo === 3 ? 0.34 : 0.2; p.comboT = 0.6; p.hitSet = new Set(); sfx('slash');
+    if (p.onGround) p.vx = p.face * (p.combo === 3 ? 150 : 70);
+  }
+  if (P.skill && p.ink >= 30 && p.skillCd <= 0 && p.hurtT <= 0) { p.ink -= 30; p.skillCd = 0.4; sfx('wave'); shots.push({ x: cx(p) + p.face * 8, y: p.y - 4, w: 14, h: 30, vx: p.face * 270, vy: 0, life: 0.65, friendly: true, wave: true, dmg: 2, hit: new Set() }); }
+  if (p.atkT > 0) { p.atkT -= dt; if (p.atkT > 0.07) slashHit(p); }
+  move(p, dt);
+  // thorns and pits
+  const fx0 = Math.floor((p.x + 2) / TS), fx1 = Math.floor((p.x + p.w - 2) / TS), fy = Math.floor((p.y + p.h - 3) / TS);
+  if (tile(fx0, fy) === '^' || tile(fx1, fy) === '^') { hurtPlayer(1, -p.face); if (!p.dead) p.vy = -260; }
+  if (p.y > ROWS * TS + 30) { p.inv = 0; hurtPlayer(1, 0); if (!p.dead) { p.x = p.safe.x; p.y = p.safe.y; p.vx = p.vy = 0; } }
+  p.safeT -= dt;
+  if (p.onGround && p.safeT <= 0 && tile(Math.floor((p.x - 6) / TS), Math.floor((p.y + p.h + 2) / TS)) === '#' && tile(Math.floor((p.x + p.w + 6) / TS), Math.floor((p.y + p.h + 2) / TS)) === '#') { p.safe = { x: p.x, y: p.y }; p.safeT = 0.2; }
+  // the scarf trails behind as a short chain
+  let ax0 = cx(p) - p.face * 2, ay0 = p.y + 6; for (const s of p.scarf) { const dx = s.x - ax0, dy = s.y - ay0 + 0.6, d = Math.hypot(dx, dy) || 1, L = 3.2; if (d > L) { s.x = ax0 + (dx / d) * L; s.y = ay0 + (dy / d) * L; } s.y += 14 * dt; s.x -= p.face * 6 * dt; ax0 = s.x; ay0 = s.y; }
+}
+function slashHit(p) {
+  const r = p.combo === 3 ? 38 : 30, box = { x: p.face > 0 ? p.x + p.w - 4 : p.x - r + 4, y: p.y - 8, w: r, h: p.h + 14 }, dmg = p.combo === 3 ? 2 : 1;
+  for (const e of ents) if (e.hp > 0 && e.hurtable && !p.hitSet.has(e) && overlap(box, e)) { p.hitSet.add(e); if (damage(e, dmg, p.face, 'slash')) p.ink = Math.min(100, p.ink + 8); }
+  for (const s of shots) if (!s.friendly && !s.noReflect && overlap(box, s)) { s.friendly = true; s.vx = p.face * Math.max(220, Math.abs(s.vx) * 1.5); s.vy = -Math.abs(s.vy) * 0.2; s.dmg = 2; s.hit = new Set(); sfx('clang'); hitstop = 0.04; puff(s.x, s.y, 6); }
+}
+
+// ---------- the Nameless: blots, ink blooms, crow-letters, gatekeepers; plus items ----------
+const WASX = LANG === 'ko' ? { s: '꽃', k: '문지기', c: ['ㄱ', 'ㅁ', 'ㅅ', 'ㅎ'] } : { s: 'flower', k: 'gatekeeper', c: ['a', 'k', 's', 'h'] };
+const mkEnt = (o) => Object.assign({ vx: 0, vy: 0, face: -1, t: rnd(10), flash: 0, hurtable: true, contact: true, onGround: false, kb: 1, mode: 0, mt: 0, cd: rnd(0.5, 1.5) }, o);
+let seen = {}, cp = null, bossOn = false, boss = null, glyphNote = null;
+function spawnEnts() {
+  ents = []; shots = []; boss = null; bossOn = false; cam.lock = null;
+  for (const s of lvl.E) {
+    const X = s.x * TS, Y = (s.y + 1) * TS, it = (type, w, h, o) => ents.push(mkEnt({ type, x: X + (TS - w) / 2, y: Y - h, w, h, hp: 1, hurtable: false, contact: false, arg: s.arg, ...o }));
+    if (s.ch === 'b') ents.push(mkEnt({ type: 'b', x: X + 1, y: Y - 12, w: 14, h: 12, hp: 2 + (stageI > 1 ? 1 : 0), was: T.was[Math.floor(rnd(T.was.length))] }));
+    else if (s.ch === 's') ents.push(mkEnt({ type: 's', x: X + 2, y: Y - 18, w: 12, h: 18, hp: 2, kb: 0, was: WASX.s }));
+    else if (s.ch === 'c') ents.push(mkEnt({ type: 'c', x: X, y: s.y * TS, w: 14, h: 10, hp: 1, home: { x: X, y: s.y * TS }, was: WASX.c[Math.floor(rnd(4))] }));
+    else if (s.ch === 'k') ents.push(mkEnt({ type: 'k', x: X, y: Y - 26, w: 16, h: 26, hp: 5, kb: 0.25, was: WASX.k }));
+    else if (s.ch === 'B') { boss = mkBoss(X, s.y * TS); ents.push(boss); }
+    else if (s.ch === 'T') { if (!seen[s.arg]) it('T', 4, 400); }
+    else if (s.ch === 'G') { if (!save.glyphs.includes(s.arg)) it('G', 16, 16); }
+    else if (s.ch === 'C') it('C', 16, 26, { on: cp && Math.abs(cp.x - X) < 20 });
+    else if (s.ch === 'H') it('H', 12, 14);
+    else if (s.ch === 'S') it('S', 20, 34);
+    else if (s.ch === 'E') it('E', 22, 44);
+    else if (s.ch === 'D') it('D', 8, 400);
+  }
+}
+function damage(e, d, dir, kind) {
+  if (e.type === 'k' && e.mode !== 3 && dir === -e.face) { sfx('clang'); puff(cx(e) + e.face * 10, cy(e), 5, { col: GRAY }); hitstop = 0.05; if (kind === 'slash') pl.vx = -dir * 120; e.flashB = 0.15; return false; }
+  if (e.type === 'B' && !bossHurt(e, d, kind)) return false;
+  e.hp -= d; e.flash = 0.12; e.vx = dir * 110 * e.kb; if (e.kb) e.vy = Math.min(e.vy, -60); hitstop = Math.max(hitstop, d > 1 ? 0.08 : 0.05); cam.shake = Math.max(cam.shake, 3 + d);
+  puff(cx(e), cy(e), 8 + d * 4, { dir: dir > 0 ? 0 : 3.14, s1: 170, col: e.type === 'B' ? GRAY : INK }); sfx('hit');
+  if (e.hp <= 0) kill(e);
+  return true;
+}
+function kill(e) {
+  if (e.type === 'B') return bossDown(e);
+  puff(cx(e), cy(e), 26, { s1: 160, max: 0.9, col: GRAY }); sfx('die'); floatText(cx(e), e.y - 4, e.was, RED); pl.ink = Math.min(100, pl.ink + 6);
+}
+const floorAhead = (e) => { const t = tile(Math.floor((cx(e) + e.face * (e.w / 2 + 3)) / TS), Math.floor((e.y + e.h + 4) / TS)); return t === '#' || t === '='; };
+function updEnts(dt) {
+  const p = pl;
+  for (const e of ents) {
+    if (e.hp <= 0) continue; e.t += dt; if (e.flash > 0) e.flash -= dt; if (e.flashB > 0) e.flashB -= dt;
+    const dx = cx(p) - cx(e), dy = cy(p) - cy(e), near = Math.abs(dx) < VW;
+    if (e.type === 'b') {
+      if (!near) continue;
+      if (e.onGround) {
+        if (e.hitWall || !floorAhead(e)) e.face *= -1;
+        e.vx = e.face * 26; e.cd -= dt;
+        if (Math.abs(dx) < 90 && Math.abs(dy) < 44 && !p.dead) { e.face = sign(dx); if (e.cd <= 0) { e.vy = -200; e.vx = e.face * 100; e.cd = 1.2; e.onGround = false; } }
+      }
+      e.vy = Math.min(e.vy + GRAV * dt, 400); move(e, dt); if (e.y > ROWS * TS + 40) e.hp = 0;
+    } else if (e.type === 's') {
+      if (!near) continue; e.face = sign(dx); e.cd -= dt;
+      if (e.mode === 0 && e.cd <= 0 && Math.abs(dx) < 210 && Math.abs(dy) < 90 && !p.dead) { e.mode = 1; e.mt = 0.4; sfx('warn'); }
+      if (e.mode === 1 && (e.mt -= dt) <= 0) { e.mode = 0; e.cd = 2.1; sfx('spit'); const far = clamp(Math.abs(dx) / 200, 0.3, 1); shots.push({ x: cx(e) + e.face * 6, y: e.y + 2, w: 7, h: 7, vx: e.face * (70 + 110 * far), vy: -120, g: 300, life: 3, dmg: 1 }); }
+    } else if (e.type === 'c') {
+      if (!near) continue; e.cd -= dt;
+      if (e.mode === 0) { e.x = e.home.x + Math.sin(e.t * 1.3) * 22; e.y = e.home.y + Math.sin(e.t * 2.6) * 6; e.face = sign(dx); if (e.cd <= 0 && Math.abs(dx) < 120 && dy > 0 && dy < 170 && !p.dead) { e.mode = 1; e.mt = 0.4; sfx('warn'); } }
+      else if (e.mode === 1) { if ((e.mt -= dt) <= 0) { const d = Math.hypot(dx, dy) || 1; e.vx = (dx / d) * 215; e.vy = (dy / d) * 215; e.mode = 2; e.mt = 0.85; } }
+      else if (e.mode === 2) { e.x += e.vx * dt; e.y += e.vy * dt; if ((e.mt -= dt) <= 0 || collide(e)) { e.mode = 3; } }
+      else { const hx = e.home.x - e.x, hy = e.home.y - e.y, d = Math.hypot(hx, hy); if (d < 4) { e.mode = 0; e.cd = 1.4; e.t = 0; e.home.x = e.x; } else { e.x += (hx / d) * 90 * dt; e.y += (hy / d) * 90 * dt; } }
+    } else if (e.type === 'k') {
+      if (!near) continue; e.mt -= dt;
+      if (e.mode === 0) {
+        if (Math.abs(dx) < 170 && Math.abs(dy) < 60) { if (Math.abs(dx) > 6) e.face = sign(dx); e.vx = floorAhead(e) && Math.abs(dx) > 26 ? e.face * 34 : 0; if (Math.abs(dx) < 36 && Math.abs(dy) < 30 && !p.dead) { e.mode = 1; e.mt = 0.55; e.vx = 0; sfx('warn'); } }
+        else e.vx = 0;
+      } else if (e.mode === 1) { e.vx = 0; if (e.mt <= 0) { e.mode = 2; e.mt = 0.16; sfx('slash'); cam.shake = 3; } }
+      else if (e.mode === 2) { const box = { x: e.face > 0 ? e.x + e.w : e.x - 36, y: e.y - 6, w: 36, h: e.h + 6 }; if (overlap(box, p)) hurtPlayer(2, e.face); if (e.mt <= 0) { e.mode = 3; e.mt = 0.8; } }
+      else if (e.mt <= 0) e.mode = 0;
+      e.vy = Math.min(e.vy + GRAV * dt, 400); move(e, dt);
+    } else if (e.type === 'B') updBoss(e, dt);
+    else updItem(e, dt);
+    if (e.contact && e.hp > 0 && overlap(e.type === 'B' ? { x: e.x + 10, y: e.y + 10, w: e.w - 20, h: e.h - 20 } : e, p)) hurtPlayer(1, sign(cx(p) - cx(e)) || 1);
+  }
+  ents = ents.filter((e) => e.hp > 0);
+  for (const s of shots) {
+    s.life -= dt; s.vy += (s.g || 0) * dt; s.x += s.vx * dt; s.y += s.vy * dt;
+    if (!s.ghost && tile(Math.floor((s.x + s.w / 2) / TS), Math.floor((s.y + s.h / 2) / TS)) === '#') { s.life = 0; puff(s.x, s.y, 5); }
+    if (s.friendly) { for (const e of ents) if (e.hurtable && e.hp > 0 && !s.hit.has(e) && overlap(s, e)) { s.hit.add(e); damage(e, s.dmg, sign(s.vx), s.wave ? 'wave' : 'reflect'); if (!s.wave) s.life = 0; } }
+    else if (overlap(s, p)) { hurtPlayer(s.dmg, sign(s.vx) || 1); if (p.inv > 0 && p.dashT <= 0) s.life = 0; }
+  }
+  shots = shots.filter((s) => s.life > 0);
+}
+function updItem(e) {
+  const p = pl, hit = overlap(e, p);
+  if (e.type === 'T') { if (hit) { e.hp = 0; seen[e.arg] = 1; say(e.arg); } }
+  else if (e.type === 'C') { if (hit && !e.on) { for (const o of ents) if (o.type === 'C') o.on = false; e.on = true; cp = { x: e.x, y: e.y }; p.hp = p.maxHp; sfx('save'); floatText(cx(e), e.y - 8, T.saved); puff(cx(e), e.y, 14, { col: RED, up: 60 }); } }
+  else if (e.type === 'G') { if (hit) { e.hp = 0; save.glyphs.push(e.arg); persist(); sfx('glyph'); glyphNote = { i: e.arg, t: 0 }; puff(cx(e), cy(e), 30, { col: RED, s1: 140, max: 1.2, g: -30 }); } }
+  else if (e.type === 'H') { if (hit && (p.hp < p.maxHp || p.ink < 100)) { e.hp = 0; p.hp = Math.min(p.maxHp, p.hp + 2); p.ink = 100; sfx('heal'); floatText(cx(e), e.y - 6, T.heal); } }
+  else if (e.type === 'E') { if (hit && p.onGround) nextStage(); }
+  else if (e.type === 'D') { if (p.x > e.x + 30 && !bossOn) startBoss(e); }
+}
+
+// ---------- the Thousand-Brush Engine ----------
+// It hovers and writes. Three phases; after a few patterns it tires and sinks, and that is the opening.
+const GY = 13 * TS;
+function mkBoss(X, Y) { return mkEnt({ type: 'B', x: X - 28, y: Y, w: 56, h: 56, hp: 150, maxHp: 150, kb: 0, phase: 1, mode: 'wait', mt: 0, n: 0, k: 0, homeY: Y, sw: null, cols: [], last: '' }); }
+function startBoss(door) {
+  bossOn = true; door.hp = 0; const tx = Math.floor(door.x / TS) - 1;
+  for (let y = 0; y < 13; y++) { lvl.G[y][tx] = '#'; lvl.G[y][tx - 1] = '#'; }
+  cam.lock = { x0: (tx - 1) * TS, x1: lvl.w * TS, a0: (tx + 1) * TS + 4, a1: (lvl.w - 2) * TS - 4 };
+  boss.mode = 'idle'; boss.mt = 1.6; cam.shake = 8; sfx('boom'); sayOnce('b0');
+}
+function bossHurt(e, d) { if (!bossOn || e.mode === 'wait') return false; if (e.mode === 'tired') e.hp -= d; return true; }
+function bossDown(e) { e.hp = 0; shots = []; for (const o of ents) if (o.type === 'b') o.hp = 0; finale(e); }
+function updBoss(e, dt) {
+  if (!bossOn) { e.y = e.homeY + Math.sin(e.t) * 4; return; }
+  const p = pl, L = cam.lock, ph = e.phase, spd = 1 + (ph - 1) * 0.22; e.contact = e.mode !== 'tired' && e.y < e.homeY + 16; /* never while sunk or still rising */
+  const want = e.hp <= 50 ? 3 : e.hp <= 100 ? 2 : 1;
+  if (want > ph) {
+    e.phase = want; shots = shots.filter((s) => s.friendly); e.mode = 'idle'; e.mt = 1.3; e.sw = null; e.cols = []; e.n = 0; cam.shake = 10; sfx('boom');
+    puff(cx(e), cy(e), 50, { s1: 260, col: GRAY, max: 1.2 }); p.vx = sign(cx(p) - cx(e)) * 220; ents.push(mkEnt({ type: 'H', x: clamp(cx(p) - sign(cx(p) - cx(e) || 1) * 70, L.a0 + 20, L.a1 - 30), y: GY - 14.01, w: 12, h: 14, hp: 1, hurtable: false, contact: false })); /* a spilled ink pot: a breath between phases */
+    sayOnce(want === 2 ? 'b1' : 'b2'); return;
+  }
+  e.mt -= dt;
+  let tx = e.x, ty = e.homeY + Math.sin(e.t * 2) * 5;
+  if (e.mode === 'tired') ty = GY - e.h - 2; else if (e.mode === 'idle') tx = clamp(cx(p) - e.w / 2 + Math.sin(e.t * 0.9) * 70, L.a0, L.a1 - e.w);
+  e.x += clamp(tx - e.x, -75 * spd * dt, 75 * spd * dt); e.y += clamp(ty - e.y, -150 * dt, 150 * dt);
+  if (e.mode === 'idle') {
+    if (e.mt > 0) return;
+    if (e.n >= (ph === 1 ? 2 : 3)) { e.mode = 'tired'; e.mt = 3; e.n = 0; sfx('die'); return; }
+    const opts = ph === 1 ? ['sweep', 'rain'] : ['sweep', 'rain', 'scroll']; let m = opts[Math.floor(rnd(opts.length))]; if (m === e.last) m = opts[(opts.indexOf(m) + 1) % opts.length]; e.last = m; e.mode = m; sfx('warn');
+    if (ph >= 2 && !ents.some((o) => o.type === 'b' && o.hp > 0) && Math.random() < 0.6) for (const s of [-1, 1]) ents.push(mkEnt({ type: 'b', x: cx(e) + s * 24, y: e.y + e.h, w: 14, h: 12, hp: 2, vx: s * 60, was: T.was[Math.floor(rnd(T.was.length))] }));
+    if (m === 'sweep') { const dir = Math.random() < 0.5 ? 1 : -1; e.sw = { x: dir > 0 ? L.a0 - 30 : L.a1 + 30, dir, go: false, back: false }; e.mt = 0.8 / spd; }
+    else if (m === 'rain') { const n = ph === 3 ? 7 : 5; e.cols = [cx(p)]; for (let i = 1; i < n; i++) e.cols.push(rnd(L.a0 + 10, L.a1 - 10)); e.mt = 0.9 / spd; }
+    else { e.k = ph === 3 ? 5 : 3; e.mt = 0.6; }
+  } else if (e.mode === 'sweep') {
+    const s = e.sw; if (e.mt > 0) return;
+    if (!s.go) { s.go = true; sfx('dash'); }
+    s.x += s.dir * 330 * spd * dt; if (overlap({ x: s.x - 13, y: GY - 30, w: 26, h: 30 }, p)) hurtPlayer(1, s.dir);
+    if (Math.random() < 0.5) puff(s.x, GY - 2, 1, { col: GRAY, dir: -1.57, s1: 60 });
+    if (s.x < L.a0 - 40 || s.x > L.a1 + 40) { if (ph === 3 && !s.back) { s.back = true; s.dir *= -1; } else { e.sw = null; e.mode = 'idle'; e.mt = 0.9 / spd; e.n++; } }
+  } else if (e.mode === 'rain') {
+    if (e.mt > 0) return;
+    for (const x of e.cols) shots.push({ x: x - 4, y: -12, w: 8, h: 14, vx: 0, vy: 240, g: 220, life: 3, dmg: 1, noReflect: true, drop: true });
+    e.cols = []; e.mode = 'idle'; e.mt = 1.3 / spd; e.n++; sfx('spit');
+  } else if (e.mode === 'scroll') {
+    if (e.mt > 0) return;
+    if (e.k > 0) { e.k--; e.mt = 0.62 / spd; const fromRight = cx(p) < (L.a0 + L.a1) / 2; shots.push({ x: fromRight ? L.a1 - 24 : L.a0 + 2, y: GY - (e.k % 2 ? 50 : 13), w: 22, h: 8, vx: (fromRight ? -1 : 1) * 165, vy: 0, life: 4, dmg: 1, scroll: true }); sfx('spit'); }
+    else { e.mode = 'idle'; e.mt = 1 / spd; e.n++; }
+  } else if (e.mode === 'tired' && e.mt <= 0) { e.mode = 'idle'; e.mt = 0.9; }
+}
+
+// ---------- drawing: paper, ink-wash mountains, stage scenery, tiles ----------
+let colorT = 0; // 0 = ink only; rises toward 1 in the true ending, when colour comes back
+const PAPERS = ['#efe6d2', '#e7e8d2', '#d6cfbf'];
+const grain = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'); for (let i = 0; i < 900; i++) { x.fillStyle = `rgba(${Math.random() < 0.5 ? '60,45,30' : '255,250,235'},${rnd(0.03, 0.1)})`; x.fillRect(rnd(128), rnd(128), rnd(0.5, 2.2), rnd(0.5, 1.2)); } return c; })();
+let grainPat = null;
+function ridge(par, base, amp, f, seed, alpha, col = '26,22,19') {
+  const ox = cam.x * par; g.fillStyle = `rgba(${col},${alpha})`; g.beginPath(); g.moveTo(0, VH);
+  for (let x = 0; x <= VW + 8; x += 8) { const wx = (x + ox) * f + seed; g.lineTo(x, base - amp * (Math.sin(wx) * 0.6 + Math.sin(wx * 2.3 + seed) * 0.3 + Math.sin(wx * 5.1) * 0.1)); }
+  g.lineTo(VW + 8, VH); g.fill();
+}
+function drawBg(t) {
+  const st = stageI, dark = st === 2;
+  g.fillStyle = PAPERS[st]; g.fillRect(0, 0, VW, VH);
+  if (colorT > 0) { const sky = g.createLinearGradient(0, 0, 0, VH); sky.addColorStop(0, `rgba(120,170,215,${0.55 * colorT})`); sky.addColorStop(0.7, `rgba(250,205,170,${0.45 * colorT})`); sky.addColorStop(1, `rgba(140,180,120,${0.4 * colorT})`); g.fillStyle = sky; g.fillRect(0, 0, VW, VH); }
+  // the sun is a red seal
+  const sx = VW * 0.78 - cam.x * 0.02, sy = dark ? 62 : 48; g.fillStyle = dark ? 'rgba(196,55,40,.5)' : 'rgba(196,55,40,.85)'; g.beginPath(); g.arc(sx, sy, 15, 0, 7); g.fill();
+  const mc = colorT > 0 ? `${Math.round(lerp(26, 60, colorT))},${Math.round(lerp(22, 110, colorT))},${Math.round(lerp(19, 90, colorT))}` : '26,22,19';
+  ridge(0.06, 150, 46, 0.006, 1.7 + st, 0.07, mc); ridge(0.12, 172, 38, 0.011, 4.1 + st * 2, 0.1, mc); ridge(0.22, 196, 30, 0.017, 9.3 + st, 0.14, mc);
+  if (st === 0) { // roofs of the village, half washed out
+    for (let i = Math.floor((cam.x * 0.4) / 130) - 1; i < (cam.x * 0.4 + VW) / 130 + 1; i++) { const h = hash(i * 3.1); if (h < 0.3) continue; const x = i * 130 - cam.x * 0.4 + h * 40, y = 196 - h * 14, w = 54 + h * 22; g.fillStyle = 'rgba(26,22,19,.2)'; g.fillRect(x + 8, y, w - 16, 40); g.beginPath(); g.moveTo(x - 6, y + 2); g.quadraticCurveTo(x + w / 2, y - 22 - h * 8, x + w + 6, y + 2); g.quadraticCurveTo(x + w / 2, y - 8, x - 6, y + 2); g.fill(); }
+  } else if (st === 1) { // bamboo, two depths
+    for (const [par, a, gap] of [[0.35, 0.12, 46], [0.6, 0.22, 74]]) for (let i = Math.floor((cam.x * par) / gap) - 1; i < (cam.x * par + VW) / gap + 1; i++) {
+      const h = hash(i * 7.7 + par), x = i * gap - cam.x * par + h * 30, lean = (h - 0.5) * 16, wd = 2 + h * 3;
+      g.strokeStyle = colorT > 0 ? `rgba(${Math.round(lerp(26, 50, colorT))},${Math.round(lerp(22, 120, colorT))},60,${a + 0.1 * colorT})` : `rgba(26,22,19,${a})`; g.lineWidth = wd; g.beginPath(); g.moveTo(x, VH); g.lineTo(x + lean, -10); g.stroke();
+      g.lineWidth = 1; g.strokeStyle = PAPERS[1]; for (let k = 0; k < 6; k++) { const yy = 30 + k * 42 + h * 20, xx = x + lean * (1 - yy / VH); g.beginPath(); g.moveTo(xx - wd, yy); g.lineTo(xx + wd, yy); g.stroke(); }
+      g.fillStyle = `rgba(26,22,19,${a})`; for (let k = 0; k < 3; k++) { const yy = 40 + hash(i + k * 1.3) * 120, xx = x + lean * (1 - yy / VH), d = k % 2 ? 1 : -1, sw = Math.sin(t * 0.8 + i) * 2; g.beginPath(); g.moveTo(xx, yy); g.quadraticCurveTo(xx + d * 12, yy - 2 + sw, xx + d * 22, yy + 6 + sw); g.quadraticCurveTo(xx + d * 10, yy + 3, xx, yy); g.fill(); }
+    }
+  } else { // inside the tower: pillars, hanging pages full of gray writing, falling gray ink
+    for (let i = Math.floor((cam.x * 0.5) / 96) - 1; i < (cam.x * 0.5 + VW) / 96 + 1; i++) {
+      const h = hash(i * 5.3), x = i * 96 - cam.x * 0.5; g.fillStyle = 'rgba(26,22,19,.16)'; g.fillRect(x, 0, 14, VH);
+      const px = x + 34 + h * 20, ph = 70 + h * 90, sway = Math.sin(t * 0.7 + i) * 2; g.fillStyle = 'rgba(239,230,210,.5)'; g.fillRect(px + sway, 0, 26, ph);
+      g.fillStyle = 'rgba(120,116,110,.5)'; for (let k = 0; k < 4; k++) for (let y = 6; y < ph - 6; y += 5) if (hash(i * 31 + k * 7 + y) > 0.25) g.fillRect(px + sway + 3 + k * 6, y, 3, 3);
+      if (h > 0.55) { const fx = x + 70; g.fillStyle = 'rgba(120,116,110,.28)'; g.fillRect(fx, 0, 5, VH); g.fillStyle = 'rgba(120,116,110,.4)'; g.fillRect(fx + 1, ((t * 90 + h * 300) % (VH + 40)) - 40, 3, 40); }
+    }
+  }
+  const mist = g.createLinearGradient(0, 150, 0, VH); mist.addColorStop(0, 'rgba(239,230,210,0)'); mist.addColorStop(1, `rgba(239,230,210,${dark ? 0.25 : 0.55})`); g.fillStyle = mist; g.fillRect(0, 150, VW, VH - 150);
+}
+function drawTiles(t) {
+  const x0 = Math.max(0, Math.floor(cam.x / TS)), x1 = Math.min(lvl.w - 1, Math.floor((cam.x + VW) / TS) + 1);
+  for (let ty = 0; ty < ROWS; ty++) for (let tx = x0; tx <= x1; tx++) {
+    const c = lvl.G[ty][tx]; if (c === ' ') continue; const x = tx * TS, y = ty * TS, h = hash(tx * 13.7 + ty * 91.3);
+    if (c === '#') {
+      g.fillStyle = INK; g.fillRect(x, y, TS + 0.5, TS + 0.5);
+      if (h > 0.6) { g.fillStyle = 'rgba(239,230,210,.05)'; g.fillRect(x + h * 8, y + 3, 6, 2); }
+      if (tile(tx, ty - 1) !== '#') { // dry-brush top edge, and grass outside the tower
+        g.fillStyle = 'rgba(239,230,210,.16)'; g.fillRect(x, y + 1.5, TS + 0.5, 1);
+        g.fillStyle = INK; g.beginPath(); g.moveTo(x, y + 1); g.quadraticCurveTo(x + 8, y - 2 - h * 2, x + TS, y + 1); g.fill();
+        if (stageI < 2 && h > 0.35) { g.strokeStyle = colorT > 0.5 ? '#3c7a46' : INK; g.lineWidth = 1; const sw = Math.sin(t * 2 + tx) * 1.5; g.beginPath(); for (let k = 0; k < 3; k++) { const gx = x + 2 + k * 5 + h * 3; g.moveTo(gx, y); g.lineTo(gx + sw + k - 1, y - 3 - h * 5); } g.stroke(); }
+      }
+    } else if (c === '=') { g.strokeStyle = INK; g.lineCap = 'round'; g.lineWidth = 3.5; g.beginPath(); g.moveTo(x, y + 2.5); g.lineTo(x + TS, y + 2.5); g.stroke(); g.lineWidth = 1; g.strokeStyle = 'rgba(26,22,19,.5)'; g.beginPath(); g.moveTo(x + 3, y + 5); g.lineTo(x + 3 + h * 4, y + 9 + h * 4); g.stroke(); g.lineCap = 'butt'; }
+    else if (c === '^') { g.fillStyle = INK; for (let k = 0; k < 3; k++) { const bx = x + k * 5.3, hh = 9 + hash(tx * 3 + k) * 6; g.beginPath(); g.moveTo(bx, y + TS); g.lineTo(bx + 2.7 + Math.sin(t * 3 + tx + k) * 0.6, y + TS - hh); g.lineTo(bx + 5.3, y + TS); g.fill(); } g.fillStyle = RED; g.fillRect(x + 7.4, y + 4, 1.2, 1.2); }
+  }
+}
+function drawOverlay() {
+  if (!grainPat) grainPat = g.createPattern(grain, 'repeat');
+  g.fillStyle = grainPat; g.fillRect(0, 0, VW, VH);
+  const v = g.createRadialGradient(VW / 2, VH / 2, VH * 0.45, VW / 2, VH / 2, VW * 0.75); v.addColorStop(0, 'rgba(40,28,16,0)'); v.addColorStop(1, 'rgba(40,28,16,.32)'); g.fillStyle = v; g.fillRect(0, 0, VW, VH);
+}
+
+// ---------- drawing: the scribe, her paper crane, the Nameless ----------
+const NAMELESS = '#45413d', FLASH = '#fff6e0';
+function blob(x, y, r, t, seed = 0, n = 10, wob = 0.16) { // an uneven, breathing ink blot
+  g.beginPath();
+  for (let i = 0; i <= n; i++) { const a = (i / n) * 6.283, rr = r * (1 + wob * Math.sin(a * 3 + t * 3 + seed) + wob * 0.5 * Math.sin(a * 5 - t * 2 + seed)); const px = x + Math.cos(a) * rr, py = y + Math.sin(a) * rr; if (i) g.lineTo(px, py); else g.moveTo(px, py); }
+  g.fill();
+}
+function crescent(ox, oy, r, a0, a1, wd) { // a tapered brush stroke along an arc
+  const ccw = a1 < a0; g.beginPath(); g.arc(ox, oy, r, a0, a1, ccw); g.arc(ox - 2, oy, r - wd, a1, a0, !ccw); g.closePath(); g.fill();
+}
+const crane = { x: 0, y: 0, f: 1 };
+function drawCrane(t) {
+  const flap = Math.sin(t * 9) * 3.5; g.save(); g.translate(crane.x, crane.y); g.scale(crane.f, 1);
+  g.fillStyle = '#fbf6e8'; g.strokeStyle = INK; g.lineWidth = 0.7;
+  g.beginPath(); g.moveTo(-5, 1); g.lineTo(0, -1); g.lineTo(5.5, -2.5); g.lineTo(1, 2); g.closePath(); g.fill(); g.stroke();
+  g.beginPath(); g.moveTo(-1, 0); g.lineTo(0.5, -6 - flap); g.lineTo(2, 0); g.closePath(); g.fill(); g.stroke();
+  g.fillStyle = RED; g.fillRect(4.6, -2.9, 1.3, 1.1); g.restore();
+}
+function drawPlayer(t) {
+  const p = pl; if (!p || p.dead) return; drawCrane(t);
+  if (p.inv > 0 && p.dashT <= 0 && Math.floor(p.t * 22) % 2) return;
+  const x = cx(p), f = p.face, air = !p.onGround, run = !air && Math.abs(p.vx) > 20, sw = Math.sin(p.t * 18), bob = run ? Math.abs(sw) * 1.2 : Math.sin(p.t * 2.5) * 0.5;
+  g.lineCap = g.lineJoin = 'round'; g.strokeStyle = RED; g.lineWidth = 2.6; g.beginPath(); g.moveTo(x - f * 2, p.y + 6 + bob); for (const s of p.scarf) g.lineTo(s.x, s.y); g.stroke();
+  g.save(); g.translate(x, p.y + bob); g.scale(f, 1); if (p.dashT > 0) g.transform(1, 0, -0.45, 1, 5, 0);
+  g.strokeStyle = g.fillStyle = INK; g.lineWidth = 2.2; const lg = run ? sw * 4 : 0;
+  g.beginPath(); g.moveTo(-1.5, 15); g.lineTo(-2 + (air ? -2.5 : lg), 22 - bob); g.moveTo(1.5, 15); g.lineTo(2 + (air ? 3 : -lg), 22 - bob - (air ? 2.5 : 0)); g.stroke();
+  g.beginPath(); g.moveTo(-3, 5); g.lineTo(3.5, 5); g.lineTo(5.5, 17); g.quadraticCurveTo(0, 19.5, -6.5 - (run ? 1.5 : 0), 16.5); g.closePath(); g.fill(); // robe
+  g.beginPath(); g.arc(0.5, 2.4, 3.1, 0, 7); g.fill(); g.fillStyle = PAPER; g.fillRect(1.9, 1.7, 1.3, 1.4);                                              // head
+  g.fillStyle = INK; g.beginPath(); g.ellipse(0.3, -0.2, 7.2, 1.5, 0, 0, 7); g.fill(); g.fillRect(-2.3, -4.4, 5.2, 4.4);                                 // wide-brimmed hat
+  // the brush-sword: resting on the shoulder, or mid-stroke
+  if (p.atkT > 0) {
+    const k = 1 - p.atkT / 0.2, e = 1 - (1 - k) * (1 - k), c = p.combo, r = c === 3 ? 34 : 27, a0 = c === 2 ? 1.25 : c === 3 ? -2.7 : -2.2, a1 = c === 2 ? -1.9 : c === 3 ? 1.45 : 1.0, a = lerp(a0, a1, e);
+    g.globalAlpha = 1 - k * k; g.fillStyle = INK; crescent(3, 9, r, lerp(a0, a, k * 0.6), a, c === 3 ? 9 : 6); g.globalAlpha = 1;
+    g.lineWidth = 1.6; g.beginPath(); g.moveTo(3, 9); g.lineTo(3 + Math.cos(a) * 15, 9 + Math.sin(a) * 15); g.stroke();
+    if (c === 3) { g.fillStyle = RED; g.beginPath(); g.arc(3 + Math.cos(a) * r, 9 + Math.sin(a) * r, 2.2 * (1 - k), 0, 7); g.fill(); }
+  } else { g.lineWidth = 1.5; g.beginPath(); g.moveTo(2, 11); g.lineTo(-7, -3); g.stroke(); g.lineWidth = 3; g.beginPath(); g.moveTo(-7, -3); g.lineTo(-8.6, -5.6); g.stroke(); }
+  g.restore();
+}
+function drawEnts(t) {
+  for (const e of ents) {
+    if (e.x > cam.x + VW + 60 || e.x + e.w < cam.x - 60) continue;
+    const x = cx(e), y = e.y + e.h, col = e.flash > 0 ? FLASH : NAMELESS, f = e.face; g.fillStyle = col; g.strokeStyle = col; g.lineCap = 'round';
+    if (e.type === 'b') { // blot: something small that forgot what it was
+      const sq = e.onGround ? 1 + Math.sin(e.t * 6) * 0.08 : 0.84; g.save(); g.translate(x, y); g.scale(sq, 2 - sq); blob(0, -6, 7.4, e.t); g.beginPath(); g.arc(-5, -1, 2, 0, 7); g.arc(4.5, -0.6, 1.6, 0, 7); g.fill();
+      g.fillStyle = PAPER; g.fillRect(f * 2 - 2.6, -8.5, 1.6, 2.8); g.fillRect(f * 2 + 1.4, -8.5, 1.6, 2.8); g.restore();
+    } else if (e.type === 's') { // ink bloom: swells, then spits
+      const up = e.mode === 1 ? 1.4 : 1 + Math.sin(e.t * 3) * 0.05, hx = x + f * 2 + Math.sin(e.t * 2) * 1.2, hy = e.y + 5;
+      g.lineWidth = 2; g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x - f * 5, y - 9, hx, hy); g.stroke(); g.beginPath(); g.ellipse(x + 4, y - 5, 4, 1.6, -0.5, 0, 7); g.ellipse(x - 4, y - 8, 4, 1.6, 0.5, 0, 7); g.fill();
+      for (let i = 0; i < 5; i++) { const a = i * 1.257 + e.t * 0.6; g.beginPath(); g.arc(hx + Math.cos(a) * 4 * up, hy + Math.sin(a) * 4 * up, 3 * up, 0, 7); g.fill(); }
+      g.fillStyle = e.mode === 1 ? RED : PAPER; g.beginPath(); g.arc(hx, hy, e.mode === 1 ? 2.6 : 1.6, 0, 7); g.fill();
+    } else if (e.type === 'c') { // crow-letter: a stroke that flew off its page
+      const dive = e.mode === 2, sh = e.mode === 1 ? Math.sin(e.t * 60) * 1.2 : 0, flap = dive ? -0.9 : Math.sin(e.t * 14) * 0.8;
+      g.save(); g.translate(x + sh, cy(e)); if (dive) g.rotate(Math.atan2(e.vy, e.vx)); else g.scale(f, 1);
+      g.beginPath(); g.ellipse(0, 0, 6.5, 3.2, 0, 0, 7); g.fill(); g.beginPath(); g.moveTo(6, -1.2); g.lineTo(11, 0.4); g.lineTo(6, 1.6); g.fill();
+      g.lineWidth = 2.6; g.beginPath(); g.moveTo(-1, -1); g.quadraticCurveTo(-4, -7 - flap * 6, -11, -4 - flap * 9); g.moveTo(1, -1); g.quadraticCurveTo(0, -8 - flap * 6, -5, -9 - flap * 9); g.stroke();
+      g.fillStyle = e.mode === 1 || dive ? RED : PAPER; g.fillRect(3, -1.6, 1.6, 1.6); g.restore();
+    } else if (e.type === 'k') { // gatekeeper: still guarding, no longer knows what
+      const m = e.mode, slump = m === 3 ? 4 : 0; g.save(); g.translate(x, y); g.scale(f, 1);
+      g.beginPath(); g.moveTo(-6, 0); g.lineTo(-7, -17 + slump); g.quadraticCurveTo(0, -23 + slump, 6, -17 + slump); g.lineTo(7, 0); g.closePath(); g.fill(); g.beginPath(); g.arc(1 + slump * 0.5, -22 + slump * 1.4, 4.2, 0, 7); g.fill();
+      g.fillStyle = m === 1 ? RED : PAPER; g.fillRect(2.4 + slump * 0.5, -23 + slump * 1.4, 2, 1.3);
+      g.strokeStyle = col; g.lineWidth = 3; g.beginPath(); // the club
+      if (m === 1) { g.moveTo(-2, -15); g.lineTo(-9, -31); } else if (m === 2) { g.moveTo(2, -13); g.lineTo(22, -9); } else { g.moveTo(-3, -13); g.lineTo(-9, -3); } g.stroke();
+      if (m === 2) { g.globalAlpha = 0.55; crescent(2, -12, 34, -1.7, 0.5, 8); g.globalAlpha = 1; }
+      const sy = m === 3 ? -13 : -25; g.fillStyle = e.flashB > 0 ? FLASH : GRAY; g.fillRect(7, sy, 4.5, 23 + (m === 3 ? -10 : 0)); g.fillStyle = INK; g.fillRect(8.5, sy + 3, 1.5, m === 3 ? 7 : 17); // the shield: a door plank
+      g.restore(); if (m === 1) { g.fillStyle = RED; g.font = '700 12px ' + FONT; g.textAlign = 'center'; g.fillText('!', x, e.y - 8); }
+    } else if (e.type === 'B') { if (!husk) drawBoss(e, t); } else drawItem(e, t);
+  }
+}
+
+// ---------- drawing: the Engine, items, shots ----------
+let husk = null; // what is left of the Engine once it stops
+function drawEngine(x, y, t, o) { // o: {tired, flash, phase, still, named}
+  const col = o.flash ? FLASH : o.named ? '#3a4a5c' : NAMELESS, spin = o.still ? 0.4 : t * (0.8 + o.phase * 0.5), n = 12;
+  g.strokeStyle = col; g.lineCap = 'round';
+  for (let i = 0; i < n; i++) { // a ring of brushes that never stops writing
+    const a = (i / n) * 6.283 + spin, droop = o.tired || o.still ? 0.75 : 0, ax = x + Math.cos(a) * 24, ay = y + Math.sin(a) * 24, len = 17 + Math.sin(t * 9 + i * 2.1) * (o.still ? 0 : 4);
+    const bx = ax + Math.cos(a) * len * (1 - droop), by = ay + Math.sin(a) * len * (1 - droop) + len * droop;
+    g.lineWidth = 2; g.beginPath(); g.moveTo(ax, ay); g.lineTo(bx, by); g.stroke(); g.lineWidth = 4.5; g.beginPath(); g.moveTo(bx, by); g.lineTo(bx + (bx - ax) * 0.22, by + (by - ay) * 0.22); g.stroke();
+  }
+  g.fillStyle = col; g.beginPath(); g.arc(x, y, 25, 0, 7); g.fill();
+  g.strokeStyle = 'rgba(239,230,210,.35)'; g.lineWidth = 1; for (const r of [20, 14]) { g.beginPath(); g.arc(x, y, r, spin * (r > 15 ? -1 : 1.6), spin * (r > 15 ? -1 : 1.6) + 4.6); g.stroke(); }
+  g.fillStyle = 'rgba(239,230,210,.8)'; for (let i = 0; i < 4; i++) { const px = x - 15 + i * 9, sw = Math.sin(t * 2 + i) * 2, h = 18 + hash(i * 3.3) * 14; g.fillRect(px + sw, y + 22, 5, h); g.fillStyle = 'rgba(120,116,110,.7)'; for (let k = 3; k < h - 3; k += 4) g.fillRect(px + sw + 1.5, y + 22 + k, 2, 2); g.fillStyle = 'rgba(239,230,210,.8)'; }
+  // the eye: a gray slit while it writes, a red seal when it can be reached
+  if (o.tired || o.named) { const s = 7 + Math.sin(t * 8) * (o.named ? 0 : 1.2); g.fillStyle = RED; g.fillRect(x - s, y - s, s * 2, s * 2); g.fillStyle = PAPER; g.fillRect(x - s + 2.5, y - 1.2, s * 2 - 5, 2.4); if (o.named) g.fillRect(x - 1.2, y - s + 2.5, 2.4, s * 2 - 5); }
+  else { g.fillStyle = PAPER; g.beginPath(); g.ellipse(x, y, 8, o.still ? 1 : 3.5 + Math.sin(t * 5) * 1.5, 0, 0, 7); g.fill(); if (!o.still) { g.fillStyle = INK; g.beginPath(); g.arc(x + Math.sin(t * 3) * 3, y, 2, 0, 7); g.fill(); } }
+}
+function drawBoss(e, t) {
+  const L = cam.lock;
+  if (L && e.mode === 'sweep' && e.sw) { // the ground brush
+    const s = e.sw;
+    if (!s.go) { g.fillStyle = `rgba(196,55,40,${0.16 + 0.12 * Math.sin(t * 30)})`; g.fillRect(L.a0, GY - 26, L.a1 - L.a0, 26); g.fillStyle = RED; g.font = '700 14px ' + FONT; g.textAlign = 'center'; for (let i = 1; i < 6; i++) g.fillText(s.dir > 0 ? '›' : '‹', lerp(L.a0, L.a1, i / 6), GY - 9); }
+    g.strokeStyle = NAMELESS; g.lineWidth = 5; g.beginPath(); g.moveTo(s.x - s.dir * 26, GY - 130); g.lineTo(s.x, GY - 28); g.stroke();
+    g.fillStyle = INK; g.beginPath(); g.moveTo(s.x - 11, GY - 30); g.quadraticCurveTo(s.x - 14, GY - 10, s.x - s.dir * 12, GY); g.quadraticCurveTo(s.x + 14, GY - 10, s.x + 11, GY - 30); g.fill();
+  }
+  if (e.mode === 'rain') for (const x of e.cols) { g.fillStyle = `rgba(196,55,40,${0.14 + 0.1 * Math.sin(t * 30)})`; g.fillRect(x - 5, 0, 10, GY); g.fillStyle = RED; g.fillRect(x - 5, GY - 2, 10, 2); }
+  if (e.mode === 'scroll' && L) { const right = cx(pl) < (L.a0 + L.a1) / 2; g.fillStyle = `rgba(196,55,40,${0.2 + 0.15 * Math.sin(t * 30)})`; g.fillRect(right ? L.a1 - 5 : L.a0, GY - 62, 5, 62); }
+  drawEngine(cx(e), cy(e), e.t, { tired: e.mode === 'tired', flash: e.flash > 0, phase: e.phase });
+}
+function drawItem(e, t) {
+  const x = cx(e), y = e.y + e.h, ty = e.type;
+  if (ty === 'C') { // seal stone
+    g.fillStyle = INK; g.beginPath(); g.moveTo(x - 7, y); g.lineTo(x - 6, y - 20); g.quadraticCurveTo(x, y - 28, x + 6, y - 20); g.lineTo(x + 7, y); g.fill();
+    if (e.on) { g.fillStyle = `rgba(196,55,40,${0.18 + 0.08 * Math.sin(t * 3)})`; g.beginPath(); g.arc(x, y - 16, 15, 0, 7); g.fill(); g.fillStyle = RED; g.fillRect(x - 3.5, y - 19.5, 7, 7); } else { g.strokeStyle = 'rgba(239,230,210,.6)'; g.lineWidth = 1; g.strokeRect(x - 3.5, y - 19.5, 7, 7); }
+  } else if (ty === 'G') { // a lost word, still warm
+    const by = cy(e) + Math.sin(t * 2.4 + e.x) * 3, h = g.createRadialGradient(x, by, 2, x, by, 22); h.addColorStop(0, 'rgba(196,55,40,.4)'); h.addColorStop(1, 'rgba(196,55,40,0)'); g.fillStyle = h; g.fillRect(x - 22, by - 22, 44, 44);
+    g.save(); g.translate(x, by); g.rotate(Math.sin(t * 1.3 + e.x) * 0.12); g.fillStyle = '#fbf6e8'; g.fillRect(-7, -9, 14, 18); g.strokeStyle = INK; g.lineWidth = 0.8; g.strokeRect(-7, -9, 14, 18);
+    g.fillStyle = RED; g.font = '700 11px ' + FONT; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(T.glyph[e.arg][0][0], 0, 0.5); g.textBaseline = 'alphabetic'; g.restore();
+  } else if (ty === 'H') { g.fillStyle = INK; g.beginPath(); g.ellipse(x, y - 5.5, 6, 5.5, 0, 0, 7); g.fill(); g.fillRect(x - 3, y - 13, 6, 4); g.fillStyle = RED; g.fillRect(x - 3.5, y - 10.5, 7, 1.6); g.fillStyle = 'rgba(239,230,210,.5)'; g.fillRect(x - 3.4, y - 7, 1.4, 3); }
+  else if (ty === 'S') { // the master's shrine
+    g.fillStyle = INK; g.fillRect(x - 7, y - 27, 14, 27); g.beginPath(); g.moveTo(x - 13, y - 26); g.quadraticCurveTo(x, y - 40, x + 13, y - 26); g.quadraticCurveTo(x, y - 30, x - 13, y - 26); g.fill(); g.fillRect(x - 10, y - 2, 20, 2);
+    g.fillStyle = 'rgba(239,230,210,.75)'; for (let k = 0; k < 4; k++) g.fillRect(x - 1, y - 22 + k * 5, 2, 3); g.fillStyle = RED; g.fillRect(x - 2, y - 5.5, 4, 4);
+  } else if (ty === 'E') { // the way onward: a red gate
+    g.strokeStyle = RED; g.lineCap = 'butt'; g.lineWidth = 3; g.beginPath(); g.moveTo(x - 9, y); g.lineTo(x - 8, y - 42); g.moveTo(x + 9, y); g.lineTo(x + 8, y - 42); g.stroke();
+    g.lineWidth = 3.5; g.beginPath(); g.moveTo(x - 15, y - 41); g.quadraticCurveTo(x, y - 45, x + 15, y - 41); g.stroke(); g.lineWidth = 2; g.beginPath(); g.moveTo(x - 11, y - 33); g.lineTo(x + 11, y - 33); g.stroke();
+    g.fillStyle = `rgba(196,55,40,${0.1 + 0.06 * Math.sin(t * 3)})`; g.fillRect(x - 7, y - 32, 14, 32);
+  } else if (ty === 'D') { g.fillStyle = INK; g.fillRect(x - 12, GY - 78, 5, 78); g.fillRect(x + 7, GY - 78, 5, 78); g.fillRect(x - 16, GY - 84, 32, 7); g.fillStyle = '#fbf6e8'; g.fillRect(x - 3, GY - 76, 6, 15); g.fillStyle = GRAY; g.fillRect(x - 1, GY - 73, 2, 9); }
+}
+function drawShots(t) {
+  for (const s of shots) {
+    const x = s.x + s.w / 2, y = s.y + s.h / 2, d = sign(s.vx);
+    if (s.wave) { g.fillStyle = INK; g.globalAlpha = Math.min(1, s.life * 4); g.save(); g.translate(x, y); g.scale(d, 1); crescent(-14, 0, 22, -1.0, 1.0, 9); g.restore(); g.globalAlpha = 1; }
+    else if (s.scroll) { g.fillStyle = '#fbf6e8'; g.fillRect(s.x, s.y, s.w, s.h); g.strokeStyle = INK; g.lineWidth = 1; g.strokeRect(s.x, s.y, s.w, s.h); g.fillStyle = GRAY; for (let k = 3; k < s.w - 3; k += 4) g.fillRect(s.x + k, s.y + 2, 2, 4); g.fillStyle = s.friendly ? RED : NAMELESS; g.fillRect(d > 0 ? s.x + s.w - 2 : s.x, s.y, 2, s.h); }
+    else if (s.drop) { g.fillStyle = NAMELESS; g.beginPath(); g.moveTo(x, s.y - 8); g.quadraticCurveTo(x + 6, s.y + 8, x, s.y + s.h); g.quadraticCurveTo(x - 6, s.y + 8, x, s.y - 8); g.fill(); }
+    else { g.fillStyle = s.friendly ? INK : '#5d5a56'; blob(x, y, s.friendly ? 5 : 4.5, t * 2, s.x * 0.1, 8, 0.2); if (s.friendly) { g.fillStyle = RED; g.beginPath(); g.arc(x, y, 1.8, 0, 7); g.fill(); } }
+  }
+}
+
+// ---------- particles, floating words, camera, HUD, dialog box, the frame ----------
+let gt = 0, dlg = null, card = null;
+function updFx(dt) {
+  for (const p of parts) { p.life += dt; p.vy += p.g * dt; p.x += p.vx * dt; p.y += p.vy * dt; }
+  parts = parts.filter((p) => p.life < p.max); if (parts.length > 400) parts.splice(0, parts.length - 400);
+  for (const f of floats) { f.life += dt; if (!f.ring) f.y -= (f.big ? 8 : 16) * dt; }
+  floats = floats.filter((f) => f.life < f.max);
+  if (glyphNote && (glyphNote.t += dt) > 4.5) glyphNote = null;
+  if (pl) { const k = Math.min(1, dt * 5); crane.x += (cx(pl) - pl.face * 15 - crane.x) * k; crane.y += (pl.y - 7 + Math.sin(gt * 3) * 3 - crane.y) * k; crane.f = pl.face; }
+  cam.shake = Math.max(0, cam.shake - 28 * dt);
+}
+function updCam(dt, snap) {
+  let tx = cx(pl) - VW / 2 + pl.face * 34, lo = 0, hi = lvl.w * TS - VW;
+  if (cam.lock) { lo = cam.lock.x0; hi = cam.lock.x1 - VW; if (hi < lo) lo = hi = (lo + hi) / 2; }
+  tx = clamp(tx, lo, hi); cam.x = snap ? tx : cam.x + (tx - cam.x) * Math.min(1, dt * 5); cam.y = ROWS * TS - VH;
+  if (snap) { crane.x = cx(pl) - 15; crane.y = pl.y - 7; }
+}
+function drawFx() {
+  for (const p of parts) { const k = 1 - p.life / p.max; g.globalAlpha = k; g.fillStyle = p.col; g.beginPath(); g.arc(p.x, p.y, p.r * (0.5 + k * 0.5), 0, 7); g.fill(); }
+  g.textAlign = 'center';
+  for (const f of floats) {
+    const k = f.life / f.max;
+    if (f.ring) { g.globalAlpha = 1 - k; g.strokeStyle = INK; g.lineWidth = 1.5; g.beginPath(); g.ellipse(f.x, f.y, 4 + k * 12, 1.5 + k * 3, 0, 0, 7); g.stroke(); continue; }
+    g.globalAlpha = k < 0.15 ? k / 0.15 : k > 0.7 ? (1 - k) / 0.3 : 1; g.font = `700 ${f.big ? 15 : 11}px ${FONT}`; g.lineWidth = 3; g.strokeStyle = 'rgba(239,230,210,.85)'; g.strokeText(f.text, f.x, f.y); g.fillStyle = f.col; g.fillText(f.text, f.x, f.y);
+  }
+  g.globalAlpha = 1;
+}
+function drawHud() {
+  const p = pl; if (!p) return;
+  for (let i = 0; i < p.maxHp; i++) { const x = 12 + i * 13; if (i < p.hp) { g.fillStyle = RED; g.fillRect(x, 10, 10, 10); g.fillStyle = PAPER; g.fillRect(x + 2.5, 14.2, 5, 1.6); } else { g.strokeStyle = 'rgba(26,22,19,.45)'; g.lineWidth = 1; g.strokeRect(x + 0.5, 10.5, 9, 9); } }
+  g.fillStyle = 'rgba(26,22,19,.18)'; g.fillRect(12, 25, 62, 4); g.fillStyle = p.ink >= 30 ? INK : GRAY; g.fillRect(12, 25, 62 * p.ink / 100, 4); g.fillStyle = PAPER; for (const k of [30, 60, 90]) g.fillRect(12 + 62 * k / 100, 25, 1, 4);
+  for (let i = 0; i < 9; i++) { const x = VW - 20 - (8 - i) * 9 - (2 - Math.floor(i / 3)) * 5; if (save.glyphs.includes(i)) { g.fillStyle = RED; g.fillRect(x, 11, 7, 7); } else { g.strokeStyle = 'rgba(26,22,19,.4)'; g.lineWidth = 1; g.strokeRect(x + 0.5, 11.5, 6, 6); } }
+  if (bossOn && boss && boss.hp > 0) {
+    const w = Math.min(220, VW - 216), x = (VW - w) / 2; g.font = '700 9px ' + FONT; g.textAlign = 'center'; g.fillStyle = INK; g.fillText(T.boss, VW / 2, 14);
+    g.fillStyle = 'rgba(26,22,19,.2)'; g.fillRect(x, 18, w, 5); g.fillStyle = boss.mode === 'tired' ? RED : NAMELESS; g.fillRect(x, 18, w * boss.hp / boss.maxHp, 5); g.fillStyle = PAPER; g.fillRect(x + w / 3, 18, 1, 5); g.fillRect(x + w * 2 / 3, 18, 1, 5);
+  }
+  if (glyphNote) { // a lost word found
+    const n = glyphNote, a = n.t < 0.3 ? n.t / 0.3 : n.t > 3.9 ? Math.max(0, (4.5 - n.t) / 0.6) : 1, [word, line] = T.glyph[n.i], w = Math.min(VW - 30, 300), x = (VW - w) / 2;
+    g.globalAlpha = a; g.fillStyle = 'rgba(251,246,232,.95)'; g.fillRect(x, 38, w, 62); g.fillStyle = RED; g.fillRect(x, 38, w, 1.5); g.fillRect(x, 98.5, w, 1.5); g.textAlign = 'center';
+    g.font = '8px ' + FONT; g.fillStyle = GRAY; g.fillText(T.found, VW / 2, 51); g.font = '700 21px ' + FONT; g.fillStyle = RED; g.fillText(word, VW / 2, 74); g.font = '9.5px ' + FONT; g.fillStyle = INK; g.fillText(line, VW / 2, 90, w - 16); g.globalAlpha = 1;
+  }
+  if (stageI === 0 && p.x < 380 && state === 'play' && !pad.classList.contains('on')) { g.font = '9px ' + FONT; g.textAlign = 'center'; g.fillStyle = 'rgba(26,22,19,.7)'; g.fillText(T.keys, VW / 2, VH - 12); }
+}
+function drawDialog() {
+  const d = dlg, [who, text] = d.lines[d.i], w = Math.min(VW - 24, 430), x = (VW - w) / 2, name = T.who[who];
+  g.font = (who === 'm' || who === 'n' ? 'italic ' : '') + '10.5px ' + FONT; const lines = wrap(text, w - 28), h = Math.max(50, 22 + lines.length * 14), y = VH - h - 10;
+  g.fillStyle = 'rgba(247,241,225,.97)'; g.fillRect(x, y, w, h); g.strokeStyle = INK; g.lineWidth = 1.5; g.strokeRect(x, y, w, h); g.lineWidth = 0.5; g.strokeRect(x + 3, y + 3, w - 6, h - 6);
+  g.textAlign = 'left'; g.fillStyle = who === 'e' ? '#55514c' : INK; let left = Math.floor(d.n);
+  lines.forEach((ln, i) => { if (left > 0) g.fillText(ln.slice(0, left), x + 14, y + 22 + i * 14); left -= ln.length + 1; });
+  if (name) { g.font = '700 10px ' + FONT; const nw = g.measureText(name).width + 12; g.fillStyle = who === 'j' ? RED : who === 'e' ? NAMELESS : INK; g.fillRect(x + 10, y - 9, nw, 15); g.fillStyle = PAPER; g.fillText(name, x + 16, y + 2); }
+  if (d.n >= text.length && Math.floor(gt * 2.5) % 2) { g.fillStyle = RED; g.font = '9px ' + FONT; g.fillText(T.next, x + w - 20, y + h - 7); }
+  if (!pad.classList.contains('on')) { g.font = '7.5px ' + FONT; g.textAlign = 'right'; const sw = g.measureText(T.skip).width + 8; g.fillStyle = 'rgba(247,241,225,.9)'; g.fillRect(x + w - sw, y - 12, sw, 10.5); g.fillStyle = 'rgba(26,22,19,.7)'; g.fillText(T.skip, x + w - 4, y - 4); }
+}
+function drawCard() {
+  const c = card, a = c.t < 0.6 ? c.t / 0.6 : c.t < 2.3 ? 1 : Math.max(0, 1 - (c.t - 2.3) / 0.7); g.fillStyle = `rgba(239,230,210,${a})`; g.fillRect(0, 0, VW, VH);
+  if (c.t < 0.6) return; const ta = Math.min(1, (c.t - 0.6) / 0.4) * a, [ch, name] = T.stage[stageI]; g.globalAlpha = ta; g.textAlign = 'center';
+  g.font = '700 10px ' + FONT; g.fillStyle = RED; g.fillText(ch, VW / 2, VH / 2 - 22); g.font = '700 26px ' + FONT; g.fillStyle = INK; g.fillText(name, VW / 2, VH / 2 + 8);
+  g.fillStyle = INK; const sw = 120 * Math.min(1, (c.t - 0.6) / 0.7); g.beginPath(); g.moveTo(VW / 2 - 60, VH / 2 + 20); g.quadraticCurveTo(VW / 2 - 60 + sw / 2, VH / 2 + 24, VW / 2 - 60 + sw, VH / 2 + 20.5); g.quadraticCurveTo(VW / 2 - 60 + sw / 2, VH / 2 + 21, VW / 2 - 60, VH / 2 + 20); g.fill(); g.globalAlpha = 1;
+}
+function render() {
+  g.setTransform(SC * DPR, 0, 0, SC * DPR, 0, 0); g.textBaseline = 'alphabetic'; g.globalAlpha = 1; pad.style.opacity = state === 'play' ? '' : '.12'; /* the touch pad steps back while reading */
+  if (state === 'title') return drawTitle(); if (state === 'intro') return drawIntro(); if (state === 'ending') return drawEnding();
+  drawBg(gt); const sh = cam.shake * 0.5; g.save(); g.translate(-cam.x + rnd(-sh, sh), -cam.y + rnd(-sh, sh));
+  drawTiles(gt); drawEnts(gt); if (husk) drawEngine(husk.x, husk.y, gt, { still: true, named: colorT > 0.25, phase: 1 }); drawPlayer(gt); drawShots(gt); drawFx(); g.restore();
+  drawOverlay(); drawHud(); if (state === 'dialog') drawDialog(); if (card) drawCard();
+}
+
+// ---------- game flow: title, intro, stages, dialog, the two endings ----------
+let state = 'title', stT = 0, introI = 0, titleSel = 0, tapX = 0.5, endTrue = false, finT = 0;
+addEventListener('pointerdown', (e) => { tapX = e.clientX / innerWidth; });
+function persist() { store.set({ stage: save.stage, glyphs: save.glyphs, dj: save.dj, deaths: save.deaths, time: save.time }); }
+const AFTER = { s1d: () => { if (!save.dj) { save.dj = true; persist(); sfx('glyph'); floatText(cx(pl), pl.y - 14, T.dj, RED, true); } } };
+function say(key, after) { for (const e of ents) e.flash = e.flashB = 0; dlg = { key, lines: T.d[key], i: 0, n: 0, after: after || AFTER[key] }; state = 'dialog'; }
+function sayOnce(key) { if (seen[key]) return; seen[key] = 1; say(key); }
+function closeDialog() { const d = dlg; dlg = null; state = 'play'; if (d.after) d.after(); }
+function updDialog(dt) {
+  const d = dlg, text = d.lines[d.i][1], before = Math.floor(d.n);
+  if (d.key === 'endT' && d.i >= 5) colorT = Math.min(1, colorT + dt * 0.3); // colour comes back while they read together
+  if (P.esc) { if (d.key === 'endT') colorT = 1; return closeDialog(); }
+  d.n = Math.min(text.length, d.n + dt * 42); if (Math.floor(d.n) > before && Math.floor(d.n) % 3 === 0) sfx('text');
+  if (P.atk || P.jump || P.ok || P.tap) { if (d.n < text.length) d.n = text.length; else if (++d.i >= d.lines.length) closeDialog(); else d.n = 0; }
+}
+function loadStage(i, fromCp) {
+  stageI = i; lvl = LEVELS[i](); if (!fromCp) cp = null; husk = null; colorT = 0; glyphNote = null; spawnEnts();
+  const s = lvl.E.find((e) => e.ch === 'P'); let x = s.x * TS + 3, y = (s.y + 1) * TS - 22.01;
+  if (cp) { x = cp.x + 3; y = cp.y + 26 - 22.01; }
+  pl = newPlayer(x, y); parts = []; floats = []; hitstop = 0; cam.shake = 0; updCam(0, true);
+}
+function respawn() { loadStage(stageI, true); state = 'play'; }
+function startStage(i, fade) { card = { t: fade ? 0 : 0.6, to: i, loaded: !fade }; if (!fade) loadStage(i); state = 'card'; }
+function nextStage() { if (card) return; save.stage = stageI + 1; persist(); sfx('save'); startStage(stageI + 1, true); }
+function updCard(dt) {
+  const c = card; c.t += dt;
+  if (!c.loaded && c.t >= 0.6) { c.loaded = true; loadStage(c.to); }
+  if (c.loaded && c.t > 1.2 && c.t < 2.3 && state === 'card' && (P.atk || P.jump || P.ok || P.tap)) c.t = 2.3;
+  if (c.t >= 2.3 && state === 'card') state = 'play';
+  if (c.t > 3) card = null;
+}
+function finale(e) { // the Engine stops. Which ending depends on whether its name was found.
+  husk = { x: cx(e), y: cy(e) }; state = 'finale'; finT = 0; endTrue = save.glyphs.length === 9; cam.shake = 14; sfx('boom'); puff(husk.x, husk.y, 80, { s1: 300, max: 1.6, col: GRAY });
+}
+function toEnding() {
+  state = 'ending'; stT = 0; stageI = endTrue ? 1 : 0; colorT = endTrue ? 1 : 0; husk = null; card = null;
+  if (endTrue) store.clear(); else { save.stage = 0; persist(); } // after the plain ending, the words found so far are kept
+}
+function newGame() { Object.assign(save, { stage: 0, glyphs: [], dj: false, deaths: 0, time: 0 }); seen = {}; cp = null; store.clear(); state = 'intro'; introI = 0; stT = 0; }
+function contGame(sv) { Object.assign(save, { stage: sv.stage || 0, glyphs: sv.glyphs || [], dj: !!sv.dj, deaths: sv.deaths || 0, time: sv.time || 0 }); seen = {}; cp = null; startStage(Math.min(save.stage, 2), false); }
+const savedGame = () => { const sv = store.get(); return sv && (sv.stage > 0 || (sv.glyphs && sv.glyphs.length)) ? sv : null; };
+function updTitle() {
+  const sv = savedGame(), go = P.atk || P.jump || P.ok;
+  if (!sv) { if (P.any && !P.mute && stT > 0.4) newGame(); return; }
+  if (P.left) titleSel = 0; if (P.right) titleSel = 1; if (P.tap) titleSel = tapX < 0.5 ? 0 : 1;
+  if ((go || P.tap) && stT > 0.4) { if (titleSel === 0) contGame(sv); else newGame(); }
+}
+function update(dt) {
+  gt += dt; stT += dt; if (P.mute) muted = !muted;
+  if (card) updCard(dt);
+  if (state === 'title') { cam.x = gt * 8; music(dt, 0); updTitle(); }
+  else if (state === 'intro') {
+    cam.x = gt * 8; music(dt, 0);
+    if (P.esc) startStage(0, false);
+    else if (P.any && !P.mute && stT > 0.35) { stT = 0; if (++introI >= T.intro.length) startStage(0, false); }
+  } else if (state === 'dialog') { updDialog(dt); updFx(dt); }
+  else if (state === 'play') {
+    if (hitstop > 0) { hitstop -= dt; return; } // frozen frame: keep this frame's presses for the next live one
+    save.time += dt; updPlayer(dt); if (state === 'play') updEnts(dt); updFx(dt); updCam(dt); music(dt, bossOn ? 3 : stageI);
+  } else if (state === 'finale') {
+    finT += dt; husk.y = approach(husk.y, GY - 34, 70 * dt); updFx(dt); updCam(dt);
+    if (Math.random() < 0.3) puff(husk.x + rnd(-24, 24), husk.y + rnd(-24, 24), 1, { col: GRAY, s1: 40, g: -40, max: 1.2 });
+    if (finT > 2.2) say(endTrue ? 'endT' : 'endN', toEnding);
+  } else if (state === 'ending') { cam.x = gt * 10; music(dt, endTrue ? 0 : 2); if (stT > 2.5 && P.any && !P.mute) { state = 'title'; stT = 0; colorT = 0; stageI = 0; } }
+  for (const k in P) P[k] = 0;
+}
+
+// ---------- title, intro, ending screens; the main loop ----------
+function veil(a) { g.fillStyle = `rgba(239,230,210,${a})`; g.fillRect(0, 0, VW, VH); }
+function seal(x, y, s, ch) { g.fillStyle = RED; g.fillRect(x, y, s, s); g.fillStyle = PAPER; g.font = `700 ${s * 0.68}px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(ch, x + s / 2, y + s / 2 + 0.5); g.textBaseline = 'alphabetic'; }
+function drawTitle() {
+  const sv = savedGame(), cxm = VW / 2; stageI = 0; drawBg(gt);
+  g.globalAlpha = 0.16; drawEngine(VW * 0.78, 118, gt, { phase: 1 }); g.globalAlpha = 1; veil(0.25);
+  g.textAlign = 'center'; g.fillStyle = INK; g.font = `700 ${LANG === 'ko' ? 62 : 50}px ${FONT}`; g.fillText(T.title, cxm, 112);
+  const tw = g.measureText(T.title).width; seal(cxm + tw / 2 + 8, 66, 18, LANG === 'ko' ? '筆' : 'i');
+  g.fillStyle = INK; g.beginPath(); g.moveTo(cxm - tw / 2 - 6, 124); g.quadraticCurveTo(cxm, 131, cxm + tw / 2 + 12, 123); g.quadraticCurveTo(cxm, 126, cxm - tw / 2 - 6, 124); g.fill();
+  g.font = '700 13px ' + FONT; g.textAlign = 'center'; g.fillText(T.sub, cxm, 146);
+  if (sv) {
+    [T.cont, T.fresh].forEach((s, i) => { const x = cxm + (i ? 62 : -62), on = titleSel === i; g.font = `${on ? 700 : 400} 13px ${FONT}`; g.fillStyle = on ? RED : 'rgba(26,22,19,.6)'; g.fillText(s, x, 196); if (on) g.fillRect(x - 22, 201, 44, 1.5); });
+    g.font = '8.5px ' + FONT; g.fillStyle = 'rgba(26,22,19,.55)'; g.fillText(`${T.stage[Math.min(sv.stage || 0, 2)][1]} · ${(sv.glyphs || []).length}/9`, cxm - 62, 213);
+  } else if (Math.floor(gt * 1.6) % 2) { g.font = '11px ' + FONT; g.fillStyle = INK; g.fillText(T.start, cxm, 198); }
+  g.font = '8.5px ' + FONT; g.fillStyle = 'rgba(26,22,19,.6)'; if (!pad.classList.contains('on')) g.fillText(T.keys, cxm, VH - 14);
+  drawOverlay();
+}
+function drawIntro() {
+  stageI = 0; drawBg(gt); veil(0.62); const lines = T.intro[introI].split('\n'), a = Math.min(1, stT / 0.7), y0 = VH / 2 - (lines.length - 1) * 10;
+  g.globalAlpha = a; g.textAlign = 'center'; g.fillStyle = INK; g.font = '12.5px ' + FONT; lines.forEach((ln, i) => g.fillText(ln, VW / 2, y0 + i * 20, VW - 30)); g.globalAlpha = 1;
+  for (let i = 0; i < T.intro.length; i++) { g.fillStyle = i === introI ? RED : 'rgba(26,22,19,.25)'; g.fillRect(VW / 2 - T.intro.length * 5 + i * 10, VH - 26, 5, 5); }
+  g.font = '8px ' + FONT; g.textAlign = 'right'; g.fillStyle = 'rgba(26,22,19,.5)'; if (!pad.classList.contains('on')) g.fillText(T.skip, VW - 12, VH - 12);
+  if (stT > 1 && Math.floor(gt * 2.5) % 2) { g.textAlign = 'center'; g.fillStyle = RED; g.font = '9px ' + FONT; g.fillText(T.next, VW / 2, VH - 36); }
+  drawOverlay();
+}
+function drawEnding() {
+  drawBg(gt); veil(endTrue ? 0.3 : 0.5); const a = Math.min(1, stT / 1.2), m = Math.floor(save.time / 60), s = Math.floor(save.time % 60);
+  g.globalAlpha = a; g.textAlign = 'center'; g.fillStyle = INK; g.font = '700 24px ' + FONT; g.fillText(endTrue ? T.endT : T.endN, VW / 2, 96, VW - 30);
+  seal(VW / 2 - 9, 112, 18, endTrue ? (LANG === 'ko' ? '讀' : 'A') : (LANG === 'ko' ? '止' : '—'));
+  g.fillStyle = INK; g.font = '10.5px ' + FONT; g.textAlign = 'center'; g.fillText(T.stat(`${m}:${String(s).padStart(2, '0')}`, save.deaths, save.glyphs.length), VW / 2, 158, VW - 24);
+  if (!endTrue) { g.fillStyle = RED; g.font = '10px ' + FONT; g.fillText(T.hintN, VW / 2, 180, VW - 24); }
+  if (stT > 2.5 && Math.floor(gt * 1.6) % 2) { g.fillStyle = 'rgba(26,22,19,.7)'; g.font = '10px ' + FONT; g.fillText(T.again, VW / 2, 222); }
+  g.globalAlpha = 1; drawOverlay();
+}
+let lastT = 0, acc = 0;
+function frame(now) {
+  const dt = Math.min(0.1, (now - lastT) / 1000 || 0); lastT = now; acc += dt; let n = 0;
+  while (acc >= 1 / 60 && n < 5) { update(1 / 60); acc -= 1 / 60; n++; } if (n >= 5) acc = 0;
+  render(); requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+</script></body></html>

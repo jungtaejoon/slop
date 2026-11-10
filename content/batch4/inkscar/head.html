@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover">
+<title>묵흔: 마지막 필경사</title>
+<style>
+  html,body{margin:0;height:100%;background:#15120e;overflow:hidden;font-family:"Nanum Myeongjo","Apple SD Gothic Neo",Georgia,serif;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:none}
+  #wrap{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start}
+  canvas{display:block;background:#efe6d2;touch-action:none}
+  #pad{position:fixed;left:0;right:0;bottom:0;height:150px;pointer-events:none;display:none}
+  #pad.on{display:block}
+  #pad b{position:absolute;pointer-events:auto;width:58px;height:58px;border-radius:50%;background:rgb(239 230 210/.16);border:2px solid rgb(239 230 210/.5);color:#efe6d2;font:800 20px system-ui;display:flex;align-items:center;justify-content:center;touch-action:none}
+  #pad b.dn{background:rgb(196 55 40/.55)}
+  #pad b small{font-size:12px}
+</style></head><body>
+<div id="wrap"><canvas id="c"></canvas></div>
+<div id="pad">
+  <b data-k="left" style="left:14px;bottom:26px">◀</b><b data-k="right" style="left:84px;bottom:26px">▶</b>
+  <b data-k="skill" style="right:150px;bottom:16px"><small id="bS"></small></b>
+  <b data-k="dash" style="right:82px;bottom:76px"><small id="bD"></small></b>
+  <b data-k="atk" style="right:82px;bottom:10px"><small id="bA"></small></b>
+  <b data-k="jump" style="right:14px;bottom:42px"><small id="bJ"></small></b>
+</div>
+<script>
+/*SCRIPT*/
+</script></body></html>
