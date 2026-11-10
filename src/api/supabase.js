@@ -2,6 +2,7 @@
 // this file only shapes queries and results.
 import { createClient } from '@supabase/supabase-js';
 import * as shape from './shape.js';
+import { lang as uiLang } from '../i18n.js';
 
 // explicit FK names: votes/saves tables also link posts and comments to profiles,
 // so a bare profiles() embed is ambiguous for PostgREST
@@ -95,7 +96,7 @@ export function createSupabaseApi(url, key) {
     const limit = o.limit || 30, offset = o.offset || 0;
     if (o.special === 'home' && !o.followIds?.length) return { posts: [], hasMore: false };
     const ranked = check(await sb.rpc('recommend_posts', { p_lang: o.clang || 'all', p_community: o.communityId || null, p_follow_only: o.special === 'home',
-      p_seen: (o.seen || []).slice(-200), p_seed: o.seed || 0, p_offset: offset, p_limit: limit + 1 }));
+      p_seen: (o.seen || []).slice(-200), p_seed: o.seed || 0, p_offset: offset, p_limit: limit + 1, p_pref: uiLang }));
     const ids = ranked.slice(0, limit).map((r) => r.post_id);
     if (!ids.length) return { posts: [], hasMore: false };
     const rows = check(await sb.from('post_feed').select(FEED_COLS).in('id', ids)), byId = new Map(rows.map((r) => [r.id, r]));
@@ -116,6 +117,8 @@ export function createSupabaseApi(url, key) {
     if (o.tool) q = q.eq('tool', o.tool);
     // content language is inferred from the title: Hangul means Korean
     if (o.clang === 'ko') q = q.filter('title', 'match', '[가-힣]'); else if (o.clang === 'en') q = q.not('title', 'match', '[가-힣]');
+    // one card per language group: with every language shown, prefer the edition in the interface language
+    if ((o.clang || 'all') === 'all' && o.special !== 'saved') q = q.eq(uiLang === 'ko' ? 'alt_ko' : 'alt_en', false);
     if (o.tag) q = q.contains('tags', [o.tag]);
     if (o.q) { const t = o.q.replace(/[%,()*\\]/g, ' ').trim(); if (t) q = q.or(`title.ilike.*${t}*,excerpt.ilike.*${t}*,tool.ilike.*${t}*`); }
     if (o.special === 'saved') { const ids = [...(await api.mySaves())]; if (!ids.length) return { posts: [], hasMore: false }; q = q.in('id', ids); }
