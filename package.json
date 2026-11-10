@@ -22,5 +22,6 @@
     "@electric-sql/pglite": "^0.5.15",
     "@resvg/resvg-js": "^2.6.2",
     "vite": "^6.4.5"
-  }
+  },
+  "license": "AGPL-3.0-or-later"
 }

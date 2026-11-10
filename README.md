@@ -102,3 +102,10 @@ supabase/functions/ai/      Claude 요약·분류 Edge Function
 scripts/                    예시 빌드, SQL 검사
 legacy/                     이전 claude.ai 아티팩트 버전 (참고용)
 ```
+
+## License
+
+Copyright (C) 2026 정태준 (Jung Taejoon)
+
+Slop is free software under the [GNU Affero General Public License v3.0 or later](LICENSE).
+If you run a modified version of Slop as a public service, you must publish your modified source code under the same license.
