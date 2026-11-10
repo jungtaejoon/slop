@@ -7,7 +7,7 @@
 // the side buttons step aside, until "Done". Only the card on screen keeps a live
 // app; apps scrolled away are removed, which also stops their sound and CPU use.
 import { api, S, $, app, KINDS, icon, gradFor, sandboxFrame, loadMyVotes, remember, voteBox, countView, go, toast, seenPosts, REC_SEED, REC_REASONS } from '../core.js';
-import { esc, safeImgs, safeUrl, domain, ago } from '../text.js';
+import { esc, md, safeImgs, safeUrl, domain, ago } from '../text.js';
 import { getCode, primeCodes } from './feed.js';
 
 const PAGE = 20;
@@ -85,7 +85,8 @@ function card(p, i) {
     ${media}
     ${i === 0 && !hintSeen() ? '<div class="sw-hint" aria-hidden="true">↑ 위로 넘기면 다음 글</div>' : ''}
     <div class="sw-cap"><div class="sw-meta">${p.community ? `<a class="sw-chip" href="#/c/${esc(p.community.slug)}">${esc(p.community.name)}</a>` : ''}<span class="sw-chip ghost">${esc(KINDS[p.kind]?.[0] || '')}</span>${p.tool ? `<span class="sw-chip ghost" data-ugc>${esc(p.tool)}</span>` : ''}<span class="sw-ago">${ago(p.createdAt)}</span>${p.recReason && REC_REASONS[p.recReason] && p.recReason !== 'explore' ? `<span class="sw-why">${REC_REASONS[p.recReason]}</span>` : ''}</div>
-      <h2 data-ugc><a href="#/p/${p.id}">${esc(p.title)}</a></h2>${(p.kind === 'html' || p.kind === 'image') && p.excerpt ? `<p data-ugc>${esc(p.excerpt.slice(0, 160))}</p>` : ''}</div>
+      <h2 data-ugc><a href="#/p/${p.id}">${esc(p.title)}</a></h2>${(p.kind === 'html' || p.kind === 'image') && p.excerpt ? `<p data-ugc>${esc(p.excerpt.slice(0, 160))}</p>` : ''}
+      <button class="sw-read" data-read="${i}">전체 읽기</button></div>
     <div class="sw-rail">${voteBox('p', p.id)}
       <a class="sw-b" href="#/p/${p.id}" aria-label="의견 ${p.comments}">${icon('comment')}<small>${p.comments}</small></a>
       <button class="sw-b" data-act="save" data-id="${p.id}" aria-label="저장">${icon(S.saves.has(p.id) ? 'bookmarked' : 'bookmark')}<small data-save-label="${p.id}">${S.saves.has(p.id) ? '저장됨' : '저장'}</small></button>
@@ -133,8 +134,36 @@ function stopPlay(c, quiet) {
   if (!quiet && !(S.votes.p[c.dataset.id])) toast('어땠어요? 오른쪽 ▲보석 / ▼슬롭으로 판정해 주세요');
 }
 
+// "Read all": the full text (and code or prompt) in a panel over the card. The panel
+// scrolls by itself and swiping waits until it is closed.
+async function openSheet(c) {
+  if (c.querySelector('.sw-sheet')) return;
+  const id = c.dataset.id, p = S.cache.get(id) || {};
+  c.querySelector('.sw-frame').insertAdjacentHTML('beforeend', `<div class="sw-sheet" role="dialog" aria-label="전체 읽기"><div class="sw-sheet-h"><b data-ugc>${esc(p.title || '')}</b><button class="sw-sheet-x" data-unread="1">✕ 닫기</button></div><div class="sw-sheet-b"><p class="muted">불러오는 중…</p></div></div>`);
+  c.classList.add('reading'); $('#sw').classList.add('locked');
+  const box = c.querySelector('.sw-sheet-b');
+  try {
+    const full = await api.getPost(id), code = full?.kind === 'code' ? await getCode(id) : '';
+    if (!c.querySelector('.sw-sheet')) return;
+    if (!full) { box.innerHTML = '<p class="muted">글을 불러오지 못했어요.</p>'; return; }
+    box.innerHTML = `${full.kind === 'link' && safeUrl(full.url) ? `<a class="linkcard" href="${esc(full.url)}" target="_blank" rel="noopener noreferrer"><span class="d">${esc(domain(full.url))} ↗</span><span>${esc(full.url)}</span></a>` : ''}
+      ${full.body ? `<div class="md" data-ugc>${md(full.body)}</div>` : ''}
+      ${code ? `<pre class="code" data-ugc>${esc(code)}</pre>` : ''}
+      ${full.prompt ? `<h3>사용한 프롬프트</h3><pre class="code" data-ugc>${esc(full.prompt)}</pre>` : ''}
+      ${!full.body && !code && !full.prompt ? '<p class="muted">더 볼 내용이 없어요.</p>' : ''}
+      <p><a class="btn sm" href="#/p/${id}">글 페이지에서 의견 보기</a></p>`;
+  } catch { box.innerHTML = '<p class="muted">글을 불러오지 못했어요.</p>'; }
+}
+function closeSheet(c) {
+  if (!c?.querySelector('.sw-sheet')) return;
+  c.querySelector('.sw-sheet').remove(); c.classList.remove('reading'); $('#sw')?.classList.remove('locked');
+}
+
 function onClick(e) {
   const play = e.target.closest('[data-play]'), stop = e.target.closest('[data-stop]');
+  const read = e.target.closest('[data-read]'), unread = e.target.closest('[data-unread]');
+  if (read) { e.preventDefault(); openSheet(read.closest('.sw-card')); return; }
+  if (unread) { e.preventDefault(); closeSheet(unread.closest('.sw-card')); return; }
   if (play) { e.preventDefault(); startPlay(play.closest('.sw-card')); }
   else if (stop) { e.preventDefault(); stopPlay(stop.closest('.sw-card')); }
 }
@@ -143,6 +172,7 @@ function onKey(e) {
   if (S.view.name !== 'shorts' || e.metaKey || e.ctrlKey || e.altKey || /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName)) return;
   const sw = $('#sw'); if (!sw) return; const c = sw.children[S.shorts.i];
   if (c?.classList.contains('playing')) { if (e.key === 'Escape') stopPlay(c); return; }
+  if (c?.classList.contains('reading')) { if (e.key === 'Escape') closeSheet(c); return; }
   const step = { ArrowDown: 1, PageDown: 1, j: 1, ArrowUp: -1, PageUp: -1, k: -1 }[e.key];
   if (step) { e.preventDefault(); sw.children[Math.max(0, Math.min(sw.children.length - 1, S.shorts.i + step))]?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
   else if ((e.key === 'Enter' || e.key === ' ') && c?.classList.contains('k-html')) { e.preventDefault(); startPlay(c); }

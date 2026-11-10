@@ -57,6 +57,8 @@ const D = {
   '신고하려면 로그인해 주세요': 'Log in to report', '이미 신고했어요. 운영자가 확인할 거예요': 'Already reported. A moderator will review it.',
   '글 신고': 'Report post', '댓글 신고': 'Report comment',
   '신고 내용은 운영자만 볼 수 있어요. 그냥 별로라면 신고 대신 ▼슬롭으로 판정해 주세요.': "Only moderators see reports. If you just didn't like it, vote ▼ Slop instead.",
+  '전체 읽기': 'Read all', '✕ 닫기': '✕ Close', '글 페이지에서 의견 보기': 'See comments on the post page', '더 볼 내용이 없어요.': 'Nothing more to show.',
+  '글을 불러오지 못했어요.': "Couldn't load the post.",
   '추천': 'For you', '좋아한 글과 비슷해요': 'Similar to posts you liked', '새 글 · 첫 판정을 기다려요': 'New · waiting for its first verdicts', '보석 판정을 받은 글': 'Judged a gem',
   '팔로우한 커뮤니티': 'From a community you follow', '반응이 많은 글': 'Getting lots of reactions', '새로운 발견': 'Something new', '이미 판정한 글': 'You judged this',
   '차단': 'Block', '작성자 차단': 'Block author', '차단하기': 'Block', '차단 풀기': 'Unblock', '차단했어요': 'Blocked', '차단을 풀었어요': 'Unblocked',
