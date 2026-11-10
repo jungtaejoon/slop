@@ -12,6 +12,8 @@ https://jungtaejoon.github.io/slop/
 
 ## Hacker News (Show HN)
 
+> **Do not post this text as is.** HN's guidelines say not to post generated or AI-edited text. Write the post yourself; see the fact list in docs/promo-blocked.md (2026-11-10).
+
 Title: Show HN: Slop – share AI-made things and vote gem or slop
 
 URL: https://jungtaejoon.github.io/slop/
