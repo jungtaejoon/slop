@@ -16,6 +16,7 @@ export async function renderPost(v) {
     if (post.blockedAuthor) { $('#pArticle').innerHTML = `<div class="banner">차단한 사용자의 글이라 보이지 않아요. <button class="btn sm" data-act="block" data-id="${esc(post.authorId)}">차단 풀기</button></div>`; return; }
     S.cache.set(post.id, Object.assign(S.cache.get(post.id) || {}, post));
     d.post = S.cache.get(post.id); d.versions = versions; d.comments = comments; d.loaded = true;
+    d.editions = post.langGroup ? await api.listEditions(post.langGroup).catch(() => []) : [];
     await loadMyVotes([post.id], comments.map((c) => c.id));
     if (S.d !== d) return;
     if (post.community) { remember(post.community); $('#crumb').href = '#/c/' + post.community.slug; $('#crumb').textContent = '← ' + post.community.name; }
@@ -30,6 +31,17 @@ export async function renderPost(v) {
 async function reloadComments() {
   const d = S.d; if (!d) return;
   try { const cs = await api.listComments(d.id); if (S.d !== d) return; const known = new Set(d.comments.map((c) => c.id)); d.comments = cs; await loadMyVotes([], cs.filter((c) => !known.has(c.id)).map((c) => c.id)); d.post.comments = cs.filter((c) => !c.deleted && !c.hidden).length; drawThread(); drawSide(); } catch { /* keep what we have */ }
+}
+
+export const LANG_NAMES = { ko: '한국어', en: 'English' };
+// version picker, language editions, and (for the author) editions that fell behind this one
+function editionBar(p, v, mine) {
+  const d = S.d, eds = d.editions || [], vs = d.versions;
+  const langs = eds.length > 1 ? `<div class="seg edseg" role="group" aria-label="언어판">${eds.map((e) => `<a href="#/p/${e.id}" aria-current="${e.id === p.id}" lang="${e.lang}">${LANG_NAMES[e.lang] || e.lang}</a>`).join('')}</div>` : '';
+  const pick = vs.length > 1 ? `<label class="verpick"><span>버전</span><select id="verSel">${vs.slice().reverse().map((x) => `<option value="${x.n}"${x.n === v.n ? ' selected' : ''}>v${x.n}${x.n === vs[vs.length - 1].n ? ' (최신)' : ''}</option>`).join('')}</select></label>` : '';
+  const behind = mine ? eds.filter((e) => e.id !== p.id && e.version < p.version) : [];
+  return (langs || pick ? `<div class="edrow">${langs}${pick}</div>` : '')
+    + behind.map((e) => `<div class="oldver">${LANG_NAMES[e.lang] || e.lang}판은 아직 v${e.version}이에요. 이 글은 v${p.version}이에요. <a href="#/edit/${e.id}">그 언어판도 새 버전 올리기</a></div>`).join('');
 }
 
 const curVer = () => { const vs = S.d.versions; if (!vs.length) return null; return vs.find((x) => x.n === S.d.sel) || vs[vs.length - 1]; };
@@ -62,17 +74,20 @@ function drawArticle() {
     ${p.remixOf ? `<div class="muted" style="font-size:13px;margin:-4px 0 8px">↳ 리믹스 원본: <a href="#/p/${esc(p.remixOf)}${p.remixOfVersion ? '/v/' + p.remixOfVersion : ''}"><span${p.remixTitle ? ' data-ugc' : ''}>${esc(p.remixTitle || '원본 글')}</span>${p.remixOfVersion ? ` v${p.remixOfVersion}` : ''}</a></div>` : ''}
     ${p.hidden ? `<div class="banner warnb" style="margin:0 0 8px">운영자가 숨긴 글이에요${p.hiddenReason ? ` (사유: ${esc(p.hiddenReason)})` : ''}. 작성자와 운영자에게만 보여요.</div>` : ''}
     ${mine && Date.now() - p.createdAt < 3 * 864e5 && p.up + p.down < 3 && !p.hidden ? `<div class="nudge"><div><b>판정을 더 받아 보세요.</b> 친구나 단톡방, 관련 커뮤니티에 공유하면 보석인지 슬롭인지 금방 모여요.</div><button class="btn sm gem" data-act="share" data-id="${p.id}" data-title="${esc(p.title)}">공유하기</button></div>` : ''}
+    ${editionBar(p, v, mine)}
     ${old ? `<div class="oldver">지금 v${v.n}을 보고 있어요. 최신은 v${latest}이에요. <a href="#/p/${p.id}">최신 보기</a></div>` : ''}</div>
     ${main}
     <div class="verdict mverdict" data-verdict="${p.id}">${verdictInner(p.id)}</div>
     ${p.tags.length ? `<div class="chips">${p.tags.map((t) => `<button class="chip" data-act="tag" data-v="${esc(t)}">#${esc(t)}</button>`).join('')}</div>` : ''}
     <div class="pact"><button class="btn ghost" data-act="save" data-id="${p.id}">${S.saves.has(p.id) ? '저장됨' : '저장'}</button><button class="btn ghost" data-act="share" data-id="${p.id}" data-title="${esc(p.title)}">공유</button>
-      ${canWrite() ? `<a class="btn ghost" href="#/remix/${p.id}/${v.n}">리믹스</a>` : ''}${(mine || isMod()) && canWrite() ? `<a class="btn ghost" href="#/edit/${p.id}">수정판 올리기</a>` : ''}
+      ${canWrite() ? `<a class="btn ghost" href="#/remix/${p.id}/${v.n}">리믹스</a>` : ''}${(mine || isMod()) && canWrite() ? `<a class="btn ghost" href="#/edit/${p.id}">새 버전 올리기</a>` : ''}
+      ${mine && canWrite() ? Object.keys(LANG_NAMES).filter((l) => l !== p.lang && !(d.editions || []).some((e) => e.lang === l)).map((l) => `<a class="btn ghost" href="#/translate/${p.id}/${l}">${LANG_NAMES[l]}판 올리기</a>`).join('') : ''}
       ${mine || canMod ? `<button class="btn ghost danger" id="delPost">${d.delArm ? '정말 삭제할까요? 한 번 더 누르세요' : '삭제'}</button>` : ''}
       ${api.me && !mine ? `<button class="btn ghost" data-act="report" data-t="p" data-id="${p.id}">${S.reports.has('p:' + p.id) ? '신고함' : '신고'}</button>` : ''}
       ${api.me && !mine && p.authorId ? `<button class="btn ghost" data-act="block" data-id="${esc(p.authorId)}" data-name="${esc(p.author?.name || '')}">작성자 차단</button>` : ''}</div>
     ${canMod ? modBar(p) : ''}
   </div></article>`;
+  const vsel = $('#verSel'); if (vsel) vsel.onchange = () => go(`/p/${p.id}${+vsel.value === latest ? '' : '/v/' + vsel.value}`);
   const sb = $('#stageBody');
   if (sb) {
     if (d.tab === 'run') { const r = document.createElement('div'); r.className = 'runner'; r.append(sandboxFrame(v.code || '')); sb.append(r); }

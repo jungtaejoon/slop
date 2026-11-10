@@ -560,3 +560,13 @@ body.standalone .install-link{display:none}
 .sw-sheet-b h3{font-size:14px;margin:18px 0 6px;color:var(--muted)}
 .sw-card.reading .sw-rail,.sw-card.reading .sw-cap,.sw-card.reading .sw-hint{display:none}
 body.sw-mode:has(.sw-card.reading) .sw-top{display:none}
+
+/* post page: language editions and version picker */
+.edrow{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:0 0 8px}
+.edseg{border:1px solid var(--line);border-radius:999px;padding:2px}
+.edseg a{padding:4px 12px;font-size:13px;border-radius:999px;color:var(--muted);text-decoration:none}
+.edseg a:hover{color:var(--ink)}
+.edseg a[aria-current="true"]{background:var(--ink);color:var(--bg);font-weight:600}
+.verpick{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-size:13px;color:var(--muted)}
+.verpick select{font:inherit;font-size:13px;padding:3px 8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.oldver+.oldver,.edrow+.oldver{margin-top:6px}

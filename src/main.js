@@ -15,7 +15,7 @@ import { renderShorts, closeShorts } from './views/shorts.js';
 
 /* ---------- router
    #/ (home: followed)  #/popular  #/gems  #/saved  #/c/<slug>  #/c/<slug>/settings  #/communities  #/communities/new
-   #/p/<id>[/v/<n>]  #/submit[/<slug>]  #/edit/<id>  #/remix/<id>/<n>  #/u/<name>  #/login  #/settings  #/inbox  #/mod */
+   #/p/<id>[/v/<n>]  #/submit[/<slug>]  #/edit/<id>  #/translate/<id>/<lang>  #/remix/<id>/<n>  #/u/<name>  #/login  #/settings  #/inbox  #/mod */
 function parse() {
   const parts = currentHash().replace(/^#\/?/, '').split('/').filter(Boolean).map((s) => { try { return decodeURIComponent(s); } catch { return s; } });
   const [a, b, c, d] = parts;
@@ -27,6 +27,7 @@ function parse() {
   if (a === 'p' && b) return { name: 'post', id: b, n: c === 'v' && d ? +d : null };
   if (a === 'submit') return { name: 'compose', mode: 'new', slug: b || null };
   if (a === 'edit' && b) return { name: 'compose', mode: 'edit', id: b };
+  if (a === 'translate' && b && ['ko', 'en'].includes(c)) return { name: 'compose', mode: 'translate', id: b, lang: c };
   if (a === 'remix' && b) return { name: 'compose', mode: 'remix', id: b, n: c ? +c : null };
   if (a === 'u' && b) return { name: 'profile', username: b };
   if (['login', 'settings', 'inbox', 'mod', 'judge'].includes(a)) return { name: a };

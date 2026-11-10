@@ -140,6 +140,8 @@ export function createSupabaseApi(url, key) {
   };
   api.getPostCodes = async (ids) => (ids.length ? Object.fromEntries(check(await sb.from('posts').select('id,code').in('id', ids)).map((r) => [r.id, r.code || ''])) : {});
   api.getPostCode = async (id) => check(await sb.from('posts').select('code').eq('id', id).maybeSingle())?.code || '';
+  // other language editions of a post (the post itself included), oldest first
+  api.listEditions = async (group) => (group ? check(await sb.from('posts').select('id,lang,title,version,hidden').eq('lang_group', group).eq('hidden', false).order('created_at')) : []);
   api.getVersions = async (id) => check(await sb.from('post_versions').select('*').eq('post_id', id).order('n')).map(shape.version);
   api.listRemixes = async (id) => check(await sb.from('post_feed').select(FEED_COLS).eq('remix_of', id).eq('hidden', false).order('score', { ascending: false }).limit(5)).map(shape.post);
   api.createPost = async (f) => check(await sb.rpc('create_post', { p: toRow(f) }));
@@ -278,5 +280,5 @@ export function createSupabaseApi(url, key) {
 
 function toRow(f) {
   return { community_id: f.communityId, kind: f.kind, title: f.title, body: f.body, url: f.url, images: f.images, code: f.code, code_lang: f.codeLang, code_head: f.codeHead,
-    tool: f.tool, prompt: f.prompt, tags: f.tags, remix_of: f.remixOf || '', remix_of_version: f.remixOfVersion || '' };
+    tool: f.tool, prompt: f.prompt, tags: f.tags, remix_of: f.remixOf || '', remix_of_version: f.remixOfVersion || '', lang: f.lang || '', translation_of: f.translationOf || '', note: f.note || '' };
 }

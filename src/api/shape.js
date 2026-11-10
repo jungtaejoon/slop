@@ -25,6 +25,7 @@ export function post(r) {
     url: r.url || '', images: r.images || [], code: r.code, codeLang: r.code_lang || '', codeHead: r.code_head || '',
     tool: r.tool || '', prompt: r.prompt || '', tags: r.tags || [], version: r.version || 1,
     remixOf: r.remix_of || null, remixOfVersion: r.remix_of_version || null,
+    lang: r.lang || (/[가-힣]/.test(r.title || '') ? 'ko' : 'en'), langGroup: r.lang_group || null,
     pinned: !!r.pinned, hidden: !!r.hidden, hiddenReason: r.hidden_reason || '', locked: !!r.locked, isExample: !!r.is_example,
     up, down, score: up - down, isGem: isGemCounts(up, down), comments: r.comment_count ?? 0, views: r.view_count ?? 0,
     createdAt: Date.parse(r.created_at), updatedAt: Date.parse(r.updated_at || r.created_at),

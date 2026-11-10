@@ -134,14 +134,22 @@ export function createDemoApi() {
   api.getPostCodes = async (ids) => Object.fromEntries(ids.filter((id) => visible(db.posts[id])).map((id) => [id, db.posts[id].code || '']));
   api.getPostCode = async (id) => (visible(db.posts[id]) ? db.posts[id].code : '');
   api.getVersions = async (id) => (visible(db.posts[id]) ? db.versions.filter((v) => v.post_id === id).sort((a, b) => a.n - b.n).map(shape.version) : []);
+  api.listEditions = async (group) => (group ? Object.values(db.posts).filter((p) => p.lang_group === group && !p.hidden).sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at)).map((p) => ({ id: p.id, lang: p.lang, title: p.title, version: p.version })) : []);
   api.listRemixes = async (id) => Object.values(db.posts).filter((p) => p.remix_of === id && !p.hidden).map((p) => shape.post(withAuthor({ ...p, code: undefined })));
   const fields = (f) => ({ kind: f.kind, title: f.title.trim(), body: f.body || '', url: f.url || '', images: f.images || [], code: f.code || '', code_lang: f.codeLang || '', code_head: f.codeHead || '', tool: f.tool || '', prompt: f.prompt || '', tags: f.tags || [] });
   api.createPost = async (f) => {
-    need(); const id = uid(), t = now();
-    if (!db.communities[f.communityId]) throw Object.assign(new Error('community'), { code: '23503' });
-    db.posts[id] = { id, author_id: api.me.id, community_id: f.communityId, ...fields(f), version: 1, remix_of: f.remixOf || null, remix_of_version: f.remixOfVersion || null, pinned: false, hidden: false, hidden_reason: '', locked: false, is_example: false, up_count: 0, down_count: 0, comment_count: 0, created_at: t, updated_at: t };
-    const p = db.posts[id]; db.versions.push({ post_id: id, n: 1, title: p.title, body: p.body, url: p.url, images: p.images, code: p.code, prompt: p.prompt, note: '첫 버전', author_id: api.me.id, created_at: t });
-    recountCommunity(f.communityId); save(); return id;
+    need(); const id = uid(), t = now(), lang = ['ko', 'en'].includes(f.lang) ? f.lang : /[가-힣]/.test(f.title) ? 'ko' : 'en';
+    let group = null, cid = f.communityId;
+    if (f.translationOf) { // a language edition of an existing post
+      const s = db.posts[f.translationOf]; if (!s || (s.author_id !== api.me.id && !isMod())) throw Object.assign(new Error('not allowed'), { code: '42501' });
+      group = s.lang_group || s.id; const langOf = (x) => x.lang || (/[가-힣]/.test(x.title) ? 'ko' : 'en');
+      if (Object.values(db.posts).some((x) => (x.lang_group === group || x.id === s.id) && langOf(x) === lang)) throw Object.assign(new Error('exists'), { code: '23505' });
+      s.lang_group = group; cid = s.community_id;
+    }
+    if (!db.communities[cid]) throw Object.assign(new Error('community'), { code: '23503' });
+    db.posts[id] = { id, author_id: api.me.id, community_id: cid, ...fields(f), lang, lang_group: group, version: 1, remix_of: f.remixOf || null, remix_of_version: f.remixOfVersion || null, pinned: false, hidden: false, hidden_reason: '', locked: false, is_example: false, up_count: 0, down_count: 0, comment_count: 0, created_at: t, updated_at: t };
+    const p = db.posts[id]; db.versions.push({ post_id: id, n: 1, title: p.title, body: p.body, url: p.url, images: p.images, code: p.code, prompt: p.prompt, note: group ? '언어판 추가' : '첫 버전', author_id: api.me.id, created_at: t });
+    recountCommunity(cid); save(); return id;
   };
   api.saveVersion = async (id, f, note, resolved = []) => {
     need(); const p = db.posts[id]; if (!p || (p.author_id !== api.me.id && !isMod())) throw Object.assign(new Error('not allowed'), { code: '42501' });

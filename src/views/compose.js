@@ -24,8 +24,9 @@ export async function renderCompose(v) {
     if (S.c !== st) return;
     ver = ver?.find((x) => x.n === (v.mode === 'edit' ? src?.version : v.n)) || ver?.[ver.length - 1];
     if (!src || !ver) { app.innerHTML = '<a class="crumb" href="#/">← 게시판으로</a><div class="banner">원본 글을 찾을 수 없어요.</div>'; return; }
+    if (v.mode === 'translate' && src.authorId !== api.me.id && !isMod()) { app.innerHTML = '<div class="banner">언어판은 글쓴이만 올릴 수 있어요.</div>'; return; }
     if (v.mode === 'edit' && src.authorId !== api.me.id && !isMod()) { app.innerHTML = `<div class="banner">작성자만 수정판을 올릴 수 있어요. 대신 <a href="#/remix/${src.id}/${ver.n}">리믹스</a>해 보세요.</div>`; return; }
-    f = { communityId: src.communityId, kind: src.kind, title: v.mode === 'remix' ? `${src.title} (리믹스)`.slice(0, 120) : ver.title, body: ver.body, url: ver.url, code: ver.code, codeLang: src.codeLang, tool: src.tool, prompt: ver.prompt, tags: src.tags.join(', '), images: v.mode === 'edit' ? [...ver.images] : [] };
+    f = { communityId: src.communityId, kind: src.kind, title: v.mode === 'remix' ? `${src.title} (리믹스)`.slice(0, 120) : ver.title, body: ver.body, url: ver.url, code: ver.code, codeLang: src.codeLang, tool: src.tool, prompt: ver.prompt, tags: src.tags.join(', '), images: v.mode === 'remix' ? [] : [...ver.images] };
     st.src = src; st.ver = ver;
     if (v.mode === 'edit') { try { open = (await api.listComments(v.id)).filter((c) => !c.deleted && !c.resolvedIn && (c.flair === 'improve' || c.flair === 'question')); } catch { /* optional */ } }
     if (S.c !== st) return;
@@ -34,10 +35,11 @@ export async function renderCompose(v) {
   f.kind ??= byId(f.communityId)?.defaultKind || 'text'; st.images = [...f.images]; st.byId = byId;
   const followed = all.filter((c) => S.my.has(c.id)), others = all.filter((c) => !S.my.has(c.id));
   const opt = (c) => `<option value="${c.id}"${c.id === f.communityId ? ' selected' : ''}>${esc(c.name)} · c/${esc(c.slug)}</option>`;
-  const head = v.mode === 'new' ? '새 글' : v.mode === 'edit' ? `수정판 올리기 · v${src.version + 1}` : `리믹스: ${esc(src.title)}`;
+  const LN = { ko: '한국어', en: 'English' };
+  const head = v.mode === 'new' ? '새 글' : v.mode === 'edit' ? `새 버전 올리기 · v${src.version + 1}` : v.mode === 'translate' ? `${LN[v.lang]}판 올리기` : `리믹스: ${esc(src.title)}`;
   app.innerHTML = `<a class="crumb" href="${v.mode === 'new' ? (fromSlug ? '#/c/' + esc(fromSlug.slug) : '#/') : '#/p/' + v.id}">← 돌아가기</a><div class="compose"><form class="form" id="cmp" novalidate>
-    <h1>${head}</h1>${st.restored ? '<div class="banner" style="margin:0">작성하던 초안을 불러왔어요. <button type="button" class="linkbtn" id="clearDraft">비우기</button></div>' : ''}
-    <div class="grid2"><div class="field"><label for="fCat">커뮤니티</label><select id="fCat"${v.mode === 'edit' ? ' disabled' : ''}><option value="">커뮤니티를 고르세요</option>${followed.length ? `<optgroup label="팔로우 중">${followed.map(opt).join('')}</optgroup>` : ''}${others.length ? `<optgroup label="다른 커뮤니티">${others.map(opt).join('')}</optgroup>` : ''}</select>
+    <h1>${head}</h1>${v.mode === 'translate' ? `<div class="banner" style="margin:0">원본 글과 같은 커뮤니티에 올라가고, 글 화면에서 언어를 골라 볼 수 있게 묶여요. 제목·본문·코드를 ${LN[v.lang]}로 바꿔 주세요.</div>` : ''}${st.restored ? '<div class="banner" style="margin:0">작성하던 초안을 불러왔어요. <button type="button" class="linkbtn" id="clearDraft">비우기</button></div>' : ''}
+    <div class="grid2"><div class="field"><label for="fCat">커뮤니티</label><select id="fCat"${v.mode === 'edit' || v.mode === 'translate' ? ' disabled' : ''}><option value="">커뮤니티를 고르세요</option>${followed.length ? `<optgroup label="팔로우 중">${followed.map(opt).join('')}</optgroup>` : ''}${others.length ? `<optgroup label="다른 커뮤니티">${others.map(opt).join('')}</optgroup>` : ''}</select>
         <span class="hint">맞는 곳이 없으면 <a href="#/communities/new">새로 만들 수 있어요</a>.</span></div>
       <div class="field"><label for="fTool">만든 도구</label><input type="text" id="fTool" list="toolList" maxlength="40" value="${esc(f.tool)}" placeholder="예: Claude, Midjourney, Suno"><datalist id="toolList">${TOOLS.map((t) => `<option value="${esc(t)}">`).join('')}</datalist></div></div>
     <div class="field"><span class="flabel">형식</span><div class="kinds" role="group">${Object.entries(KINDS).map(([k, [l, dd]]) => `<button type="button" data-kind="${k}" aria-pressed="${f.kind === k}">${l}<small>${dd}</small></button>`).join('')}</div></div>
@@ -53,7 +55,7 @@ export async function renderCompose(v) {
     <div class="field"><label for="fTags">태그</label><input type="text" id="fTags" value="${esc(f.tags)}" placeholder="쉼표로 구분, 최대 5개"></div>
     ${v.mode === 'edit' ? `<div class="field"><label for="fNote">무엇이 바뀌었나요?</label><input type="text" id="fNote" maxlength="200" placeholder="예: 댓글 의견대로 색 대비를 높였어요">
       ${open.length ? `<span class="hint">아래 개선 제안·질문 중 이번에 반영한 것을 고르면 "v${src.version + 1}에서 반영"으로 표시되고, 쓴 사람에게 알림이 가요.</span><div class="addr">${open.map((c) => `<label><input type="checkbox" data-addr="${c.id}"><span><b>${esc(c.author?.name || '')}</b> ${esc(c.text.slice(0, 200))}</span></label>`).join('')}</div>` : ''}</div>` : ''}
-    <div class="row"><button class="btn pri" type="submit" id="submitBtn">${v.mode === 'edit' ? '수정판 올리기' : '올리기'}</button><span class="hint" id="subStatus" role="status"></span></div>
+    <div class="row"><button class="btn pri" type="submit" id="submitBtn">${v.mode === 'edit' ? '새 버전 올리기' : '올리기'}</button><span class="hint" id="subStatus" role="status"></span></div>
   </form>
   <aside class="side"><section class="panel"><h2>좋은 글의 조건</h2><ul><li>어떤 도구로, 어떤 프롬프트로 만들었는지 적어요.</li><li>어디가 볼 만한지 한두 줄로 설명해요.</li><li>맞는 게시판과 형식을 골라요. 웹·게임은 실행물로 올리면 바로 돌려볼 수 있어요.</li><li>실행물은 격리된 샌드박스에서 돌아가요. 외부 주소로 데이터를 보내는 코드는 신고 대상이에요.</li></ul></section>
     ${api.aiAvailable ? '<section class="panel"><h2>Claude 도우미</h2><p>내용을 보고 게시판, 형식, 제목, 태그를 추천해 줘요. 이미 쓴 칸은 건드리지 않아요.</p><button type="button" class="btn sm" id="aiGo">분류·제목 추천받기</button><p class="hint" id="aiStatus" style="margin:8px 0 0"></p></section>' : ''}</aside></div>`;
@@ -148,8 +150,10 @@ async function submit(v) {
       const n = await api.saveVersion(v.id, f, $('#fNote').value.trim(), resolved);
       S.cache.delete(v.id); S.c = null; toast(`v${n}을 올렸어요`); go('/p/' + v.id); return;
     }
-    const id = await api.createPost({ ...f, remixOf: v.mode === 'remix' ? S.c.src.id : null, remixOfVersion: v.mode === 'remix' ? S.c.ver.n : null });
+    const tr = v.mode === 'translate' ? { translationOf: v.id, lang: v.lang, note: v.lang === 'en' ? 'Language edition added' : '언어판 추가' } : {};
+    const id = await api.createPost({ ...f, ...tr, remixOf: v.mode === 'remix' ? S.c.src.id : null, remixOfVersion: v.mode === 'remix' ? S.c.ver.n : null });
     if (v.mode === 'new') try { localStorage.removeItem(DRAFT); } catch { /* */ }
-    S.c = null; toast('올렸어요'); go('/p/' + id);
-  } catch (e) { console.error(e); btn.disabled = false; st.textContent = errMsg(e, '올리지 못했어요. 다시 시도해 주세요.'); }
+    if (tr.translationOf) S.cache.delete(v.id);
+    S.c = null; toast(tr.translationOf ? '언어판을 올렸어요' : '올렸어요'); go('/p/' + id);
+  } catch (e) { console.error(e); btn.disabled = false; st.textContent = v.mode === 'translate' && e?.code === '23505' ? '이 언어판은 이미 있어요.' : errMsg(e, '올리지 못했어요. 다시 시도해 주세요.'); }
 }
