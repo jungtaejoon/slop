@@ -1,6 +1,6 @@
 // ---------- flow: title → intro → curator → act card → map ⇄ areas / scenes → ending ----------
 let state = 'title', stT = 0, gt = 0, introI = 0, selI = 0, seenIntro = false, endKind = null, resultT = 0, dlgBg = 'map';
-function setState(s) { if (s === 'dialog') dlgBg = state === 'play' || state === 'lvl' ? 'world' : state === 'title' || state === 'select' ? 'menu' : 'map'; state = s; stT = 0; ui = []; }
+function setState(s) { cv.style.cursor = ''; if (s === 'dialog') dlgBg = state === 'play' || state === 'lvl' ? 'world' : state === 'title' || state === 'select' ? 'menu' : 'map'; state = s; stT = 0; ui = []; }
 function pauseGame() { if (state === 'play') setState('pause'); }
 function startRun() { startJourney(selI); sfx('lvl'); }
 function endRun(kind) { endKind = kind; resultT = 0; setState('result'); music(-1); }
@@ -165,9 +165,12 @@ function drawResult() {
 // ---------- main loop: fixed 60 Hz steps ----------
 let lastT = 0, acc = 0;
 function frame(now) {
+  requestAnimationFrame(frame); // schedule first: one bad frame must never stop the game
   const dt = Math.min(0.1, (now - lastT) / 1000 || 0); lastT = now; acc += dt; let n = 0;
   while (acc >= 1 / 60 && n < 4) { update(1 / 60); acc -= 1 / 60; n++; for (const k in hit) hit[k] = 0; taps.length = 0; }
   if (n >= 4) acc = 0;
-  render(); requestAnimationFrame(frame);
+  if (innerWidth && innerHeight && (innerWidth !== CW || innerHeight !== CH)) resize(); // size arrived or changed without an event
+  if (!innerWidth || !innerHeight) return; // nothing to draw into yet
+  try { render(); } catch (e) { console.error(e); }
 }
 requestAnimationFrame(frame);

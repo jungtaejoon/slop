@@ -60,6 +60,7 @@ const TXT = {
       shop: ['기록 보관함', '금박으로 필요한 것을 바꿔요.'], boss: ['막의 끝', '이 막의 주인이 기다려요.'],
     },
     mapTitle: (a, n) => `${a} · ${n}`, mapPick: '다음 갈 곳을 고르세요', mapGo: '이리로 가기', destination: '목적지: 필터 탑',
+    mapNext: '이어지는 곳', mapLater: (n) => `이 길로 가면 이후 ${n}곳 중에서 고를 수 있어요`, mapCant: '지금 위치에서는 갈 수 없는 곳이에요', mapHere: '지금 있는 곳', mapDone: '지나온 곳', mapEnd: '막의 끝으로 바로 이어져요',
     gate: (a, b) => `출구 문 충전 ${a}/${b}`, gateOpen: '문이 열렸다! 빛나는 문으로 가세요', bossGate: '이 구역의 주인을 쓰러뜨리세요',
     clear: '구역 통과', clearSub: (t, k, g) => `${t} · 지운 슬롭 ${k} · 금박 +${g}`, cont: '지도로', gold: '금박',
     camp: { title: '쉼터', sub: '모닥불 옆에서 잠깐 숨을 고른다.', rest: ['쉬기', (n) => `체력 ${n} 회복`], study: ['갈고닦기', '무기 하나를 한 단계 올린다'] },
@@ -150,6 +151,7 @@ const TXT = {
       shop: ['Archive cache', 'Trade gold leaf for what you need.'], boss: ['End of the act', 'The master of this act is waiting.'],
     },
     mapTitle: (a, n) => `${a} · ${n}`, mapPick: 'Choose where to go next', mapGo: 'Go here', destination: 'Destination: the Filter Tower',
+    mapNext: 'Leads to', mapLater: (n) => `Take this road and ${n} later stops stay open to you`, mapCant: "You can't reach this from where you are", mapHere: 'You are here', mapDone: 'Already passed', mapEnd: 'Goes straight to the end of the act',
     gate: (a, b) => `Exit gate ${a}/${b}`, gateOpen: 'The gate is open! Head for the light', bossGate: 'Defeat the master of this place',
     clear: 'Area cleared', clearSub: (t, k, g) => `${t} · ${k} slop erased · +${g} gold leaf`, cont: 'To the map', gold: 'Gold leaf',
     camp: { title: 'Camp', sub: 'You catch your breath by the fire.', rest: ['Rest', (n) => `Heal ${n} HP`], study: ['Sharpen', 'Raise one weapon by a level'] },
@@ -200,11 +202,13 @@ const cv = document.getElementById('c'), ctx = cv.getContext('2d');
 const L = document.createElement('canvas'), g = L.getContext('2d'); // the pixel layer, drawn at logical resolution
 let DPR = 1, CW = 0, CH = 0, S = 3, LW = 400, LH = 250;
 const FONT = '"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif';
+// A frame can start before it has a size (0 x 0). Keep every canvas at least 1 px so drawing never throws,
+// and let the main loop re-measure until the real size arrives.
 function resize() {
-  DPR = Math.min(devicePixelRatio || 1, 3); CW = innerWidth; CH = innerHeight;
+  DPR = Math.min(devicePixelRatio || 1, 3); CW = Math.max(1, innerWidth || document.documentElement.clientWidth || 0); CH = Math.max(1, innerHeight || document.documentElement.clientHeight || 0);
   cv.width = Math.round(CW * DPR); cv.height = Math.round(CH * DPR); cv.style.width = CW + 'px'; cv.style.height = CH + 'px';
   S = Math.max(1, Math.round(Math.min(cv.width, cv.height) / 270)); // device pixels per game pixel
-  LW = Math.ceil(cv.width / S); LH = Math.ceil(cv.height / S); L.width = LW; L.height = LH;
+  LW = Math.max(1, Math.ceil(cv.width / S)); LH = Math.max(1, Math.ceil(cv.height / S)); L.width = LW; L.height = LH;
   g.imageSmoothingEnabled = false;
 }
 addEventListener('resize', resize); resize();
@@ -240,7 +244,9 @@ cv.addEventListener('pointerdown', (e) => {
   if (usingTouch && dist2(e.clientX, e.clientY, b.x, b.y) < (b.r + 10) ** 2) { hit.dash = 1; return; }
   if (joy.id === null) { joy.id = e.pointerId; joy.ox = joy.x = e.clientX; joy.oy = joy.y = e.clientY; try { cv.setPointerCapture(e.pointerId); } catch { /* */ } }
 });
-cv.addEventListener('pointermove', (e) => { if (e.pointerId === joy.id) { joy.x = e.clientX; joy.y = e.clientY; } });
+const mouse = { x: -1, y: -1, on: false }; // hover position for tooltips (mouse and pen only)
+cv.addEventListener('pointermove', (e) => { if (e.pointerId === joy.id) { joy.x = e.clientX; joy.y = e.clientY; } if (e.pointerType !== 'touch') { mouse.x = e.clientX; mouse.y = e.clientY; mouse.on = true; } });
+cv.addEventListener('pointerleave', () => { mouse.on = false; });
 const joyEnd = (e) => { if (e.pointerId === joy.id) joy.id = null; };
 cv.addEventListener('pointerup', joyEnd); cv.addEventListener('pointercancel', joyEnd);
 function moveInput() {
@@ -679,23 +685,30 @@ function drawMap() {
   txt(T.destination, 24, 66, 12.5, '#9aa0aa', 'left', 600, false);
   for (let i = 0; i < 4; i++) { const x = 24 + i * 30, y = 86; ctx.fillStyle = i < run.act ? '#2dd4bf' : i === run.act ? '#f1f2f4' : '#2a2e36'; ctx.save(); ctx.translate(x + 6, y); ctx.rotate(Math.PI / 4); ctx.fillRect(-5, -5, 10, 10); ctx.restore(); if (i < 3) { ctx.fillStyle = '#2a2e36'; ctx.fillRect(x + 14, y - 1, 14, 2); } }
   mapStatus(vert);
+  const live = state === 'map', sel = live ? av[clamp(mapSel, 0, av.length - 1)] : null;
+  // hovering a stop (or the selected one) previews where that road can lead
+  const radius = (n) => (n.type === 'boss' ? 26 : 19);
+  const hov = live && mouse.on ? run.map.find((n) => { const q = pos(n); return dist2(q.x, q.y, mouse.x, mouse.y) < (radius(n) + 8) ** 2; }) : null;
+  const focus = hov || sel, reach = focus ? reachFrom(focus) : null;
+  cv.style.cursor = hov && avIds.has(hov.id) ? 'pointer' : '';
   // roads
   for (const n of run.map) for (const id of n.next) {
     const m = nodeById(id), a = pos(n), b = pos(m), walked = run.path.includes(n.id) && run.path.includes(m.id), open = n.id === run.at && avIds.has(m.id) || (!run.at && false);
-    ctx.strokeStyle = walked ? '#2dd4bf' : open ? 'rgba(241,242,244,.7)' : 'rgba(255,255,255,.14)'; ctx.lineWidth = walked ? 3 : 2; ctx.setLineDash(walked ? [] : [5, 7]); ctx.lineDashOffset = open ? -mapT * 18 : 0;
+    const ahead = reach && reach.has(n.id) && reach.has(m.id) && !walked;
+    ctx.strokeStyle = walked ? '#2dd4bf' : ahead ? 'rgba(246,213,92,.9)' : open ? 'rgba(241,242,244,.7)' : reach ? 'rgba(255,255,255,.07)' : 'rgba(255,255,255,.14)';
+    ctx.lineWidth = walked ? 3 : ahead ? 2.5 : 2; ctx.setLineDash(walked ? [] : [5, 7]); ctx.lineDashOffset = open || ahead ? -mapT * 18 : 0;
     ctx.beginPath(); ctx.moveTo(a.x, a.y); const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2; vert ? ctx.bezierCurveTo(a.x, my, b.x, my, b.x, b.y) : ctx.bezierCurveTo(mx, a.y, mx, b.y, b.x, b.y); ctx.stroke();
   }
   ctx.setLineDash([]);
   // district labels on act II
-  if (run.act === 1) for (let r = 0; r < 3; r++) { const n0 = run.map.find((n) => n.col === 0 && n.row === r), p = pos(n0); txt(T.biome[A.biomes[r]][0], p.x, vert ? p.y + 36 : p.y - 34, 11, hexA(BIOMES[A.biomes[r]].accent, 0.95), 'center', 700, false); }
-  const live = state === 'map', sel = live ? av[clamp(mapSel, 0, av.length - 1)] : null;
+  if (run.act === 1) for (let r = 0; r < 3; r++) { const n0 = run.map.find((n) => n.col === 0 && n.row === r), p = pos(n0); txt(T.biome[A.biomes[r]][0], p.x, vert || p.y - 34 < 110 ? p.y + 36 : p.y - 34, 11, hexA(BIOMES[A.biomes[r]].accent, 0.95), 'center', 700, false); }
   for (const n of run.map) {
     const p = pos(n), isAv = avIds.has(n.id), done = run.path.includes(n.id), cur = n.id === run.at, R = n.type === 'boss' ? 26 : 19, col = NODE_COL[n.type];
     if (isAv && live) { const k = 0.5 + Math.sin(mapT * 4) * 0.5; ctx.strokeStyle = hexA(col, 0.35 + k * 0.35); ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(p.x, p.y, R + 5 + k * 3, 0, 7); ctx.stroke(); button(p.x - R - 6, p.y - R - 6, R * 2 + 12, R * 2 + 12, () => { if (sel === n) enterNode(n); else mapSel = av.indexOf(n); }); }
     ctx.fillStyle = done ? '#10302c' : '#15181d'; ctx.beginPath(); ctx.arc(p.x, p.y, R, 0, 7); ctx.fill();
     ctx.lineWidth = sel === n ? 3 : 1.5; ctx.strokeStyle = sel === n ? '#f1f2f4' : done ? '#2dd4bf' : isAv ? hexA(col, 0.9) : 'rgba(255,255,255,.12)'; ctx.stroke();
     if (n.biome !== 'out' && run.act === 1) { ctx.fillStyle = BIOMES[n.biome].accent; ctx.beginPath(); ctx.arc(p.x + R * 0.7, p.y - R * 0.7, 3.5, 0, 7); ctx.fill(); }
-    ctx.globalAlpha = isAv || done || n.type === 'boss' ? 1 : 0.4; nodeIcon(n.type, p.x, p.y, R * 0.75, done && !cur ? '#5eead4' : col); ctx.globalAlpha = 1;
+    ctx.globalAlpha = reach && !reach.has(n.id) && !done && !cur ? 0.18 : isAv || done || n.type === 'boss' || (reach && reach.has(n.id)) ? 1 : 0.4; nodeIcon(n.type, p.x, p.y, R * 0.75, done && !cur ? '#5eead4' : col); ctx.globalAlpha = 1;
     if (cur) { ctx.fillStyle = '#f1f2f4'; ctx.beginPath(); const by = p.y - R - 10 + Math.sin(mapT * 3) * 2; ctx.moveTo(p.x, by); ctx.lineTo(p.x - 6, by - 9); ctx.lineTo(p.x + 6, by - 9); ctx.fill(); }
   }
   // info panel for the selected road
@@ -703,10 +716,40 @@ function drawMap() {
     const w = Math.min(CW - 32, 460), x = (CW - w) / 2, y = CH - (vert ? 172 : 128), h = vert ? 150 : 108; panel(x, y, w, h, false, 'rgba(18,20,24,.94)');
     nodeIcon(sel.type, x + 34, y + 34, 16, NODE_COL[sel.type]);
     txt(T.node[sel.type][0], x + 62, y + 28, 17, '#f1f2f4', 'left', 800); txt(T.biome[sel.biome][0], x + 62, y + 48, 12, hexA(BIOMES[sel.biome].accent, 1), 'left', 700, false);
-    wrapLines(T.node[sel.type][1] + ' ' + (sel.type === 'boss' ? '' : T.biome[sel.biome][1]), w - 190, 12.5).slice(0, vert ? 4 : 3).forEach((l, i) => txt(l, x + 20, y + 74 + i * 17, 12.5, '#b8bdc6', 'left', 500, false));
+    const nx = nextText(sel); if (nx) txt(nx, x + 20, y + 74, 12.5, '#f6d55c', 'left', 700, false);
+    wrapLines(T.node[sel.type][1] + ' ' + (sel.type === 'boss' ? '' : T.biome[sel.biome][1]), w - 40, 12.5).slice(0, vert ? 3 : 2).forEach((l, i) => txt(l, x + 20, y + 74 + (nx ? 17 : 0) + i * 17, 12.5, '#b8bdc6', 'left', 500, false));
     const b = button(x + w - 150, y + 18, 132, 40, () => enterNode(sel)); ctx.fillStyle = '#f1f2f4'; rr(b.x, b.y, b.w, b.h, 10); ctx.fill(); txt(T.mapGo, b.x + b.w / 2, b.y + 20, 14, '#0a0b0d', 'center', 800, false);
   }
   if (live) txt(T.mapPick, 150, 86, 12, '#6f7580', 'left', 600, false);
+  if (hov) mapTip(hov, pos(hov), radius(hov), avIds.has(hov.id), reach);
+}
+// every stop you can still reach from n (n included), following the roads forward
+function reachFrom(n) { const seen = new Set([n.id]), q = [n]; while (q.length) for (const id of q.shift().next) if (!seen.has(id)) { seen.add(id); q.push(nodeById(id)); } return seen; }
+// "Leads to: Camp, Elite" for one stop
+function nextText(n) {
+  if (!n.next.length) return '';
+  if (n.next.includes('boss')) return T.mapEnd;
+  const names = [...new Set(n.next.map((id) => T.node[nodeById(id).type][0]))];
+  return `${T.mapNext}: ${names.join(', ')}`;
+}
+// the hover card: what this stop is, whether you can go, and where it leads
+function mapTip(n, p, R, canGo, reach) {
+  const done = run.path.includes(n.id), here = n.id === run.at;
+  const status = here ? T.mapHere : done ? T.mapDone : canGo ? '' : !available().some((a) => reachFrom(a).has(n.id)) ? T.mapCant : '';
+  const later = reach ? [...reach].filter((id) => id !== n.id && id !== 'boss').length : 0;
+  const w = Math.min(280, CW - 24), body = wrapLines(T.node[n.type][1] + (n.type === 'boss' ? '' : ' ' + T.biome[n.biome][1]), w - 28, 12.5);
+  const extra = [nextText(n), canGo && later ? T.mapLater(later) : '', status].filter(Boolean);
+  const extraLines = extra.flatMap((e) => wrapLines(e, w - 28, 12, 600));
+  const h = 46 + body.length * 17 + extraLines.length * 16 + (extraLines.length ? 8 : 0);
+  let x = p.x + R + 14, y = p.y - h / 2;
+  if (x + w > CW - 12) x = p.x - R - 14 - w; x = clamp(x, 12, CW - w - 12); y = clamp(y, 12, CH - h - 12);
+  panel(x, y, w, h, false, 'rgba(10,11,13,.97)'); ctx.strokeStyle = hexA(NODE_COL[n.type], 0.6); ctx.lineWidth = 1; rr(x, y, w, h, 12); ctx.stroke();
+  nodeIcon(n.type, x + 22, y + 23, 10, NODE_COL[n.type]);
+  txt(T.node[n.type][0], x + 40, y + 23, 14.5, '#f1f2f4', 'left', 800, false);
+  if (n.type !== 'boss') { ctx.font = `800 14.5px ${FONT}`; const tw = ctx.measureText(T.node[n.type][0]).width; txt(T.biome[n.biome][0], x + 48 + tw, y + 23.5, 11.5, hexA(BIOMES[n.biome].accent, 1), 'left', 700, false); }
+  body.forEach((l, i) => txt(l, x + 14, y + 48 + i * 17, 12.5, '#c9cdd3', 'left', 500, false));
+  let yy = y + 48 + body.length * 17 + 6;
+  extra.forEach((e, k) => { const col = e === status ? (here || done ? '#5eead4' : '#fb7185') : k === 0 ? '#f6d55c' : '#9aa0aa'; for (const l of wrapLines(e, w - 28, 12, 600)) { txt(l, x + 14, yy, 12, col, 'left', 600, false); yy += 16; } });
 }
 function mapStatus(vert) { // HP, level, gold, weapons, top right
   const x = CW - 24, w = vert ? 150 : 200;
@@ -1793,7 +1836,7 @@ function drawClear() {
 
 // ---------- flow: title → intro → curator → act card → map ⇄ areas / scenes → ending ----------
 let state = 'title', stT = 0, gt = 0, introI = 0, selI = 0, seenIntro = false, endKind = null, resultT = 0, dlgBg = 'map';
-function setState(s) { if (s === 'dialog') dlgBg = state === 'play' || state === 'lvl' ? 'world' : state === 'title' || state === 'select' ? 'menu' : 'map'; state = s; stT = 0; ui = []; }
+function setState(s) { cv.style.cursor = ''; if (s === 'dialog') dlgBg = state === 'play' || state === 'lvl' ? 'world' : state === 'title' || state === 'select' ? 'menu' : 'map'; state = s; stT = 0; ui = []; }
 function pauseGame() { if (state === 'play') setState('pause'); }
 function startRun() { startJourney(selI); sfx('lvl'); }
 function endRun(kind) { endKind = kind; resultT = 0; setState('result'); music(-1); }
@@ -1958,10 +2001,13 @@ function drawResult() {
 // ---------- main loop: fixed 60 Hz steps ----------
 let lastT = 0, acc = 0;
 function frame(now) {
+  requestAnimationFrame(frame); // schedule first: one bad frame must never stop the game
   const dt = Math.min(0.1, (now - lastT) / 1000 || 0); lastT = now; acc += dt; let n = 0;
   while (acc >= 1 / 60 && n < 4) { update(1 / 60); acc -= 1 / 60; n++; for (const k in hit) hit[k] = 0; taps.length = 0; }
   if (n >= 4) acc = 0;
-  render(); requestAnimationFrame(frame);
+  if (innerWidth && innerHeight && (innerWidth !== CW || innerHeight !== CH)) resize(); // size arrived or changed without an event
+  if (!innerWidth || !innerHeight) return; // nothing to draw into yet
+  try { render(); } catch (e) { console.error(e); }
 }
 requestAnimationFrame(frame);
 

@@ -3,11 +3,13 @@ const cv = document.getElementById('c'), ctx = cv.getContext('2d');
 const L = document.createElement('canvas'), g = L.getContext('2d'); // the pixel layer, drawn at logical resolution
 let DPR = 1, CW = 0, CH = 0, S = 3, LW = 400, LH = 250;
 const FONT = '"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif';
+// A frame can start before it has a size (0 x 0). Keep every canvas at least 1 px so drawing never throws,
+// and let the main loop re-measure until the real size arrives.
 function resize() {
-  DPR = Math.min(devicePixelRatio || 1, 3); CW = innerWidth; CH = innerHeight;
+  DPR = Math.min(devicePixelRatio || 1, 3); CW = Math.max(1, innerWidth || document.documentElement.clientWidth || 0); CH = Math.max(1, innerHeight || document.documentElement.clientHeight || 0);
   cv.width = Math.round(CW * DPR); cv.height = Math.round(CH * DPR); cv.style.width = CW + 'px'; cv.style.height = CH + 'px';
   S = Math.max(1, Math.round(Math.min(cv.width, cv.height) / 270)); // device pixels per game pixel
-  LW = Math.ceil(cv.width / S); LH = Math.ceil(cv.height / S); L.width = LW; L.height = LH;
+  LW = Math.max(1, Math.ceil(cv.width / S)); LH = Math.max(1, Math.ceil(cv.height / S)); L.width = LW; L.height = LH;
   g.imageSmoothingEnabled = false;
 }
 addEventListener('resize', resize); resize();
@@ -43,7 +45,9 @@ cv.addEventListener('pointerdown', (e) => {
   if (usingTouch && dist2(e.clientX, e.clientY, b.x, b.y) < (b.r + 10) ** 2) { hit.dash = 1; return; }
   if (joy.id === null) { joy.id = e.pointerId; joy.ox = joy.x = e.clientX; joy.oy = joy.y = e.clientY; try { cv.setPointerCapture(e.pointerId); } catch { /* */ } }
 });
-cv.addEventListener('pointermove', (e) => { if (e.pointerId === joy.id) { joy.x = e.clientX; joy.y = e.clientY; } });
+const mouse = { x: -1, y: -1, on: false }; // hover position for tooltips (mouse and pen only)
+cv.addEventListener('pointermove', (e) => { if (e.pointerId === joy.id) { joy.x = e.clientX; joy.y = e.clientY; } if (e.pointerType !== 'touch') { mouse.x = e.clientX; mouse.y = e.clientY; mouse.on = true; } });
+cv.addEventListener('pointerleave', () => { mouse.on = false; });
 const joyEnd = (e) => { if (e.pointerId === joy.id) joy.id = null; };
 cv.addEventListener('pointerup', joyEnd); cv.addEventListener('pointercancel', joyEnd);
 function moveInput() {
