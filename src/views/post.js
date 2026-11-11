@@ -126,8 +126,10 @@ function mountRunner(sb, code) {
   r.className = 'runner loading';
   cover.className = 'run-load'; cover.setAttribute('role', 'status');
   cover.innerHTML = '<span class="spin" aria-hidden="true"></span><span>실행물을 불러오는 중…</span>';
-  // the frame's load event fires once its scripts have run; wait two frames so the first picture is drawn
-  const ready = () => requestAnimationFrame(() => requestAnimationFrame(() => r.classList.remove('loading')));
+  // the frame's load event fires once its scripts have run; give it two frames (or 150 ms where frames
+  // are paused, e.g. a hidden tab) to draw its first picture
+  const show = () => r.classList.remove('loading');
+  const ready = () => { requestAnimationFrame(() => requestAnimationFrame(show)); setTimeout(show, 150); };
   f.addEventListener('load', ready, { once: true });
   setTimeout(() => r.classList.remove('loading'), 20000); // never leave the cover up for good
   r.append(f, cover); sb.replaceChildren(r);
