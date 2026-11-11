@@ -18,7 +18,7 @@ const MAX_W = 6, MAX_LV = 6;
 // `pool`: the six skills this curator can ever learn. No two curators share a pool.
 const CHARS = [
   { start: 'brush', hp: 90, spd: 1.12, area: 0.1, cd: 0, dash: 0.7, armor: 0, rage: 1.3, bloodHeal: 15, perLv: { dmg: 0.035 }, pool: ['brush', 'scis', 'knife', 'ink', 'aura', 'tape'] },
-  { start: 'hl', hp: 100, spd: 1, area: 0, cd: 0.1, dash: 1.1, armor: 0, combo: 1, crit: 0.12, perLv: { crit: 0.012 }, pool: ['hl', 'plane', 'strike', 'stapler', 'mine', 'postit'] },
+  { start: 'hl', hp: 100, spd: 1, area: 0, cd: 0.1, dash: 1.1, armor: 0, combo: 1, crit: 0.12, perLv: { crit: 0.016 }, pool: ['hl', 'plane', 'strike', 'stapler', 'mine', 'postit'] },
   { start: 'stamp', hp: 160, spd: 0.84, area: 0.1, cd: 0, dash: 1.5, armor: 0.25, regen: 0.4, thorns: 0.25, hpPower: 1, perLv: { hp: 8 }, pool: ['stamp', 'eraser', 'sun', 'abacus', 'tea', 'bell'] },
 ];
 const critChance = () => { const c = CHARS[pl.ci]; return c.crit ? Math.min(0.6, c.crit + c.perLv.crit * (pl.lv - 1)) : 0; };

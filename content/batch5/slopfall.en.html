@@ -118,7 +118,7 @@ const TXT = {
       plane: [['편대', ['비행기 +1대', '관통 +1', '폭격: 다 날고 나면 터지며 주변을 친다']], ['추적', ['속도와 선회 +30%', '피해 +30%', '귀환: 두 배 오래 날고 관통 +2']]],
       eraser: [['튕김', ['튕김 +2번', '속도 +30%', '가루: 튕길 때마다 작은 폭발']], ['무거운 지우개', ['피해 +30%', '크게 밀쳐 내고 잠깐 멈춘다', '완전 삭제: 지운 슬롭은 쪼개지지 않고 보석을 더 남긴다']]],
     },
-    flood: '홍수가 차오른다! 출구로 가세요', floodHud: (p) => `홍수 수위 ${p}%`,
+    dry: '이 구역에서 거둘 성장은 다 거뒀다. 더 강해지려면 앞으로 나아가자', flood: '홍수가 차오른다! 출구로 가세요', floodHud: (p) => `홍수 수위 ${p}%`,
     warn: '경고', swarm: '대량 생성이 몰려온다!', next: '▼', skip: '건너뛰기',
   },
   en: {
@@ -227,7 +227,7 @@ const TXT = {
       plane: [['Squadron', ['+1 plane', 'Pierce +1', 'Bombing: planes explode when they are done']], ['Hunter', ['Speed and turning +30%', 'Damage +30%', 'Long flight: twice as long, pierce +2']]],
       eraser: [['Bounce', ['+2 bounces', 'Speed +30%', 'Dust: a small blast on every bounce']], ['Heavy eraser', ['Damage +30%', 'Big knockback and a short stun', 'Full erase: erased slop never splits and leaves an extra gem']]],
     },
-    flood: 'The flood is rising! Get to the exit', floodHud: (p) => `Flood ${p}%`,
+    dry: 'Nothing left to grow on in this area. To get stronger, press on', flood: 'The flood is rising! Get to the exit', floodHud: (p) => `Flood ${p}%`,
     warn: 'WARNING', swarm: 'A mass generation is coming!', next: '▼', skip: 'Skip',
   },
 };
@@ -672,7 +672,7 @@ const MAX_W = 6, MAX_LV = 6;
 // `pool`: the six skills this curator can ever learn. No two curators share a pool.
 const CHARS = [
   { start: 'brush', hp: 90, spd: 1.12, area: 0.1, cd: 0, dash: 0.7, armor: 0, rage: 1.3, bloodHeal: 15, perLv: { dmg: 0.035 }, pool: ['brush', 'scis', 'knife', 'ink', 'aura', 'tape'] },
-  { start: 'hl', hp: 100, spd: 1, area: 0, cd: 0.1, dash: 1.1, armor: 0, combo: 1, crit: 0.12, perLv: { crit: 0.012 }, pool: ['hl', 'plane', 'strike', 'stapler', 'mine', 'postit'] },
+  { start: 'hl', hp: 100, spd: 1, area: 0, cd: 0.1, dash: 1.1, armor: 0, combo: 1, crit: 0.12, perLv: { crit: 0.016 }, pool: ['hl', 'plane', 'strike', 'stapler', 'mine', 'postit'] },
   { start: 'stamp', hp: 160, spd: 0.84, area: 0.1, cd: 0, dash: 1.5, armor: 0.25, regen: 0.4, thorns: 0.25, hpPower: 1, perLv: { hp: 8 }, pool: ['stamp', 'eraser', 'sun', 'abacus', 'tea', 'bell'] },
 ];
 const critChance = () => { const c = CHARS[pl.ci]; return c.crit ? Math.min(0.6, c.crit + c.perLv.crit * (pl.lv - 1)) : 0; };
@@ -990,6 +990,7 @@ function genStage(kind, biome, depth, mod = null) {
   // props sit on floor tiles that touch a wall: purely decorative
   for (const i of s.floor) { const x = i % s.W, y = (i / s.W) | 0; if (s.tiles[(y - 1) * s.W + x] === 1 && rand() < 0.09) s.props.push({ x, y, k: irand(0, 3) }); }
   s.need = kind === 'fight' ? gateNeed(depth) : kind === 'elite' ? Math.round(gateNeed(depth) * 0.6) : 0;
+  s.budget = kind === 'fight' || kind === 'elite' ? Math.round(gateNeed(depth) * 2.5) : 0; s.xpGot = 0; s.dry = false; // this area's growth
   return s;
 }
 function bfs(s, sx, sy) { // 8-way step distance from a tile; -1 where unreachable
@@ -1049,7 +1050,7 @@ const onScreen = (e, m = 0) => Math.abs(e.x - cam.x) < LW / 2 + m && Math.abs(e.
 
 // ---------- slop ----------
 // how far ahead of the expected level for this depth the curator is: slop catches up, so farming never snowballs
-const overLv = () => (pl ? Math.max(0, pl.lv - (10 + run.depth)) : 0); // a normal run sits near depth + 8 to 10
+const overLv = () => (pl ? Math.max(0, pl.lv - (expectLv() + 3)) : 0); // well past the expected level
 function spawnFoe(type, x, y, o = {}) {
   const d = FOES[type], over = d.prop ? 0 : overLv(), k = d.prop ? 1 + run.depth * 0.08 : hpScale(run.depth) * (o.elite ? 12 : 1) * (o.mini ? 0.35 : 1) * (st?.mod === 'danger' ? 1.15 : 1) * (1 + (st?.flood || 0) * 0.5) * (1 + over * 0.08);
   const e = { type, x, y, hp: d.hp * k, maxHp: d.hp * k, spd: d.spd * (o.elite ? 0.9 : 1) * (o.mini ? 1.25 : 1), dmg: d.dmg * (o.elite ? 1.5 : 1) * (0.8 + run.depth * 0.035) * (1 + (st?.flood || 0) * 0.25) * (1 + over * 0.04), r: d.r * (o.elite ? 1.7 : o.mini ? 0.7 : 1),
@@ -1068,9 +1069,9 @@ function spawnSpot(minD = 190, maxD = 430) { // a floor tile out of sight but no
 function spawning(dt) {
   if (st.kind === 'boss' || st.cleared) { if (st.kind === 'boss' && boss && boss.kind !== 'snake') bossAdds(dt); return; }
   if (st.t < 4) return; // a breath at the start of every area
-  // linger in one area and the flood rises: it starts 30s after the gate opens (or at 100s at the latest),
+  // linger in one area and the flood rises: it starts 30s after the gate opens (45s in act I while you learn; 100s at the latest),
   // then more slop, tougher, and waves that close in from every side
-  const flood = st.kind === 'fight' || st.kind === 'elite' ? Math.max(0, st.open ? st.t - (st.openT ?? st.t) - 30 : st.t - 100) / 30 : 0; st.flood = flood;
+  const flood = st.kind === 'fight' || st.kind === 'elite' ? Math.max(0, st.open ? st.t - (st.openT ?? st.t) - (run.act === 0 ? 45 : 30) : st.t - 100) / 30 : 0; st.flood = flood;
   if (flood > 0.5) { st.waveT = (st.waveT ?? 0) - dt; if (st.waveT <= 0) { st.waveT = Math.max(5, 14 - flood * 2.5); floodWave(flood); } }
   const mul = (run.flags.praise ? 1.4 : 1) * (run.flags.unplug ? 0.8 : 1) * (st.open ? 0.6 : 1) * (st.mod === 'danger' ? 1.35 : 1) * (1 + flood);
   spawnAcc += spawnRate(run.depth) * mul * dt;
@@ -1148,8 +1149,20 @@ function hurtPlayer(d, from) {
   if (from && Number.isFinite(from.x) && Number.isFinite(from.y)) { const a = Math.atan2(pl.y - from.y, pl.x - from.x); pl.vx += Math.cos(a) * 60; pl.vy += Math.sin(a) * 60; } // only with a real position
   if (pl.hp <= 0) { pl.hp = 0; endRun('over'); }
 }
+// ---------- growth: it comes from pressing on, not from time spent ----------
+// 1. every fight area holds a fixed amount of growth (2.5x what its gate needs); once it is gathered, gems still
+//    charge the gate but give no xp, so staying longer in one area never makes you stronger.
+// 2. a soft cap by depth: more than one level above the expected level, each extra level halves the xp you get.
+// 3. a safety net (overLv): if a curator still gets well ahead, slop toughens to match.
+const expectLv = () => 7 + run.depth * 1.2;
 function gainXp(v) {
-  pl.xp += v; pl.gems += v; pl.score += v * 5;
+  let x = v;
+  if (st && st.budget) {
+    const left = Math.max(0, st.budget - st.xpGot); x = Math.min(v, left); st.xpGot += v;
+    if (left > 0 && st.xpGot >= st.budget) { st.dry = true; banner = { text: T.dry, t: 0, long: 1 }; sfx('warn'); }
+  }
+  const ahead = pl.lv - expectLv(); if (ahead > 1) x *= Math.pow(0.5, ahead - 1);
+  pl.xp += x; pl.gems += v; pl.score += v * 5;
   if (st && st.need && !st.open) { st.charge = Math.min(st.need, st.charge + v * (run.choice === 'A' ? 1.2 : 1)); if (st.charge >= st.need && st.eliteDead) openGate(); }
   while (pl.xp >= pl.need) { pl.xp -= pl.need; pl.lv++; pl.need = xpNeed(pl.lv); pendingLv++; const ph = CHARS[pl.ci].perLv.hp; if (ph) { pl.maxHp += ph; pl.hp += ph; } }
 }
@@ -2097,7 +2110,9 @@ function drawWorld(t) {
   drawGroundShots(t);
   for (const s of shots) if (s.k === 'hole') { const k = s.t / s.max; for (let i = 0; i < 4; i++) { g.strokeStyle = i % 2 ? '#6a3fa0' : '#b07ce8'; g.lineWidth = 1.5; g.beginPath(); g.arc(s.x, s.y, 4 + i * 6 * (1 - k * 0.5), t * 6 + i, t * 6 + i + 3.5); g.stroke(); } g.fillStyle = '#120e1a'; g.beginPath(); g.arc(s.x, s.y, 5, 0, 7); g.fill(); }
   // pickups
+  g.globalAlpha = st.dry ? 0.4 : 1; // once an area's growth is gathered its gems lose their shine
   for (const gm of gems) { const b = gm.mag ? 0 : Math.round(Math.sin(t * 4 + gm.x) * 1); spr(GEMS[gm.tier], gm.x, gm.y + b); }
+  g.globalAlpha = 1;
   for (const it of items) {
     const b = Math.round(Math.sin(t * 3 + it.x) * 1.5), big = it.k === 'bigchest';
     if (it.k.includes('chest')) { g.fillStyle = `rgba(246,213,92,${0.15 + Math.sin(t * 5) * 0.08})`; g.beginPath(); g.arc(it.x, it.y, big ? 16 : 11, 0, 7); g.fill(); }
@@ -2309,7 +2324,8 @@ function bar(x, y, w, h, k, col, back = 'rgba(255,255,255,.08)') { rr(x, y, w, h
 
 function drawHud() {
   // xp along the very top
-  ctx.fillStyle = 'rgba(255,255,255,.06)'; ctx.fillRect(0, 0, CW, 4); ctx.fillStyle = '#5aa7e0'; ctx.fillRect(0, 0, CW * clamp(pl.xp / pl.need, 0, 1), 4);
+  ctx.fillStyle = 'rgba(255,255,255,.06)'; ctx.fillRect(0, 0, CW, 4); ctx.fillStyle = st && st.dry ? '#4a4f58' : '#5aa7e0'; ctx.fillRect(0, 0, CW * clamp(pl.xp / pl.need, 0, 1), 4);
+  if (st && st.budget && !st.dry) { ctx.fillStyle = 'rgba(94,234,212,.5)'; ctx.fillRect(0, 4, CW * (1 - st.xpGot / st.budget), 2); } // this area's growth left
   // left: hp, weapons, passives
   panel(10, 12, 158, 34, false, 'rgba(10,11,13,.72)');
   txt(`Lv ${pl.lv}`, 22, 29, 12.5, '#cfe8ff', 'left', 800, false); bar(62, 24, 96, 10, pl.hp / pl.maxHp, pl.hp / pl.maxHp < 0.3 ? '#ff5a4f' : '#e0524a');

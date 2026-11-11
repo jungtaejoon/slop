@@ -89,7 +89,9 @@ function drawWorld(t) {
   drawGroundShots(t);
   for (const s of shots) if (s.k === 'hole') { const k = s.t / s.max; for (let i = 0; i < 4; i++) { g.strokeStyle = i % 2 ? '#6a3fa0' : '#b07ce8'; g.lineWidth = 1.5; g.beginPath(); g.arc(s.x, s.y, 4 + i * 6 * (1 - k * 0.5), t * 6 + i, t * 6 + i + 3.5); g.stroke(); } g.fillStyle = '#120e1a'; g.beginPath(); g.arc(s.x, s.y, 5, 0, 7); g.fill(); }
   // pickups
+  g.globalAlpha = st.dry ? 0.4 : 1; // once an area's growth is gathered its gems lose their shine
   for (const gm of gems) { const b = gm.mag ? 0 : Math.round(Math.sin(t * 4 + gm.x) * 1); spr(GEMS[gm.tier], gm.x, gm.y + b); }
+  g.globalAlpha = 1;
   for (const it of items) {
     const b = Math.round(Math.sin(t * 3 + it.x) * 1.5), big = it.k === 'bigchest';
     if (it.k.includes('chest')) { g.fillStyle = `rgba(246,213,92,${0.15 + Math.sin(t * 5) * 0.08})`; g.beginPath(); g.arc(it.x, it.y, big ? 16 : 11, 0, 7); g.fill(); }

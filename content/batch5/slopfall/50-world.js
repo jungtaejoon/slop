@@ -98,6 +98,7 @@ function genStage(kind, biome, depth, mod = null) {
   // props sit on floor tiles that touch a wall: purely decorative
   for (const i of s.floor) { const x = i % s.W, y = (i / s.W) | 0; if (s.tiles[(y - 1) * s.W + x] === 1 && rand() < 0.09) s.props.push({ x, y, k: irand(0, 3) }); }
   s.need = kind === 'fight' ? gateNeed(depth) : kind === 'elite' ? Math.round(gateNeed(depth) * 0.6) : 0;
+  s.budget = kind === 'fight' || kind === 'elite' ? Math.round(gateNeed(depth) * 2.5) : 0; s.xpGot = 0; s.dry = false; // this area's growth
   return s;
 }
 function bfs(s, sx, sy) { // 8-way step distance from a tile; -1 where unreachable
@@ -157,7 +158,7 @@ const onScreen = (e, m = 0) => Math.abs(e.x - cam.x) < LW / 2 + m && Math.abs(e.
 
 // ---------- slop ----------
 // how far ahead of the expected level for this depth the curator is: slop catches up, so farming never snowballs
-const overLv = () => (pl ? Math.max(0, pl.lv - (10 + run.depth)) : 0); // a normal run sits near depth + 8 to 10
+const overLv = () => (pl ? Math.max(0, pl.lv - (expectLv() + 3)) : 0); // well past the expected level
 function spawnFoe(type, x, y, o = {}) {
   const d = FOES[type], over = d.prop ? 0 : overLv(), k = d.prop ? 1 + run.depth * 0.08 : hpScale(run.depth) * (o.elite ? 12 : 1) * (o.mini ? 0.35 : 1) * (st?.mod === 'danger' ? 1.15 : 1) * (1 + (st?.flood || 0) * 0.5) * (1 + over * 0.08);
   const e = { type, x, y, hp: d.hp * k, maxHp: d.hp * k, spd: d.spd * (o.elite ? 0.9 : 1) * (o.mini ? 1.25 : 1), dmg: d.dmg * (o.elite ? 1.5 : 1) * (0.8 + run.depth * 0.035) * (1 + (st?.flood || 0) * 0.25) * (1 + over * 0.04), r: d.r * (o.elite ? 1.7 : o.mini ? 0.7 : 1),
@@ -176,9 +177,9 @@ function spawnSpot(minD = 190, maxD = 430) { // a floor tile out of sight but no
 function spawning(dt) {
   if (st.kind === 'boss' || st.cleared) { if (st.kind === 'boss' && boss && boss.kind !== 'snake') bossAdds(dt); return; }
   if (st.t < 4) return; // a breath at the start of every area
-  // linger in one area and the flood rises: it starts 30s after the gate opens (or at 100s at the latest),
+  // linger in one area and the flood rises: it starts 30s after the gate opens (45s in act I while you learn; 100s at the latest),
   // then more slop, tougher, and waves that close in from every side
-  const flood = st.kind === 'fight' || st.kind === 'elite' ? Math.max(0, st.open ? st.t - (st.openT ?? st.t) - 30 : st.t - 100) / 30 : 0; st.flood = flood;
+  const flood = st.kind === 'fight' || st.kind === 'elite' ? Math.max(0, st.open ? st.t - (st.openT ?? st.t) - (run.act === 0 ? 45 : 30) : st.t - 100) / 30 : 0; st.flood = flood;
   if (flood > 0.5) { st.waveT = (st.waveT ?? 0) - dt; if (st.waveT <= 0) { st.waveT = Math.max(5, 14 - flood * 2.5); floodWave(flood); } }
   const mul = (run.flags.praise ? 1.4 : 1) * (run.flags.unplug ? 0.8 : 1) * (st.open ? 0.6 : 1) * (st.mod === 'danger' ? 1.35 : 1) * (1 + flood);
   spawnAcc += spawnRate(run.depth) * mul * dt;
@@ -256,8 +257,20 @@ function hurtPlayer(d, from) {
   if (from && Number.isFinite(from.x) && Number.isFinite(from.y)) { const a = Math.atan2(pl.y - from.y, pl.x - from.x); pl.vx += Math.cos(a) * 60; pl.vy += Math.sin(a) * 60; } // only with a real position
   if (pl.hp <= 0) { pl.hp = 0; endRun('over'); }
 }
+// ---------- growth: it comes from pressing on, not from time spent ----------
+// 1. every fight area holds a fixed amount of growth (2.5x what its gate needs); once it is gathered, gems still
+//    charge the gate but give no xp, so staying longer in one area never makes you stronger.
+// 2. a soft cap by depth: more than one level above the expected level, each extra level halves the xp you get.
+// 3. a safety net (overLv): if a curator still gets well ahead, slop toughens to match.
+const expectLv = () => 7 + run.depth * 1.2;
 function gainXp(v) {
-  pl.xp += v; pl.gems += v; pl.score += v * 5;
+  let x = v;
+  if (st && st.budget) {
+    const left = Math.max(0, st.budget - st.xpGot); x = Math.min(v, left); st.xpGot += v;
+    if (left > 0 && st.xpGot >= st.budget) { st.dry = true; banner = { text: T.dry, t: 0, long: 1 }; sfx('warn'); }
+  }
+  const ahead = pl.lv - expectLv(); if (ahead > 1) x *= Math.pow(0.5, ahead - 1);
+  pl.xp += x; pl.gems += v; pl.score += v * 5;
   if (st && st.need && !st.open) { st.charge = Math.min(st.need, st.charge + v * (run.choice === 'A' ? 1.2 : 1)); if (st.charge >= st.need && st.eliteDead) openGate(); }
   while (pl.xp >= pl.need) { pl.xp -= pl.need; pl.lv++; pl.need = xpNeed(pl.lv); pendingLv++; const ph = CHARS[pl.ci].perLv.hp; if (ph) { pl.maxHp += ph; pl.hp += ph; } }
 }

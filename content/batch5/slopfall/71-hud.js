@@ -23,7 +23,8 @@ function bar(x, y, w, h, k, col, back = 'rgba(255,255,255,.08)') { rr(x, y, w, h
 
 function drawHud() {
   // xp along the very top
-  ctx.fillStyle = 'rgba(255,255,255,.06)'; ctx.fillRect(0, 0, CW, 4); ctx.fillStyle = '#5aa7e0'; ctx.fillRect(0, 0, CW * clamp(pl.xp / pl.need, 0, 1), 4);
+  ctx.fillStyle = 'rgba(255,255,255,.06)'; ctx.fillRect(0, 0, CW, 4); ctx.fillStyle = st && st.dry ? '#4a4f58' : '#5aa7e0'; ctx.fillRect(0, 0, CW * clamp(pl.xp / pl.need, 0, 1), 4);
+  if (st && st.budget && !st.dry) { ctx.fillStyle = 'rgba(94,234,212,.5)'; ctx.fillRect(0, 4, CW * (1 - st.xpGot / st.budget), 2); } // this area's growth left
   // left: hp, weapons, passives
   panel(10, 12, 158, 34, false, 'rgba(10,11,13,.72)');
   txt(`Lv ${pl.lv}`, 22, 29, 12.5, '#cfe8ff', 'left', 800, false); bar(62, 24, 96, 10, pl.hp / pl.maxHp, pl.hp / pl.maxHp < 0.3 ? '#ff5a4f' : '#e0524a');

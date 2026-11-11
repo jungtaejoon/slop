@@ -109,7 +109,7 @@ const TXT = {
       plane: [['편대', ['비행기 +1대', '관통 +1', '폭격: 다 날고 나면 터지며 주변을 친다']], ['추적', ['속도와 선회 +30%', '피해 +30%', '귀환: 두 배 오래 날고 관통 +2']]],
       eraser: [['튕김', ['튕김 +2번', '속도 +30%', '가루: 튕길 때마다 작은 폭발']], ['무거운 지우개', ['피해 +30%', '크게 밀쳐 내고 잠깐 멈춘다', '완전 삭제: 지운 슬롭은 쪼개지지 않고 보석을 더 남긴다']]],
     },
-    flood: '홍수가 차오른다! 출구로 가세요', floodHud: (p) => `홍수 수위 ${p}%`,
+    dry: '이 구역에서 거둘 성장은 다 거뒀다. 더 강해지려면 앞으로 나아가자', flood: '홍수가 차오른다! 출구로 가세요', floodHud: (p) => `홍수 수위 ${p}%`,
     warn: '경고', swarm: '대량 생성이 몰려온다!', next: '▼', skip: '건너뛰기',
   },
   en: {
@@ -218,7 +218,7 @@ const TXT = {
       plane: [['Squadron', ['+1 plane', 'Pierce +1', 'Bombing: planes explode when they are done']], ['Hunter', ['Speed and turning +30%', 'Damage +30%', 'Long flight: twice as long, pierce +2']]],
       eraser: [['Bounce', ['+2 bounces', 'Speed +30%', 'Dust: a small blast on every bounce']], ['Heavy eraser', ['Damage +30%', 'Big knockback and a short stun', 'Full erase: erased slop never splits and leaves an extra gem']]],
     },
-    flood: 'The flood is rising! Get to the exit', floodHud: (p) => `Flood ${p}%`,
+    dry: 'Nothing left to grow on in this area. To get stronger, press on', flood: 'The flood is rising! Get to the exit', floodHud: (p) => `Flood ${p}%`,
     warn: 'WARNING', swarm: 'A mass generation is coming!', next: '▼', skip: 'Skip',
   },
 };
