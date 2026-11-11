@@ -117,7 +117,7 @@ const D = {
   '먼저 내용을 조금 넣어 주세요.': 'Add some content first.', '보는 중…': 'Looking…', '추천을 넣었어요. 이미 쓴 칸은 건드리지 않았어요.': "Filled in suggestions; fields you'd already filled are unchanged.",
   '이 사이트에는 아직 Claude 연결이 설정되지 않았어요.': "Claude isn't connected on this site yet.", '요청이 많아요. 잠시 후 다시 시도해 주세요.': 'Too many requests. Please try again shortly.',
   '추천을 받지 못했어요.': "Couldn't get suggestions.", '올릴 커뮤니티를 골라 주세요.': 'Please choose a community.', '제목을 적어 주세요.': 'Please add a title.',
-  '이미지를 한 장 이상 올려 주세요.': 'Please add at least one image.', '코드를 넣어 주세요.': 'Please add code.', '코드가 200KB를 넘어요.': 'Code is over 200KB.', '본문을 적어 주세요.': 'Please write something.',
+  '이미지를 한 장 이상 올려 주세요.': 'Please add at least one image.', '코드를 넣어 주세요.': 'Please add code.', '코드가 400KB를 넘어요.': 'Code is over 400KB.', '본문을 적어 주세요.': 'Please write something.',
   '올렸어요': 'Posted', '올리지 못했어요. 다시 시도해 주세요.': "Couldn't post. Please try again.",
   // feed
   '커뮤니티가 없어요': 'community does not exist', '주소를 확인하거나, 직접 만들어 보세요.': 'Check the address, or create it yourself.', '인기 글': 'Popular posts',

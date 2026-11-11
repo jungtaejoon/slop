@@ -12,7 +12,7 @@ export const KINDS = { text: ['글', '본문 중심'], link: ['링크', '외부 
 export const FLAIRS = { opinion: '의견', gem: '가치 발견', improve: '개선 제안', question: '질문', info: '출처·정보' };
 export const TOOLS = ['Claude', 'ChatGPT', 'Gemini', 'Midjourney', 'Stable Diffusion', 'DALL·E', 'Flux', 'Suno', 'Udio', 'Sora', 'Runway', 'Cursor', 'Copilot', 'v0', 'Lovable'];
 export const REPORT_REASONS = ['스팸·광고', '악성 코드·위험한 실행물', '혐오·괴롭힘', '개인정보 노출', '저작권 침해', '잘못된 게시판', '기타'];
-export const MAX_CODE = 200 * 1024, MAX_BODY = 40000;
+export const MAX_CODE = 400 * 1024, MAX_BODY = 40000;
 
 export const S = {
   prefs: { sort: 'rec', win: 'week', layout: 'card', csort: 'best', clang: lang === 'en' ? 'en' : 'all' }, // English visitors start on English posts

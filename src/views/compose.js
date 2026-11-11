@@ -75,7 +75,7 @@ function bind(v, f) {
   kindSet(f.kind);
   app.querySelectorAll('[data-kind]').forEach((b) => (b.onclick = () => { st.kindTouched = true; kindSet(b.dataset.kind); draft(); }));
   $('#fCat').onchange = () => { S.lastCommunity = $('#fCat').value; const c = st.byId($('#fCat').value); if (!st.kindTouched && c) kindSet(c.defaultKind); draft(); };
-  const code = $('#fCode'), sz = () => { const b = new Blob([code.value]).size; $('#codeSize').textContent = `${(b / 1024).toFixed(1)} KB / 200 KB`; $('#codeSize').style.color = b > MAX_CODE ? 'var(--warn)' : ''; };
+  const code = $('#fCode'), sz = () => { const b = new Blob([code.value]).size; $('#codeSize').textContent = `${(b / 1024).toFixed(1)} KB / 400 KB`; $('#codeSize').style.color = b > MAX_CODE ? 'var(--warn)' : ''; };
   const runPv = () => { if (!code.value.trim()) return; $('#pv').replaceChildren(sandboxFrame(code.value, '미리보기')); $('#pvWrap').hidden = false; };
   code.oninput = () => { sz(); draft(); }; sz();
   code.onkeydown = (e) => { if (e.key === 'Tab' && !e.shiftKey) { e.preventDefault(); code.setRangeText('  ', code.selectionStart, code.selectionEnd, 'end'); } };
@@ -141,7 +141,7 @@ async function submit(v) {
   const st = $('#subStatus'), btn = $('#submitBtn'), f = readForm();
   const err = !f.communityId ? '올릴 커뮤니티를 골라 주세요.' : !f.title ? '제목을 적어 주세요.' : f.kind === 'link' && !safeUrl(f.url) ? 'http:// 또는 https://로 시작하는 링크 주소를 넣어 주세요.'
     : f.kind === 'image' && !f.images.length ? '이미지를 한 장 이상 올려 주세요.' : (f.kind === 'html' || f.kind === 'code') && !f.code.trim() ? '코드를 넣어 주세요.'
-    : new Blob([f.code]).size > MAX_CODE ? '코드가 200KB를 넘어요.' : f.kind === 'text' && !f.body ? '본문을 적어 주세요.' : '';
+    : new Blob([f.code]).size > MAX_CODE ? '코드가 400KB를 넘어요.' : f.kind === 'text' && !f.body ? '본문을 적어 주세요.' : '';
   if (err) { st.textContent = err; return; }
   btn.disabled = true; st.textContent = '올리는 중…';
   try {
