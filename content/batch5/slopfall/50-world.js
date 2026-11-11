@@ -213,7 +213,7 @@ function kill(e) {
   if (e.dead) return; e.dead = true;
   if (e.prop) { breakProp(e); return; }
   pl.kills++; pl.score += Math.round(e.maxHp); pl.combo++;
-  if (CHARS[pl.ci].bloodHeal && pl.kills % CHARS[pl.ci].bloodHeal === 0) pl.hp = Math.min(pl.maxHp, pl.hp + 1); // Mina: every 15 kills heal 1 pl.bestCombo = Math.max(pl.bestCombo, pl.combo);
+  if (CHARS[pl.ci].bloodHeal && pl.kills % CHARS[pl.ci].bloodHeal === 0) pl.hp = Math.min(pl.maxHp, pl.hp + 1); /* Mina: every 15 kills heal 1 */ pl.bestCombo = Math.max(pl.bestCombo, pl.combo);
   if (WEAPONS[curSrc]) pl.wk[curSrc] = (pl.wk[curSrc] || 0) + 1;
   burst(e.x, e.y, e.boss ? 40 : e.elite ? 18 : 7, e.boss ? '#f6d55c' : e.elite ? '#fb7185' : '#e9e4ff');
   sfx(e.boss ? 'boom' : 'kill');
