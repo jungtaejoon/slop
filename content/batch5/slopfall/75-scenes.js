@@ -40,14 +40,16 @@ function stageWon() {
   const kills = pl.kills - st.kills0, base = st.kind === 'boss' ? 100 : st.kind === 'elite' ? 70 : st.kind === 'gen' ? 70 : st.kind === 'ambush' ? 30 : 25;
   const gold = Math.round(base + run.depth * 3 + kills / 8) * (st.biome === 'news' ? 1.3 : 1) * (st.mod === 'danger' ? 2 : 1) | 0;
   run.gold += gold; run.flags.praise = false; if (stageFrom === 'node') run.areas++;
-  clearInfo = { t: 0, time: st.t, kills, gold, boss: st.kind === 'boss' }; sfx('lvl'); setState('clear');
+  // moving on pays: clearing a fight area on the road gives a chest (lingering for the flood does not)
+  clearInfo = { t: 0, time: st.t, kills, gold, boss: st.kind === 'boss', chest: st.kind === 'fight' && stageFrom === 'node' }; sfx('lvl'); setState('clear');
 }
 function afterClear() {
   const c = clearInfo; clearInfo = null;
   if (c.boss) {
     if (run.act === 3) return; // the ending runs from the boss kill
     run.act++; run.map = genAct(run.act); run.at = null; run.path = []; run.flags.unplug = false; actIntro(run.act);
-  } else toMap();
+  } else if (c.chest) openChest(false, 'map');
+  else toMap();
 }
 // ---------- camp ----------
 let campMode = 'pick';

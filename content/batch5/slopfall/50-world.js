@@ -156,11 +156,13 @@ function nearest(x, y, maxR) {
 const onScreen = (e, m = 0) => Math.abs(e.x - cam.x) < LW / 2 + m && Math.abs(e.y - cam.y) < LH / 2 + m;
 
 // ---------- slop ----------
+// how far ahead of the expected level for this depth the curator is: slop catches up, so farming never snowballs
+const overLv = () => (pl ? Math.max(0, pl.lv - (10 + run.depth)) : 0); // a normal run sits near depth + 8 to 10
 function spawnFoe(type, x, y, o = {}) {
-  const d = FOES[type], k = d.prop ? 1 + run.depth * 0.08 : hpScale(run.depth) * (o.elite ? 12 : 1) * (o.mini ? 0.35 : 1) * (st?.mod === 'danger' ? 1.15 : 1) * (1 + (st?.flood || 0) * 0.5);
-  const e = { type, x, y, hp: d.hp * k, maxHp: d.hp * k, spd: d.spd * (o.elite ? 0.9 : 1) * (o.mini ? 1.25 : 1), dmg: d.dmg * (o.elite ? 1.5 : 1) * (0.8 + run.depth * 0.035) * (1 + (st?.flood || 0) * 0.25), r: d.r * (o.elite ? 1.7 : o.mini ? 0.7 : 1),
-    xp: d.xp * (o.elite ? 0 : 1) * Math.max(0.15, 1 - (st?.flood || 0) * 0.4) /* flood slop is not worth farming */, elite: !!o.elite, mini: !!o.mini, scale: o.elite ? 1.7 : o.mini ? 0.7 : 1, flash: 0, kx: 0, ky: 0, stun: 0, anim: rand() * 2, t: rand() * 2, spawnIn: 0.3,
-    lastScis: -9, dashing: 0, vx: 0, vy: 0, guard: !!o.guard, prop: !!d.prop };
+  const d = FOES[type], over = d.prop ? 0 : overLv(), k = d.prop ? 1 + run.depth * 0.08 : hpScale(run.depth) * (o.elite ? 12 : 1) * (o.mini ? 0.35 : 1) * (st?.mod === 'danger' ? 1.15 : 1) * (1 + (st?.flood || 0) * 0.5) * (1 + over * 0.08);
+  const e = { type, x, y, hp: d.hp * k, maxHp: d.hp * k, spd: d.spd * (o.elite ? 0.9 : 1) * (o.mini ? 1.25 : 1), dmg: d.dmg * (o.elite ? 1.5 : 1) * (0.8 + run.depth * 0.035) * (1 + (st?.flood || 0) * 0.25) * (1 + over * 0.04), r: d.r * (o.elite ? 1.7 : o.mini ? 0.7 : 1),
+    xp: d.xp * (o.elite ? 0 : 1) * Math.max(0.15, 1 - (st?.flood || 0) * 0.4) /* the flood is barely worth farming */, elite: !!o.elite, mini: !!o.mini, scale: o.elite ? 1.7 : o.mini ? 0.7 : 1, flash: 0, kx: 0, ky: 0, stun: 0, anim: rand() * 2, t: rand() * 2, spawnIn: 0.3,
+    lastScis: -9, dashing: 0, vx: 0, vy: 0, guard: !!o.guard, prop: !!d.prop, noLoot: !!o.noLoot };
   foes.push(e); return e;
 }
 function weighted(mix) { let s = 0; for (const [, w] of mix) s += w; let r = rand() * s; for (const [t, w] of mix) { if ((r -= w) <= 0) return t; } return mix[0][0]; }
@@ -174,9 +176,9 @@ function spawnSpot(minD = 190, maxD = 430) { // a floor tile out of sight but no
 function spawning(dt) {
   if (st.kind === 'boss' || st.cleared) { if (st.kind === 'boss' && boss && boss.kind !== 'snake') bossAdds(dt); return; }
   if (st.t < 4) return; // a breath at the start of every area
-  // linger in one area and the flood rises: it starts 20s after the gate opens (or at 90s at the latest),
+  // linger in one area and the flood rises: it starts 30s after the gate opens (or at 100s at the latest),
   // then more slop, tougher, and waves that close in from every side
-  const flood = st.kind === 'fight' || st.kind === 'elite' ? Math.max(0, st.open ? st.t - (st.openT ?? st.t) - 20 : st.t - 90) / 30 : 0; st.flood = flood;
+  const flood = st.kind === 'fight' || st.kind === 'elite' ? Math.max(0, st.open ? st.t - (st.openT ?? st.t) - 30 : st.t - 100) / 30 : 0; st.flood = flood;
   if (flood > 0.5) { st.waveT = (st.waveT ?? 0) - dt; if (st.waveT <= 0) { st.waveT = Math.max(5, 14 - flood * 2.5); floodWave(flood); } }
   const mul = (run.flags.praise ? 1.4 : 1) * (run.flags.unplug ? 0.8 : 1) * (st.open ? 0.6 : 1) * (st.mod === 'danger' ? 1.35 : 1) * (1 + flood);
   spawnAcc += spawnRate(run.depth) * mul * dt;
@@ -210,11 +212,13 @@ function hurt(e, dmg, kx = 0, ky = 0, kb = 1) {
 function kill(e) {
   if (e.dead) return; e.dead = true;
   if (e.prop) { breakProp(e); return; }
-  pl.kills++; pl.score += Math.round(e.maxHp); pl.combo++; pl.bestCombo = Math.max(pl.bestCombo, pl.combo);
+  pl.kills++; pl.score += Math.round(e.maxHp); pl.combo++;
+  if (CHARS[pl.ci].bloodHeal && pl.kills % CHARS[pl.ci].bloodHeal === 0) pl.hp = Math.min(pl.maxHp, pl.hp + 1); // Mina: every 15 kills heal 1 pl.bestCombo = Math.max(pl.bestCombo, pl.combo);
   if (WEAPONS[curSrc]) pl.wk[curSrc] = (pl.wk[curSrc] || 0) + 1;
   burst(e.x, e.y, e.boss ? 40 : e.elite ? 18 : 7, e.boss ? '#f6d55c' : e.elite ? '#fb7185' : '#e9e4ff');
   sfx(e.boss ? 'boom' : 'kill');
   if (e.boss) { bossDown(e); return; }
+  if (e.noLoot) { if (FOES[e.type].splits && !e.mini) for (let i = 0; i < 2; i++) { const m = spawnFoe(e.type, e.x + rnd(-5, 5), e.y + rnd(-5, 5), { mini: true }); m.spawnIn = 0; m.noLoot = true; m.xp = 0; } return; } // flood slop: nothing to farm
   if (e.elite) {
     items.push({ k: 'chest', x: e.x, y: e.y, t: 0 }, { k: 'kimbap', x: e.x + 12, y: e.y, t: 0 }); shake = Math.max(shake, 4);
     if (e.guard) { st.eliteDead = true; if (st.kind === 'ambush') stageWon(); }

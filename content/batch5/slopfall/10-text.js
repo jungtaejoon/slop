@@ -13,8 +13,8 @@ const TXT = {
       '색인을 탑까지 가져가면 탑은 다시 배울 것이다.\n길은 여러 갈래다. 어느 길로 갈지는 당신이 고른다.',
     ],
     chars: [
-      ['미나', '야간 큐레이터', '체력 80 · 빠르고 대시가 자주 된다. 체력이 낮을수록 강해져서, 거의 쓰러질 때는 공격력이 두 배를 넘는다. 레벨마다 공격력 +3.5%. 기술: 붓 · 가위 · 커터칼 · 먹물 자국 · 빨간 펜 원 · 테이프. 먹물은 움직여야 남는다.',
-        '체력 80 · 빠름 · 체력이 낮을수록 공격력 최대 +130% · 레벨마다 공격력 +3.5%'],
+      ['미나', '야간 큐레이터', '체력 90 · 빠르고 대시가 자주 된다. 체력이 낮을수록 강해져서, 거의 쓰러질 때는 공격력이 두 배를 넘는다. 레벨마다 공격력 +3.5%, 15마리를 지울 때마다 체력 1 회복. 기술: 붓 · 가위 · 커터칼 · 먹물 자국 · 빨간 펜 원 · 테이프. 먹물은 움직여야 남는다.',
+        '체력 90 · 빠름 · 체력이 낮을수록 공격력 최대 +130% · 레벨마다 공격력 +3.5%'],
       ['도윤', '교정 담당', '체력 100. 맞지 않고 계속 지우면 콤보가 쌓여 모든 무기가 최대 35% 빨라진다. 한 대라도 맞으면 콤보가 끊긴다. 치명타 12%에서 시작해 레벨마다 오른다. 기술: 형광펜 · 종이비행기 · 취소선 · 스테이플러 · 쉼표 지뢰 · 포스트잇.',
         '체력 100 · 안 맞고 지우면 콤보로 최대 35% 빨라짐 · 맞으면 끊김 · 치명타가 레벨마다 상승'],
       ['옥 할머니', '40년 차 감정사', '체력 160 · 느리다. 받는 피해 -25%, 저절로 조금씩 회복하고, 부딪힌 슬롭에게 반격한다. 레벨마다 최대 체력 +8, 최대 체력이 늘수록 공격력도 오른다. 기술: 감정 도장 · 지우개 · 돋보기 햇빛 · 주판알 · 찻주전자 · 종.',
@@ -122,8 +122,8 @@ const TXT = {
       'Carry it to the tower and the tower can learn again.\nThere are many roads. You choose which to take.',
     ],
     chars: [
-      ['Mina', 'Night curator', '80 HP · fast, dashes often. The lower her health, the harder she hits: near the end, more than double damage. +3.5% damage per level. Skills: Brush, Scissors, Cutter Knife, Ink Trail, Red-Pen Circle, Tape. Ink only flows while she moves.',
-        '80 HP · fast · up to +130% damage at low health · +3.5% damage per level'],
+      ['Mina', 'Night curator', '90 HP · fast, dashes often. The lower her health, the harder she hits: near the end, more than double damage. +3.5% damage per level, and 1 HP back every 15 kills. Skills: Brush, Scissors, Cutter Knife, Ink Trail, Red-Pen Circle, Tape. Ink only flows while she moves.',
+        '90 HP · fast · up to +130% damage at low health · +3.5% damage per level'],
       ['Doyun', 'Proofreader', "100 HP. Keep erasing without getting hit and a combo builds up, making every weapon up to 35% faster. One hit breaks it. Crits start at 12% and grow every level. Skills: Highlighter, Paper Plane, Strikethrough, Stapler, Comma Mine, Sticky Note.",
         '100 HP · an unbroken combo makes weapons up to 35% faster · crits grow per level'],
       ['Granny Ok', 'Appraiser for 40 years', '160 HP · slow. Takes 25% less damage, slowly regenerates, and hits back at slop that bumps into her. +8 max HP per level, and the more max HP she has, the harder she hits. Skills: Seal Stamp, Eraser, Sunlight Loupe, Abacus Beads, Teapot, Bell.',

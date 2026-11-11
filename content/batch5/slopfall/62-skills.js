@@ -231,7 +231,7 @@ function drawAirShots(t) {
 // the flood: a ring of slop closing in on someone who will not move on
 function floodWave(p) {
   const n = Math.min(44, 10 + run.depth + Math.floor(p * 8));
-  for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2, [x, y] = floorNear(pl.x + Math.cos(a) * 130, pl.y + Math.sin(a) * 105); spawnFoe(i % 3 === 0 ? 'eye' : weighted(st.B.mix), x, y).spawnIn = 0.6; } // a third of every wave shoots from afar
-  for (let k = 0; k < Math.min(4, Math.floor(p)); k++) { const a = rand() * 7, [x, y] = floorNear(pl.x + Math.cos(a) * 140, pl.y + Math.sin(a) * 110); const e = spawnFoe(weighted(st.B.mix), x, y, { elite: true }); e.xp = 0; e.dmg *= 1 + p * 0.2; }
+  for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2, [x, y] = floorNear(pl.x + Math.cos(a) * 130, pl.y + Math.sin(a) * 105); spawnFoe(i % 3 === 0 ? 'eye' : weighted(st.B.mix), x, y, { noLoot: true }).spawnIn = 0.6; } // a third of every wave shoots from afar
+  for (let k = 0; k < Math.min(4, Math.floor(p)); k++) { const a = rand() * 7, [x, y] = floorNear(pl.x + Math.cos(a) * 140, pl.y + Math.sin(a) * 110); const e = spawnFoe(weighted(st.B.mix), x, y, { elite: true, noLoot: true }); e.xp = 0; e.dmg *= 1 + p * 0.2; } // wave elites drop no chest
   banner = { text: T.flood, t: 0 }; sfx('warn');
 }
