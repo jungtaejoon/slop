@@ -188,7 +188,7 @@ const D = {
   '님이 내 댓글에 답글을 달았어요': ' replied to your comment', '님이 내 글에 의견을 남겼어요': ' commented on your post', '님이 내 제안을 새 버전에 반영했어요': ' used your suggestion in a new version',
   '내 글이 보석이 됐어요!': 'Your post became a gem!', '누군가': 'Someone', '아직 알림이 없어요. 누군가 내 글에 의견을 남기거나, 내 댓글에 답하거나, 내 제안이 반영되면 여기에 떠요.': "No notifications yet. You'll see comments on your posts, replies, and suggestions that get used here.",
   // post page
-  '글을 찾을 수 없어요. 삭제되었거나 운영자가 숨긴 글일 수 있어요.': 'Post not found. It may have been deleted or hidden by a moderator.', '다시 실행': 'Restart', '전체화면': 'Fullscreen', '코드 복사': 'Copy code',
+  '글을 찾을 수 없어요. 삭제되었거나 운영자가 숨긴 글일 수 있어요.': 'Post not found. It may have been deleted or hidden by a moderator.', '다시 실행': 'Restart', '전체화면': 'Fullscreen', '전체화면 끝내기': 'Exit fullscreen', '실행물을 불러오는 중…': 'Loading the piece…', '글을 불러오는 중…': 'Loading the post…', '코드 복사': 'Copy code',
   '사용한 프롬프트': 'Prompt used', '댓글 잠김': 'Comments locked', '↳ 리믹스 원본:': '↳ Remix of', '원본 글': 'original post', '. 작성자와 운영자에게만 보여요.': '. Only the author and moderators can see it.',
   '판정을 더 받아 보세요.': 'Get more verdicts.', '친구나 단톡방, 관련 커뮤니티에 공유하면 보석인지 슬롭인지 금방 모여요.': 'Share it with friends, group chats or related communities and the verdicts come in fast.',
   '최신 보기': 'See latest', '이 브라우저에서는 전체화면을 쓸 수 없어요': "Fullscreen isn't available in this browser", '코드를 복사했어요': 'Code copied', '복사하지 못했어요. 코드 탭에서 직접 선택해 주세요': "Couldn't copy. Select it in the Code tab.",

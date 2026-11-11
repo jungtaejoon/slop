@@ -8,7 +8,7 @@ export async function renderPost(v) {
   closePost();
   const d = S.d = { id: v.id, sel: v.n, versions: [], comments: [], loaded: false, tab: 'run', collapsed: new Set(), expanded: new Set(), replyTo: null, editing: null, drafts: {}, flair: 'opinion', delArm: false };
   const pre = app.querySelector('.article.prerender'); // static copy on /p/<id>/ pages: keep it until the post loads
-  app.innerHTML = `<a class="crumb" href="#/" id="crumb">← 게시판으로</a><div class="layout"><div style="min-width:0"><div id="pArticle">${pre ? pre.outerHTML : '<div class="skel" style="height:320px"></div>'}</div><div id="pThread"></div></div><aside class="side" id="pSide"></aside></div>`;
+  app.innerHTML = `<a class="crumb" href="#/" id="crumb">← 게시판으로</a><div class="layout"><div style="min-width:0"><div id="pArticle">${pre ? pre.outerHTML : '<div class="skel skel-load" style="height:320px" role="status"><span class="spin" aria-hidden="true"></span><span>글을 불러오는 중…</span></div>'}</div><div id="pThread"></div></div><aside class="side" id="pSide"></aside></div>`;
   try {
     const [post, versions, comments] = await Promise.all([api.getPost(v.id), api.getVersions(v.id), api.listComments(v.id)]);
     if (S.d !== d) return;
@@ -90,12 +90,13 @@ function drawArticle() {
   const vsel = $('#verSel'); if (vsel) vsel.onchange = () => go(`/p/${p.id}${+vsel.value === latest ? '' : '/v/' + vsel.value}`);
   const sb = $('#stageBody');
   if (sb) {
-    if (d.tab === 'run') { const r = document.createElement('div'); r.className = 'runner'; r.append(sandboxFrame(v.code || '')); sb.append(r); }
+    if (d.tab === 'run') mountRunner(sb, v.code || '');
     else if (d.tab === 'code') sb.innerHTML = `<pre class="code">${esc(v.code || '')}</pre>`;
     else sb.innerHTML = diffHtml(prev.code || '', v.code || '');
     el.querySelectorAll('[data-ptab]').forEach((b) => (b.onclick = () => { d.tab = b.dataset.ptab; drawArticle(); }));
-    const rr = $('#rerun'); if (rr) rr.onclick = () => drawArticle();
-    const fs = $('#fs'); if (fs) fs.onclick = () => $('#pStage').requestFullscreen?.().catch(() => toast('이 브라우저에서는 전체화면을 쓸 수 없어요'));
+    // restarting only swaps the frame, so fullscreen stays on
+    const rr = $('#rerun'); if (rr) rr.onclick = () => { mountRunner(sb, v.code || ''); if (isFull($('#pStage'))) focusRunner($('#pStage')); };
+    const fs = $('#fs'); if (fs) bindFullscreen($('#pStage'), fs);
     const cp = $('#copy'); if (cp) cp.onclick = () => navigator.clipboard?.writeText(v.code || '').then(() => toast('코드를 복사했어요'), () => toast('복사하지 못했어요. 코드 탭에서 직접 선택해 주세요'));
   }
   const del = $('#delPost');
@@ -119,6 +120,46 @@ document.addEventListener('change', async (e) => {
   if (e.target.id !== 'moveCat' || !S.d?.post) return; const p = S.d.post, cid = e.target.value, c = S.comms.get(cid);
   try { await api.modUpdatePost(p.id, { community_id: cid }); p.communityId = cid; p.community = { id: cid, slug: c.slug, name: c.name }; await api.log('move', 'post', p.id, p.title, c.name, cid); toast(`${c.name}(으)로 옮겼어요`); drawArticle(); } catch (err) { toast(errMsg(err, '옮기지 못했어요')); }
 });
+/* ---------- the run tab: a loading cover until the frame is up, and fullscreen ---------- */
+function mountRunner(sb, code) {
+  const r = document.createElement('div'), f = sandboxFrame(code), cover = document.createElement('div');
+  r.className = 'runner loading';
+  cover.className = 'run-load'; cover.setAttribute('role', 'status');
+  cover.innerHTML = '<span class="spin" aria-hidden="true"></span><span>실행물을 불러오는 중…</span>';
+  // the frame's load event fires once its scripts have run; wait two frames so the first picture is drawn
+  const ready = () => requestAnimationFrame(() => requestAnimationFrame(() => r.classList.remove('loading')));
+  f.addEventListener('load', ready, { once: true });
+  setTimeout(() => r.classList.remove('loading'), 20000); // never leave the cover up for good
+  r.append(f, cover); sb.replaceChildren(r);
+}
+const nativeFull = () => document.fullscreenElement || document.webkitFullscreenElement || null;
+function isFull(stage) { return !!stage && (nativeFull() === stage || stage.classList.contains('pseudo-fs')); }
+function focusRunner(stage) { setTimeout(() => stage.querySelector('iframe')?.focus(), 60); }
+let pseudoEsc = null;
+function bindFullscreen(stage, btn) {
+  const sync = () => {
+    const on = isFull(stage); btn.textContent = on ? '전체화면 끝내기' : '전체화면'; btn.setAttribute('aria-pressed', String(on));
+  };
+  const exitPseudo = () => { stage.classList.remove('pseudo-fs'); sync(); };
+  btn.onclick = async () => {
+    if (isFull(stage)) {
+      if (stage.classList.contains('pseudo-fs')) exitPseudo();
+      else await Promise.resolve((document.exitFullscreen || document.webkitExitFullscreen)?.call(document)).catch(() => {});
+      return;
+    }
+    const req = stage.requestFullscreen || stage.webkitRequestFullscreen;
+    let ok = false;
+    if (req) { try { await req.call(stage); ok = nativeFull() === stage; } catch { ok = false; } }
+    // phones without the Fullscreen API (iPhone Safari): fill the window instead
+    if (!ok) stage.classList.add('pseudo-fs');
+    sync(); focusRunner(stage);
+  };
+  stage.onfullscreenchange = stage.onwebkitfullscreenchange = () => { sync(); if (isFull(stage)) focusRunner(stage); };
+  if (pseudoEsc) removeEventListener('keydown', pseudoEsc);
+  pseudoEsc = (e) => { if (e.key === 'Escape' && stage.isConnected && stage.classList.contains('pseudo-fs')) exitPseudo(); };
+  addEventListener('keydown', pseudoEsc);
+}
+
 export function redrawPost() { if (S.d) { drawArticle(); drawThread(); drawSide(); } }
 
 /* ---------- comments ---------- */

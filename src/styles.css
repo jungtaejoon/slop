@@ -166,9 +166,21 @@ details.prompt pre{white-space:pre-wrap;overflow-wrap:anywhere;font-family:var(-
 .stage-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px 8px;border-bottom:1px solid var(--line)}
 .stage-bar .sp{flex:1}
 .stage pre.code{border-radius:0;margin:0}
-.runner{height:min(66vh,580px);background:#fff}
+.runner{position:relative;height:min(66vh,580px);background:#fff}
 .runner iframe{width:100%;height:100%;border:0;display:block;background:#fff}
-.stage:fullscreen .runner{height:calc(100% - 46px)}
+/* loading cover over the frame until the piece has started */
+.run-load{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:var(--surface);color:var(--muted);font-size:14px;transition:opacity .25s,visibility .25s}
+.runner:not(.loading) .run-load{opacity:0;visibility:hidden;pointer-events:none}
+.spin{width:30px;height:30px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--gem);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(1turn)}}
+/* fullscreen: the bar on top, the piece fills the rest (bar height varies when it wraps) */
+.stage:fullscreen,.stage.pseudo-fs{display:flex;flex-direction:column;border:0;border-radius:0;width:100%;height:100%}
+.stage:-webkit-full-screen{display:flex;flex-direction:column;border:0;border-radius:0;width:100%;height:100%}
+.stage.pseudo-fs{position:fixed;inset:0;z-index:1000;height:100dvh;padding-top:env(safe-area-inset-top)}
+.stage:fullscreen #stageBody,.stage.pseudo-fs #stageBody,.stage:-webkit-full-screen #stageBody{flex:1;min-height:0;display:flex;flex-direction:column;overflow:auto}
+.stage:fullscreen .runner,.stage.pseudo-fs .runner,.stage:-webkit-full-screen .runner{flex:1;height:auto;min-height:0}
+.skel-load{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--muted);font-size:14px}
+.stage-bar .btn[aria-pressed="true"]{border-color:var(--gem);color:var(--gem)}
 .diff{max-height:560px;overflow:auto;font-family:var(--f-mono);font-size:12.5px;line-height:1.55;background:var(--sunk);border-radius:8px}
 .diff div{white-space:pre;padding:0 12px}
 .diff .a{background:var(--ok-soft);color:var(--ok)}
