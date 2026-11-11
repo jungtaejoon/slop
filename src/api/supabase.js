@@ -7,7 +7,7 @@ import { lang as uiLang } from '../i18n.js';
 // explicit FK names: votes/saves tables also link posts and comments to profiles,
 // so a bare profiles() embed is ambiguous for PostgREST
 // where sign-in e-mails send people back to: the public site when running inside the iOS app
-const authReturn = () => (/^https?:$/.test(location.protocol) ? location.origin + location.pathname : 'https://jungtaejoon.github.io/slop/');
+const authReturn = () => (/^https?:$/.test(location.protocol) ? location.origin + location.pathname : 'https://slop.ai.kr/');
 const PCOLS = '(id,username,display_name,avatar_url)';
 const POST_AUTHOR = 'author:profiles!posts_author_id_fkey' + PCOLS;
 const COMMENT_AUTHOR = 'author:profiles!comments_author_id_fkey' + PCOLS;

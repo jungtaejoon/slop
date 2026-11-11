@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "io.github.jungtaejoon.slop",
+    "sha256_cert_fingerprints": ["FF:DD:F3:41:57:E6:16:61:16:0E:19:C4:96:84:9C:50:37:BC:19:1D:8C:AA:45:AC:AA:50:F5:36:9D:16:37:23"]
+  }
+}]

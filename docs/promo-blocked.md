@@ -1,6 +1,6 @@
 # 막혀 있는 홍보처: 준비 상황과 할 일
 
-정리한 날: 2026-11-10 · 사이트: https://jungtaejoon.github.io/slop/
+정리한 날: 2026-11-10 · 사이트: https://slop.ai.kr/
 
 지금 사이트 상태: 글 59개(실행물 30개, 한국어 33개 · 영어 26개), 커뮤니티 12개, 판정 17개, 댓글 0개, 가입 회원은 운영자 1명.
 
@@ -33,7 +33,7 @@
 제목: `Slop - AI로 만든 앱·글·그림을 바로 써 보고 보석/슬롭으로 판정하는 커뮤니티`
 (Show 타입으로 고르면 앞에 "Show GN:"이 자동으로 붙어요)
 
-URL: `https://jungtaejoon.github.io/slop/`
+URL: `https://slop.ai.kr/`
 
 본문:
 
@@ -116,7 +116,7 @@ Body:
 >
 > Most of the first posts are things I made with Claude (a paint-mixing puzzle, a group expense splitter, a Monty Hall simulator, a drum machine).
 >
-> https://jungtaejoon.github.io/slop/
+> https://slop.ai.kr/
 >
 > I'd love feedback on whether gem/slop voting actually helps find the good stuff.
 

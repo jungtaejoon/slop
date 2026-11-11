@@ -1,6 +1,6 @@
 # English launch drafts
 
-Site: https://jungtaejoon.github.io/slop/
+Site: https://slop.ai.kr/
 
 ## X (English)
 
@@ -8,7 +8,7 @@ People are quick to call AI output "slop". But useful and fun things hide in the
 
 I built Slop: a Reddit-style place to share things you made with AI, run them right on the page, and vote ▲ gem / ▼ slop. Every post keeps its versions, so feedback turns into v2.
 
-https://jungtaejoon.github.io/slop/
+https://slop.ai.kr/
 
 ## Hacker News (Show HN)
 
@@ -16,7 +16,7 @@ https://jungtaejoon.github.io/slop/
 
 Title: Show HN: Slop – share AI-made things and vote gem or slop
 
-URL: https://jungtaejoon.github.io/slop/
+URL: https://slop.ai.kr/
 
 First comment:
 
@@ -40,7 +40,7 @@ Name: Slop
 
 Tagline (60 chars max): Find the gems hiding in AI-made stuff
 
-Link: https://jungtaejoon.github.io/slop/
+Link: https://slop.ai.kr/
 
 Topics: Artificial Intelligence, Community, Web App
 

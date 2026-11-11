@@ -66,7 +66,7 @@ export const BASE_PATH = new URL(document.baseURI).pathname.replace(/[^/]*$/, ''
 // inside the iOS app (Capacitor) the page is served from capacitor://localhost, so links meant
 // for other people and sign-in e-mails must point at the public site instead
 export const isNativeApp = !/^https?:$/.test(location.protocol) || !!window.Capacitor?.isNativePlatform?.();
-export const PUBLIC_SITE = 'https://jungtaejoon.github.io/slop/';
+export const PUBLIC_SITE = 'https://slop.ai.kr/';
 export const siteBase = () => (isNativeApp ? PUBLIC_SITE : location.origin + BASE_PATH);
 export function currentHash() {
   if (location.hash.replace(/^#\/?/, '')) return location.hash;

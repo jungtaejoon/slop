@@ -25,8 +25,8 @@
 - 부제(30자 이내): `Judge AI-made apps and art` / 한국어: `AI 결과물, 보석일까 슬롭일까`
 - 카테고리: 엔터테인먼트 (보조: 소셜 네트워킹)
 - 연령 등급: 사용자 생성 콘텐츠가 있으므로 설문에서 해당 항목을 표시 → 보통 12+ 또는 17+
-- 개인정보처리방침 URL: `https://jungtaejoon.github.io/slop/privacy/`
-- 지원 URL: `https://jungtaejoon.github.io/slop/` · 연락처: jungtaejoon@gmail.com
+- 개인정보처리방침 URL: `https://slop.ai.kr/privacy/`
+- 지원 URL: `https://slop.ai.kr/` · 연락처: jungtaejoon@gmail.com
 - 설명 문구: `docs/android-release.md`의 "자세한 설명"과 같은 내용을 써요.
 - 앱 개인정보(App Privacy): 이메일 주소, 사용자 ID, 사용자 콘텐츠(사진·글) → 앱 기능용, 사용자와 연결됨, 추적 없음
 - 심사용 메모: "로그인 없이 둘러보기와 판정이 가능하고, 이메일로 바로 가입할 수 있어요(메일 확인 없음). 계정 삭제는 설정 → 계정 삭제에 있어요."

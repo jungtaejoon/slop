@@ -22,7 +22,7 @@ plugins {
 
 def twaManifest = [
     applicationId: 'io.github.jungtaejoon.slop',
-    hostName: 'jungtaejoon.github.io', // The domain being opened in the TWA.
+    hostName: 'slop.ai.kr', // The domain being opened in the TWA.
     launchUrl: '/slop/#/', // The start path for the TWA. Must be relative to the domain.
     name: 'Slop', // The application name.
     launcherName: 'Slop', // The name shown on the Android Launcher.
@@ -39,7 +39,7 @@ def twaManifest = [
     // - short_name: Shorter string used if |name| is too long.
     // - url: Absolute path of the URL to launch the app with (e.g '/create').
     // - icon: Name of the resource in the drawable folder to use as an icon.
-    shortcuts: [[name:'Swipe', short_name:'Swipe', url:'https://jungtaejoon.github.io/slop/#/shorts', icon:'shortcut_0'],[name:'Judge', short_name:'Judge', url:'https://jungtaejoon.github.io/slop/#/judge', icon:'shortcut_1'],[name:'New post', short_name:'Post', url:'https://jungtaejoon.github.io/slop/#/submit', icon:'shortcut_2']],
+    shortcuts: [[name:'Swipe', short_name:'Swipe', url:'https://slop.ai.kr/#/shorts', icon:'shortcut_0'],[name:'Judge', short_name:'Judge', url:'https://slop.ai.kr/#/judge', icon:'shortcut_1'],[name:'New post', short_name:'Post', url:'https://slop.ai.kr/#/submit', icon:'shortcut_2']],
     // The duration of fade out animation in milliseconds to be played when removing splash screen.
     splashScreenFadeOutDuration: 300,
     generatorApp: 'unknown', // Application that generated the Android Project
@@ -76,12 +76,12 @@ android {
             // The URL the Web Manifest for the Progressive Web App that the TWA points to. This
             // is used by Chrome OS and Meta Quest to open the Web version of the PWA instead of
             // the TWA, as it will probably give a better user experience for non-mobile devices.
-            resValue "string", "webManifestUrl", 'https://jungtaejoon.github.io/slop/manifest.webmanifest'
+            resValue "string", "webManifestUrl", 'https://slop.ai.kr/manifest.webmanifest'
         
 
         
             // This is used by Meta Quest.
-            resValue "string", "fullScopeUrl", 'https://jungtaejoon.github.io/slop/'
+            resValue "string", "fullScopeUrl", 'https://slop.ai.kr/'
         
 
         

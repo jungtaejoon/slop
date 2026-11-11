@@ -17,7 +17,7 @@ import { createCardRenderer, postCardSvg, communityCardSvg, isKorean } from './o
 import { LEGAL, EFFECTIVE } from '../src/legal-content.js';
 
 const URL_ = process.env.VITE_SUPABASE_URL, KEY = process.env.VITE_SUPABASE_ANON_KEY;
-const SITE = (process.env.SITE_URL || 'https://jungtaejoon.github.io/slop').replace(/\/?$/, '/');
+const SITE = (process.env.SITE_URL || 'https://slop.ai.kr').replace(/\/?$/, '/');
 const OUT = 'dist';
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const clip = (s, n) => { const t = String(s || '').replace(/[#*`>\[\]]/g, '').replace(/\s+/g, ' ').trim(); return t.length > n ? t.slice(0, n - 1) + '…' : t; };

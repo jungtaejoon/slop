@@ -5,10 +5,10 @@ import { homedir } from 'node:os';
 const require = createRequire(`${homedir()}/.bubblewrap/cli/node_modules/`);
 const { TwaManifest, TwaGenerator, ConsoleLog } = require('@bubblewrap/core');
 
-const twa = await TwaManifest.fromWebManifest('https://jungtaejoon.github.io/slop/manifest.webmanifest');
+const twa = await TwaManifest.fromWebManifest('https://slop.ai.kr/manifest.webmanifest');
 Object.assign(twa, {
   packageId: 'io.github.jungtaejoon.slop',
-  host: 'jungtaejoon.github.io',
+  host: 'slop.ai.kr',
   name: 'Slop',
   launcherName: 'Slop',
   startUrl: '/slop/#/',

@@ -1,6 +1,6 @@
 {
   "packageId": "io.github.jungtaejoon.slop",
-  "host": "jungtaejoon.github.io",
+  "host": "slop.ai.kr",
   "name": "Slop",
   "launcherName": "Slop",
   "display": "standalone",
@@ -13,8 +13,8 @@
   "backgroundColor": "#0C0E11",
   "enableNotifications": false,
   "startUrl": "/slop/#/",
-  "iconUrl": "https://jungtaejoon.github.io/slop/icon-512.png",
-  "maskableIconUrl": "https://jungtaejoon.github.io/slop/icon-maskable-512.png",
+  "iconUrl": "https://slop.ai.kr/icon-512.png",
+  "maskableIconUrl": "https://slop.ai.kr/icon-maskable-512.png",
   "splashScreenFadeOutDuration": 300,
   "signingKey": {
     "path": "/Users/taejoon/.slop-android/upload-key.jks",
@@ -26,24 +26,24 @@
     {
       "name": "Swipe",
       "shortName": "Swipe",
-      "url": "https://jungtaejoon.github.io/slop/#/shorts",
-      "chosenIconUrl": "https://jungtaejoon.github.io/slop/icon-192.png"
+      "url": "https://slop.ai.kr/#/shorts",
+      "chosenIconUrl": "https://slop.ai.kr/icon-192.png"
     },
     {
       "name": "Judge",
       "shortName": "Judge",
-      "url": "https://jungtaejoon.github.io/slop/#/judge",
-      "chosenIconUrl": "https://jungtaejoon.github.io/slop/icon-192.png"
+      "url": "https://slop.ai.kr/#/judge",
+      "chosenIconUrl": "https://slop.ai.kr/icon-192.png"
     },
     {
       "name": "New post",
       "shortName": "Post",
-      "url": "https://jungtaejoon.github.io/slop/#/submit",
-      "chosenIconUrl": "https://jungtaejoon.github.io/slop/icon-192.png"
+      "url": "https://slop.ai.kr/#/submit",
+      "chosenIconUrl": "https://slop.ai.kr/icon-192.png"
     }
   ],
   "generatorApp": "unknown",
-  "webManifestUrl": "https://jungtaejoon.github.io/slop/manifest.webmanifest",
+  "webManifestUrl": "https://slop.ai.kr/manifest.webmanifest",
   "fallbackType": "customtabs",
   "features": {},
   "alphaDependencies": {
@@ -52,7 +52,7 @@
   "enableSiteSettingsShortcut": true,
   "isChromeOSOnly": false,
   "isMetaQuest": false,
-  "fullScopeUrl": "https://jungtaejoon.github.io/slop/",
+  "fullScopeUrl": "https://slop.ai.kr/",
   "minSdkVersion": 24,
   "orientation": "default",
   "fingerprints": [],
