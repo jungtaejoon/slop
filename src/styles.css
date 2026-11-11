@@ -582,3 +582,136 @@ body.sw-mode:has(.sw-card.reading) .sw-top{display:none}
 #dirBody{margin-top:0}.panel.mine{margin:0 0 12px}
 @media (max-width:980px){.mycomms-row{display:flex}.mycomms-panel{display:none}}
 @media (max-width:640px){.boards{gap:0}.boards a{padding:6px 9px;font-size:13px}}
+
+/* ================================================================
+   Design v3: calmer, more editorial. Two accents only (gem teal, slop
+   amber) on neutral surfaces; the rainbow gradient is retired; flatter
+   panels; tighter type; a real intro with a verdict-card illustration.
+   ================================================================ */
+:root{
+  --bg:#F7F7F5; --surface:#FFFFFF; --sunk:#F0F0EC; --ink:#111316; --muted:#646A73; --line:#E7E6E1; --line-strong:#D5D3CC;
+  --gem:#0D9488; --gem-ink:#0B7A71; --gem-soft:#E2F4F1; --slop:#D9672A; --slop-soft:#FBEDE3;
+  --grad:linear-gradient(0deg,var(--gem),var(--gem));
+  --shadow-sm:0 1px 0 rgb(17 19 22 / .04);
+  --shadow-md:0 12px 32px -14px rgb(17 19 22 / .22),0 2px 6px rgb(17 19 22 / .04);
+  --r:16px;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#0A0B0D; --surface:#121418; --sunk:#191C21; --ink:#F1F2F4; --muted:#949AA4; --line:#22252B; --line-strong:#30343C;
+  --gem:#2DD4BF; --gem-ink:#5EEAD4; --gem-soft:#0E2826; --slop:#FB923C; --slop-soft:#2B1B10;
+  --shadow-sm:0 1px 0 rgb(255 255 255 / .02); --shadow-md:0 18px 40px -18px rgb(0 0 0 / .8)}}
+body{font-size:15px;letter-spacing:-.01em}
+h1{font-weight:800;letter-spacing:-.035em}
+
+/* header: one quiet bar, tabs with an underline instead of a filled pill */
+header.top{background:color-mix(in srgb,var(--bg) 78%,transparent)}
+.logo svg{filter:none}
+.logo svg rect{fill:var(--ink)}
+.logo svg path:first-of-type{fill:var(--gem)}
+.logo b{font-size:20px;letter-spacing:-.035em}
+.logo span{color:var(--muted)}
+.boards{gap:4px;padding-block:0;margin-bottom:-1px}
+.boards a{position:relative;border-radius:0;padding:10px 10px 12px;font-weight:500;color:var(--muted);border:0}
+.boards a:hover{background:transparent;color:var(--ink)}
+.boards a[aria-current="true"]{background:transparent;color:var(--ink);box-shadow:none;font-weight:700}
+.boards a[aria-current="true"]::after{content:"";position:absolute;left:10px;right:10px;bottom:0;height:2px;border-radius:2px;background:var(--ink)}
+
+/* buttons: solid ink primary, quiet secondary, teal only where it means "gem" */
+.btn{border-radius:12px;padding:9px 16px;border-color:var(--line-strong);background:var(--surface)}
+.btn:hover{border-color:var(--ink);box-shadow:none}
+.btn.pri{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn.pri:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.btn.gem{background:var(--gem);color:#04201D}
+.btn.sm{border-radius:10px}
+
+/* surfaces: hairlines, no stacked shadows */
+.panel,.sortbar,.empty,.thread,.article,.form,.judge-card,.phead,.notes{box-shadow:none;border-color:var(--line)}
+.panel{padding:16px 18px}
+.panel h2{font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+.side{gap:12px}
+.statrow b{font-size:22px;letter-spacing:-.03em}
+.sortbar{background:transparent;border:0;border-bottom:1px solid var(--line);border-radius:0;padding:0 0 10px;margin-bottom:16px}
+.seg{background:var(--sunk);border-radius:12px;padding:3px;gap:0}
+.seg button{border-radius:9px;padding:6px 12px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgb(0 0 0 / .08),0 0 0 1px var(--line)}
+select.inline{border-radius:10px;border-color:var(--line);background-color:var(--surface)}
+.chip{border-radius:999px;border-color:var(--line);font-size:12.5px}
+.chip:hover{border-color:var(--ink)}
+
+/* posts: lighter cards, title first, shorter previews */
+.list{gap:14px}
+.post{box-shadow:none;padding:16px 18px 12px 10px}
+.post:hover{border-color:var(--line-strong);box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.ptitle{font-size:19px;font-weight:750;letter-spacing:-.025em;line-height:1.35;margin:8px 0 12px}
+.pmeta{color:var(--muted)}
+.prev{border-radius:12px;border-color:var(--line)}
+.prev.frame{aspect-ratio:2/1}
+.prev .playhint{border-radius:999px;background:var(--ink);color:var(--bg)}
+.vote button{color:var(--muted)}
+.vote button:hover{color:var(--ink);background:var(--sunk)}
+.pill{border-color:var(--line);color:var(--muted)}
+.pill.gem{background:var(--gem-soft);color:var(--gem-ink)}
+.cav{border-radius:6px}
+.cover{background:var(--cv,var(--ink))}
+.verdict .vbar i{background:var(--gem)}
+
+/* feed head */
+.fhead h1{font-size:clamp(26px,3vw,32px)}
+
+/* first-visit intro */
+.welcome{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:28px;align-items:center;margin-bottom:28px;padding:40px 44px;border-radius:24px;border:1px solid var(--line);color:var(--ink);box-shadow:none;
+  background:radial-gradient(70% 90% at 92% 20%,color-mix(in srgb,var(--gem) 16%,transparent),transparent 62%),radial-gradient(50% 60% at 70% 110%,color-mix(in srgb,var(--slop) 10%,transparent),transparent 60%),var(--surface)}
+.welcome::before{background-image:radial-gradient(color-mix(in srgb,var(--ink) 9%,transparent) 1px,transparent 1.2px);background-size:22px 22px;mask-image:linear-gradient(90deg,transparent,#000 60%);-webkit-mask-image:linear-gradient(90deg,transparent,#000 60%)}
+.welcome::after{display:none}
+.welcome .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--gem-ink);margin-bottom:14px}
+.welcome .eyebrow::before{content:"";width:8px;height:8px;border-radius:2px;transform:rotate(45deg);background:var(--gem)}
+.welcome h2{font-size:clamp(30px,4.2vw,48px);line-height:1.08;letter-spacing:-.045em;font-weight:850;margin:0 0 16px;color:var(--ink)}
+.welcome h2 span{display:block}
+.welcome h2 em{font-style:normal;color:var(--gem-ink)}
+.welcome p{color:var(--muted);font-size:16px;line-height:1.6;max-width:46ch;margin:0 0 18px}
+.welcome b{color:var(--ink)}
+.welcome ol.steps{list-style:none;counter-reset:st;padding:0;margin:0 0 24px;display:grid;gap:8px;color:var(--muted);font-size:14px}
+.welcome ol.steps li{counter-increment:st;position:relative;padding-left:30px;line-height:1.55}
+.welcome ol.steps li b{margin-right:4px}
+.welcome ol.steps li::before{content:counter(st);position:absolute;left:0;top:1px;display:grid;place-items:center;width:20px;height:20px;border-radius:6px;background:var(--sunk);color:var(--ink);font-size:11.5px;font-weight:700}
+.welcome .row{gap:10px}
+.welcome .btn{background:var(--surface);color:var(--ink);border-color:var(--line-strong);padding:11px 18px;font-size:15px}
+.welcome .btn.pri{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.welcome .wlinks{display:flex;flex-wrap:wrap;gap:18px;margin-top:14px;font-size:13.5px}
+.welcome .wlinks a,.welcome .wlinks .linkbtn{color:var(--muted);text-decoration:none;font-size:13.5px}
+.welcome .wlinks a:hover{color:var(--ink);text-decoration:underline}
+.welcome .wclose{position:absolute;top:14px;right:14px;width:32px;height:32px;border-radius:10px;border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:14px}
+.welcome .wclose:hover{background:var(--sunk);color:var(--ink)}
+/* illustration: two post cards and a verdict */
+.wart{position:relative;height:300px}
+.wart i{display:block}
+.wc{position:absolute;border-radius:18px;background:var(--surface);border:1px solid var(--line-strong);box-shadow:var(--shadow-md);padding:16px}
+.wc.back{width:62%;height:62%;right:4%;top:2%;transform:rotate(6deg);opacity:.75}
+.wc.back .sh{height:46%;border-radius:10px;background:color-mix(in srgb,var(--slop) 22%,var(--sunk));margin-bottom:12px}
+.wc.front{width:76%;left:2%;bottom:0;transform:rotate(-3deg)}
+.wc .ln{height:9px;border-radius:9px;background:var(--sunk);margin-top:9px;width:86%}
+.wc .ln.s{width:54%}
+.wtop{display:flex;align-items:center;gap:8px}
+.wtop .cv{width:18px;height:18px;border-radius:6px;background:var(--gem)}
+.wtop .ln{margin:0;width:40%}
+.wshot{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:12px;padding:12px;border-radius:12px;background:var(--sunk)}
+.wshot i{aspect-ratio:1;border-radius:8px;background:var(--surface);border:1px solid var(--line)}
+.wshot i:nth-child(2){background:color-mix(in srgb,var(--gem) 70%,var(--surface))}
+.wshot i:nth-child(3){background:color-mix(in srgb,var(--slop) 60%,var(--surface))}
+.wvote{display:flex;align-items:center;gap:10px;margin-top:14px;font-size:12.5px;font-weight:800;font-variant-numeric:tabular-nums}
+.wvote .g{color:var(--gem-ink)} .wvote .s{color:var(--slop)}
+.wvote .bar{flex:1;height:8px;border-radius:8px;background:var(--slop-soft);overflow:hidden}
+.wvote .bar i{width:90%;height:100%;border-radius:8px;background:var(--gem)}
+.wgem{position:absolute;right:6%;bottom:8%;display:grid;place-items:center;width:52px;height:52px;border-radius:16px;background:var(--ink);color:var(--gem);font-size:24px;box-shadow:var(--shadow-md);transform:rotate(8deg)}
+@media (max-width:860px){
+  .welcome{grid-template-columns:minmax(0,1fr);padding:28px 22px 24px;border-radius:20px}
+  .wart{display:none}
+}
+@media (max-width:640px){
+  .welcome h2{font-size:30px}
+  .welcome p{font-size:15px}
+  .welcome .row .btn{flex:1;justify-content:center;text-align:center}
+  .ptitle{font-size:17px}
+  .prev.frame{aspect-ratio:16/10}
+}
+.welcome .wlinks .linkbtn{padding:0;border:0;background:none;cursor:pointer}

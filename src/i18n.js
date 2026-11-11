@@ -124,7 +124,7 @@ const D = {
   '모든 커뮤니티의 글이에요. 새 커뮤니티를 발견하는 곳이에요.': 'Posts from every community. A good place to discover new ones.',
   '커뮤니티가 보석으로 판정한 글이에요. 보석 3표 이상, 보석 비율 75% 이상이면 여기에 모여요.': 'Posts the community judged as gems: at least 3 gem votes and 75% gem ratio.',
   '내가 저장한 글이에요. 나에게만 보여요.': 'Posts you saved. Only you can see this.', '최신': 'New', '최고': 'Top', '논쟁 중': 'Controversial', '판정 대기': 'Needs votes',
-  'AI가 만든 것, 그냥 넘기지 마세요': "Don't just scroll past AI-made stuff", '사람들은 AI 결과물을 쉽게': 'People are quick to call AI output',
+  'AI가 만든 것, 그냥 넘기지 마세요': "Don't just scroll past AI-made stuff", 'AI가 만든 것들의 판정소': 'A verdict board for AI-made stuff', 'AI가 만든 것,': 'AI-made stuff?', '그냥 넘기지 마세요.': "Don't just scroll past it.", '사람들은 AI 결과물을 쉽게': 'People are quick to call AI output',
   '이라고 부르지만, 그 안에도 쓸모 있고 재미있는 게 숨어 있어요. 여기서 같이 캐내요.': ', but useful and fun things hide in there too. Dig them up with us.',
   '둘러보고 써 봐요.': 'Browse and try things.', '실행물은 그 자리에서 바로 돌아가요.': 'Apps run right on the page.', '▲보석 / ▼슬롭으로 판정해요.': 'Vote ▲ Gem / ▼ Slop.',
   '이유를 댓글로 남기면 더 좋아요.': 'Even better, say why in a comment.', '내가 만든 것도 올려요.': 'Post what you made.', '판정과 의견을 받아 다음 버전으로 키워요.': 'Use the verdicts and feedback to make the next version.',

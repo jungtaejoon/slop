@@ -25,10 +25,17 @@ export async function renderFeed() {
   const sorts = [['rec', '추천'], ['hot', '인기'], ['new', '최신'], ['top', '최고'], ['contro', '논쟁 중'], ['pending', '판정 대기']];
   const F = S.filters || {};
   let welcomeOff = false; try { welcomeOff = !!localStorage.getItem('slop-welcome-off'); } catch { /* */ }
-  const welcome = !api.me && !welcomeOff && !c ? `<section class="welcome" id="welcome"><div><h2>AI가 만든 것, 그냥 넘기지 마세요</h2>
+  // first-visit intro: what Slop is, the three things you do here, and a picture of a verdict card
+  const welcome = !api.me && !welcomeOff && !c ? `<section class="welcome" id="welcome"><button class="wclose" id="welcomeOff" aria-label="닫기" title="닫기">✕</button>
+      <div class="wcopy"><span class="eyebrow">AI가 만든 것들의 판정소</span>
+      <h2><span>AI가 만든 것,</span> <em>그냥 넘기지 마세요.</em></h2>
       <p>사람들은 AI 결과물을 쉽게 "슬롭"이라고 부르지만, 그 안에도 쓸모 있고 재미있는 게 숨어 있어요. 여기서 같이 캐내요.</p>
-      <ol><li><b>둘러보고 써 봐요.</b> 실행물은 그 자리에서 바로 돌아가요.</li><li><b>▲보석 / ▼슬롭으로 판정해요.</b> 이유를 댓글로 남기면 더 좋아요.</li><li><b>내가 만든 것도 올려요.</b> 판정과 의견을 받아 다음 버전으로 키워요.</li></ol>
-      <div class="row"><a class="btn pri" href="#/shorts">넘겨보며 구경하기</a><a class="btn" href="#/judge">지금 하나 판정해 보기</a><a class="btn" href="#/login">가입하기</a>${!isStandalone() && matchMedia('(pointer:coarse)').matches ? '<button class="btn" data-act="install">앱으로 받기</button>' : ''}<a class="btn" href="#/communities">커뮤니티 둘러보기</a><button class="btn ghost" id="welcomeOff">닫기</button></div></div></section>` : '';
+      <ol class="steps"><li><b>둘러보고 써 봐요.</b> 실행물은 그 자리에서 바로 돌아가요.</li><li><b>▲보석 / ▼슬롭으로 판정해요.</b> 이유를 댓글로 남기면 더 좋아요.</li><li><b>내가 만든 것도 올려요.</b> 판정과 의견을 받아 다음 버전으로 키워요.</li></ol>
+      <div class="row"><a class="btn pri" href="#/shorts">넘겨보며 구경하기</a><a class="btn" href="#/judge">지금 하나 판정해 보기</a></div>
+      <div class="wlinks"><a href="#/login">가입하기</a><a href="#/communities">커뮤니티 둘러보기</a>${!isStandalone() && matchMedia('(pointer:coarse)').matches ? '<button class="linkbtn" data-act="install">앱으로 받기</button>' : ''}</div></div>
+      <div class="wart" aria-hidden="true"><div class="wc back"><i class="sh"></i><i class="ln"></i><i class="ln s"></i></div>
+        <div class="wc front"><div class="wtop"><i class="cv"></i><i class="ln"></i></div><div class="wshot"><i></i><i></i><i></i><i></i></div><i class="ln"></i><i class="ln s"></i>
+        <div class="wvote"><span class="g">▲ 128</span><span class="bar"><i></i></span><span class="s">▼ 14</span></div></div><span class="wgem">◆</span></div></section>` : '';
   app.innerHTML = `${welcome}<div class="layout"><div style="min-width:0">
     <div class="fhead"><div class="chead">${c ? cav(c, true) : ''}<div><h1>${esc(title)}</h1><p${c ? ' class="mono"' : ''}>${esc(sub)}</p>${c?.description ? `<p>${esc(c.description)}</p>` : ''}</div></div>
       <div class="row">${c ? followBtn(c) : ''}${v.special === 'gems' ? '<button class="btn" data-act="sharebest">이번 주 보석 공유</button>' : ''}${v.special !== 'saved' ? `<a class="btn${c ? '' : ' pri'}" href="#/submit${c ? '/' + esc(c.slug) : ''}">글쓰기</a>` : ''}</div></div>
