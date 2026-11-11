@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<style>
+  :root{--bg:#0A0B0D;--surface:#121418;--line:#262A31;--ink:#F1F2F4;--muted:#9AA0AA;--gem:#2DD4BF;--slop:#FB923C}
+  *{box-sizing:border-box;margin:0}
+  html,body{background:var(--bg)}
+  body{font-family:"Pretendard Variable",Pretendard,system-ui,sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+  .slide{position:relative;width:1270px;height:760px;overflow:hidden;display:none;isolation:isolate;
+    background:radial-gradient(55% 70% at 85% 15%,rgb(45 212 191 / .16),transparent 65%),radial-gradient(45% 55% at 10% 105%,rgb(251 146 60 / .10),transparent 60%),var(--bg)}
+  .slide::before{content:"";position:absolute;inset:0;z-index:-1;background-image:radial-gradient(rgb(255 255 255 / .07) 1px,transparent 1.2px);background-size:24px 24px;
+    -webkit-mask-image:radial-gradient(80% 80% at 70% 40%,#000,transparent 75%)}
+  body[data-n="1"] #s1,body[data-n="2"] #s2,body[data-n="3"] #s3,body[data-n="t"] #thumb{display:block}
+  .brand{position:absolute;left:64px;top:56px;display:flex;align-items:center;gap:12px;font-weight:800;font-size:22px;letter-spacing:-.03em}
+  .brand i{font-style:normal;color:var(--gem)}
+  .logo{width:36px;height:36px;border-radius:10px;background:#F1F2F4;display:grid;place-items:center}
+  .logo b{width:15px;height:15px;background:#0D9488;transform:rotate(45deg);border-radius:2px}
+  .eyebrow{display:inline-flex;align-items:center;gap:10px;font-size:15px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gem)}
+  .eyebrow::before{content:"";width:9px;height:9px;transform:rotate(45deg);border-radius:2px;background:var(--gem)}
+  h1{font-weight:850;letter-spacing:-.045em;line-height:1.02}
+  h1 em{font-style:normal;color:var(--gem)}
+  p.sub{color:var(--muted);font-size:21px;line-height:1.5;letter-spacing:-.01em}
+  .win{position:absolute;border-radius:16px;overflow:hidden;background:var(--surface);border:1px solid var(--line);box-shadow:0 40px 80px -30px rgb(0 0 0 / .9),0 0 0 1px rgb(255 255 255 / .03)}
+  .win .bar{height:34px;display:flex;align-items:center;gap:7px;padding:0 14px;background:#16181D;border-bottom:1px solid var(--line)}
+  .win .bar i{width:11px;height:11px;border-radius:50%;background:#2B2F37}
+  .win .bar span{margin-left:14px;flex:1;max-width:340px;height:20px;border-radius:7px;background:#1E2127;color:#7E848E;font-size:11.5px;display:flex;align-items:center;padding-left:10px}
+  .win img{display:block;width:100%}
+  .chip{position:absolute;display:flex;align-items:center;gap:10px;padding:14px 22px;border-radius:16px;font-size:24px;font-weight:800;letter-spacing:-.02em;box-shadow:0 24px 50px -20px rgb(0 0 0 / .9)}
+  .chip.g{background:#0E2826;color:var(--gem);border:1.5px solid rgb(45 212 191 / .55)}
+  .chip.s{background:#2B1B10;color:var(--slop);border:1.5px solid rgb(251 146 60 / .55)}
+  .chip small{font-size:17px;font-weight:600;opacity:.8}
+  .bubble{position:absolute;max-width:330px;padding:16px 18px;border-radius:18px 18px 18px 6px;background:#1A1D22;border:1px solid var(--line);font-size:16.5px;line-height:1.45;color:#D8DBE0;box-shadow:0 24px 50px -20px rgb(0 0 0 / .9)}
+  .bubble b{display:block;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--gem);margin-bottom:6px}
+  .phone{position:absolute;width:300px;height:600px;border-radius:44px;padding:10px;background:#1C1F24;border:1px solid #30343C;box-shadow:0 50px 90px -30px rgb(0 0 0 / .95)}
+  .phone .scr{width:100%;height:100%;border-radius:35px;overflow:hidden;background:#000}
+  .phone img{width:100%;height:100%;object-fit:cover;object-position:top}
+  .pts{display:grid;gap:14px;margin-top:30px}
+  .pts div{display:flex;gap:14px;align-items:baseline;font-size:19px;color:#C9CDD3;letter-spacing:-.01em}
+  .pts div::before{content:"";flex:none;width:8px;height:8px;border-radius:2px;transform:rotate(45deg) translateY(-2px);background:var(--gem)}
+  #thumb{width:240px;height:240px;display:none;background:#0A0B0D}
+</style></head>
+<body data-n="1">
+<!-- 1: what it is -->
+<section class="slide" id="s1">
+  <div class="brand"><span class="logo"><b></b></span><span>Slop<i>.</i></span></div>
+  <div style="position:absolute;left:64px;top:170px;width:560px">
+    <span class="eyebrow">A verdict board for AI-made stuff</span>
+    <h1 style="font-size:76px;margin:22px 0 24px">Find the gems in <em>AI-made stuff.</em></h1>
+    <p class="sub">Try AI-made apps, games, art and writing right on the page. Vote ▲ gem or ▼ slop, and say why.</p>
+    <p style="margin-top:34px;font-size:17px;font-weight:700;color:#C9CDD3;letter-spacing:.01em">slop.ai.kr <span style="color:#6D737D;font-weight:500">· free · English &amp; Korean</span></p>
+  </div>
+  <div class="win" style="left:680px;top:120px;width:820px"><div class="bar"><i></i><i></i><i></i><span>slop.ai.kr</span></div><img src="s-home.png"></div>
+</section>
+<!-- 2: try it, then judge it -->
+<section class="slide" id="s2">
+  <div class="win" style="left:-40px;top:96px;width:800px"><div class="bar"><i></i><i></i><i></i><span>slop.ai.kr</span></div><img src="s-game.png"></div>
+  <div class="bubble" style="left:420px;top:330px"><b>Why it's a gem</b>The boss fights actually feel designed. Ten minutes went by fast.</div>
+  <div class="chip g" style="left:540px;top:515px">▲ Gem <small>128</small></div>
+  <div class="chip s" style="left:540px;top:605px">▼ Slop <small>14</small></div>
+  <div style="position:absolute;left:830px;top:150px;width:390px">
+    <span class="eyebrow">Play it, then call it</span>
+    <h1 style="font-size:58px;margin:22px 0 22px">Apps run <em>right on the page.</em></h1>
+    <p class="sub" style="font-size:19px">Games, tools and toys run in a sandbox, no install. Then judge them: ▲ gem or ▼ slop, ideally with a one-line reason.</p>
+    <div class="pts"><div>Every post keeps its versions</div><div>Feedback turns into v2</div><div>Remix anything you like</div></div>
+  </div>
+</section>
+<!-- 3: swipe -->
+<section class="slide" id="s3">
+  <div style="position:absolute;left:64px;top:150px;width:520px">
+    <span class="eyebrow">Swipe &amp; judge</span>
+    <h1 style="font-size:66px;margin:22px 0 24px">One AI-made thing <em>per screen.</em></h1>
+    <p class="sub">Swipe through apps, games and art like short videos. Tap to play, vote without an account, and keep the gems.</p>
+    <div class="pts"><div>Judge mode: one card at a time</div><div>Topic communities anyone can start</div><div>Works on phones, installable as an app</div></div>
+  </div>
+  <div class="phone" style="left:660px;top:110px;transform:rotate(-4deg)"><div class="scr"><img src="s-swipe.png"></div></div>
+  <div class="phone" style="left:930px;top:70px;transform:rotate(3deg)"><div class="scr"><img src="s-swipe2.png"></div></div>
+</section>
+<!-- thumbnail -->
+<section id="thumb"><svg viewBox="0 0 240 240" width="240" height="240"><defs><radialGradient id="gl" cx=".7" cy=".25" r=".8"><stop offset="0" stop-color="#2DD4BF" stop-opacity=".35"/><stop offset="1" stop-color="#2DD4BF" stop-opacity="0"/></radialGradient></defs>
+  <rect width="240" height="240" fill="#0A0B0D"/><rect width="240" height="240" fill="url(#gl)"/>
+  <path d="M120 38 182 100 120 202 58 100Z" fill="#2DD4BF"/><path d="M120 38 151 100 120 202 89 100Z" fill="#5EEAD4"/><path d="M58 100h124" stroke="#0A0B0D" stroke-opacity=".25" stroke-width="3"/><path d="M120 38 151 100 89 100Z" fill="#fff" fill-opacity=".22"/></svg></section>
+<script>document.body.dataset.n = location.hash.slice(1) || '1';</script>
+</body></html>
