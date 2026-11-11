@@ -12,7 +12,10 @@ function updPlayer(dt) {
   } else {
     pl.x += (m.x * sp + pl.vx) * dt; pl.y += (m.y * sp + pl.vy) * dt;
   }
+  pushOut(pl, 5);
   const kd = Math.exp(-10 * dt); pl.vx *= kd; pl.vy *= kd;
+  if (st.B.hazard === 'glitch' && tileAt(pl.x, pl.y) === 2) { pl.glitchT = (pl.glitchT || 0) - dt; if (pl.glitchT <= 0) { pl.glitchT = 0.6; const iv = pl.inv; pl.inv = 0; hurtPlayer(3 + run.depth * 0.2); if (pl.hp > 0) pl.inv = Math.max(iv, 0.15); } }
+  if (st.open && !st.cleared && dist2(pl.x, pl.y, st.exit.x, st.exit.y) < 18 * 18) { stageWon(); return; }
   pl.moving = Math.abs(m.x) + Math.abs(m.y) > 0.1;
   if (pl.moving) { pl.dx = m.x; pl.dy = m.y; pl.anim += dt * 7; if (Math.abs(m.x) > 0.15) pl.face = m.x < 0 ? -1 : 1; }
   const v = pasLv('vita'); if (v && pl.hp < pl.maxHp) { pl.regenAcc += dt * v * 0.3; if (pl.regenAcc >= 1) { pl.hp = Math.min(pl.maxHp, pl.hp + 1); pl.regenAcc -= 1; } }
@@ -30,6 +33,7 @@ function updPlayer(dt) {
       it.got = true;
       if (it.k === 'kimbap') { pl.hp = Math.min(pl.maxHp, pl.hp + 30); sfx('heal'); nums.push({ x: pl.x, y: pl.y - 12, v: '+30', t: 0, heal: 1 }); }
       if (it.k === 'clip') { for (const gm of gems) gm.mag = true; sfx('pick'); }
+      if (it.k === 'gold') { run.gold += 15; sfx('pick'); nums.push({ x: pl.x, y: pl.y - 12, v: '+15', t: 0, gold: 1 }); }
       if (it.k === 'chest' || it.k === 'bigchest') { items = items.filter((x) => x !== it); openChest(it.k === 'bigchest'); return; }
     }
   }

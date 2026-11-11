@@ -1,9 +1,8 @@
 // ---------- game data ----------
-const RUN_LEN = 600; // ten minutes, then the last boss
 // weapons: stats by level (1..6), evolution partner passive. `amt` grows with the Copier.
 const WEAPONS = {
   brush: { evoWith: 'loupe', st: (lv) => ({ dmg: 15 + lv * 4, cd: 1.05 - lv * 0.04, r: 38 + lv * 2.5, back: true, amt: 1 + (lv >= 4) }) },
-  hl: { evoWith: 'coffee', st: (lv) => ({ dmg: 9 + lv * 3, cd: 1.4 - lv * 0.06, len: 110 + lv * 12, amt: 1 + (lv >= 3) + (lv >= 6) }) },
+  hl: { evoWith: 'coffee', st: (lv) => ({ dmg: 13 + lv * 3, cd: 1.25 - lv * 0.05, len: 120 + lv * 12, amt: 1 + (lv >= 2) + (lv >= 5) }) },
   stamp: { evoWith: 'vita', st: (lv) => ({ dmg: 24 + lv * 7, cd: 1.9 - lv * 0.08, r: 23 + lv * 2.5, amt: 2 + (lv >= 3) + (lv >= 5) }) },
   scis: { evoWith: 'shoes', st: (lv) => ({ dmg: 7 + lv * 3, amt: 1 + Math.ceil(lv / 2), r: 28 + lv * 2, spin: 2.8 + lv * 0.25 }) },
   plane: { evoWith: 'copier', st: (lv) => ({ dmg: 10 + lv * 3, cd: 1.35 - lv * 0.06, amt: 1 + (lv >= 2) + (lv >= 4) + (lv >= 6), pierce: 1 + (lv >= 5) }) },
@@ -26,29 +25,39 @@ const FOES = {
   worm: { hp: 18, spd: 27, dmg: 8, r: 6, xp: 2, dasher: 1 },
   eye: { hp: 14, spd: 24, dmg: 5, r: 6, xp: 2, shooter: 1 },
   jelly: { hp: 22, spd: 26, dmg: 6, r: 6, xp: 2, splits: 1 },
+  echo: { hp: 20, spd: 34, dmg: 6, r: 6, xp: 2, splits: 1 },
 };
+// regions: look (floor, wall top, wall face, accent, darkness), slop mix, hazard tiles, music
+const BIOMES = {
+  out: { floor: ['#1d1a26', '#211d2b', '#1a1722'], top: '#3b3550', face: '#2a253a', trim: '#f0a03c', accent: '#f0a03c', dark: 0.5, hazard: null, music: 0,
+    mix: [['hand', 5], ['glyph', 2], ['jelly', 1]] },
+  gal: { floor: ['#2a2420', '#2f2924', '#26201c'], top: '#5a4a3c', face: '#3e3229', trim: '#e9c46a', accent: '#e76f51', dark: 0.42, hazard: 'paint', music: 1,
+    mix: [['hand', 3], ['clock', 2], ['jelly', 2], ['glyph', 1]] },
+  arc: { floor: ['#140f24', '#170f2b', '#120c20'], top: '#3a1f63', face: '#25133f', trim: '#ff4fd8', accent: '#22d3ee', dark: 0.6, hazard: null, music: 1,
+    mix: [['eye', 3], ['worm', 3], ['glyph', 2], ['hand', 1]] },
+  news: { floor: ['#221c17', '#251f19', '#1f1914'], top: '#4b3f33', face: '#332a22', trim: '#d6c7a8', accent: '#f4f0e8', dark: 0.48, hazard: null, music: 1,
+    mix: [['glyph', 5], ['jelly', 2], ['hand', 2], ['eye', 1]] },
+  mir: { floor: ['#122329', '#152830', '#101f25'], top: '#3a7280', face: '#224752', trim: '#7fe3d6', accent: '#7fe3d6', dark: 0.42, hazard: null, music: 2,
+    mix: [['echo', 4], ['glyph', 2], ['eye', 2], ['worm', 1]] },
+  tow: { floor: ['#16191f', '#1a1e25', '#14161b'], top: '#434b58', face: '#2a3039', trim: '#2dd4bf', accent: '#fb7185', dark: 0.5, hazard: 'glitch', music: 2,
+    mix: [['hand', 2], ['glyph', 2], ['clock', 2], ['eye', 2], ['worm', 2], ['jelly', 1], ['echo', 1]] },
+};
+// four acts (기·승·전·결): lanes are the parallel roads on the map; act II's lanes are its three districts
+const ACTS = [
+  { biomes: ['out', 'out', 'out'], cols: 4, boss: 0 },
+  { biomes: ['gal', 'arc', 'news'], cols: 5, boss: 1 },
+  { biomes: ['mir', 'mir', 'mir'], cols: 4, boss: 2 },
+  { biomes: ['tow', 'tow'], cols: 3, boss: 3 },
+];
 const BOSSES = [
-  { at: 180, hp: 1100, r: 17, spd: 21, dmg: 14, kind: 'face' },
-  { at: 360, hp: 2800, r: 17, spd: 25, dmg: 16, kind: 'box' },
-  { at: RUN_LEN, hp: 18000, r: 12, spd: 34, dmg: 18, kind: 'snake' },
+  { hp: 1500, r: 17, spd: 21, dmg: 14, kind: 'face' },
+  { hp: 3600, r: 17, spd: 25, dmg: 16, kind: 'box' },
+  { hp: 8000, r: 7, spd: 58, dmg: 12, kind: 'mirror' },
+  { hp: 32000, r: 12, spd: 34, dmg: 18, kind: 'snake' },
 ];
-// which slop shows up when (weights), by elapsed seconds
-function foeMix(t) {
-  if (t < 60) return [['hand', 1]];
-  if (t < 120) return [['hand', 3], ['glyph', 2]];
-  if (t < 180) return [['hand', 3], ['glyph', 2], ['jelly', 1]];
-  if (t < 300) return [['hand', 2], ['glyph', 2], ['jelly', 2], ['clock', 1], ['eye', 1]];
-  if (t < 420) return [['hand', 2], ['glyph', 2], ['clock', 2], ['eye', 2], ['worm', 2]];
-  return [['hand', 2], ['glyph', 3], ['clock', 2], ['eye', 2], ['worm', 3], ['jelly', 2]];
-}
-// scripted moments besides bosses
-const EVENTS = [
-  { at: 50, k: 'elite', foe: 'hand' }, { at: 120, k: 'ring', foe: 'glyph', n: 36 }, { at: 150, k: 'elite', foe: 'jelly' },
-  { at: 240, k: 'elite', foe: 'clock' }, { at: 300, k: 'wall', foe: 'hand', n: 48 }, { at: 330, k: 'elite', foe: 'eye' },
-  { at: 420, k: 'ring', foe: 'worm', n: 30 }, { at: 450, k: 'elite', foe: 'worm' }, { at: 480, k: 'wall', foe: 'glyph', n: 64 },
-  { at: 510, k: 'elite', foe: 'clock' }, { at: 540, k: 'ring', foe: 'jelly', n: 40 }, { at: 560, k: 'elite', foe: 'jelly' }, { at: 575, k: 'elite', foe: 'eye' },
-];
-const spawnRate = (t) => (t >= RUN_LEN ? 3 : 0.8 + t / 60 * 1.1); // per second
-const aliveCap = (t) => Math.min(380, 50 + t * 0.55);
-const hpScale = (t) => 1 + t / 60 * 0.3 + (t / 60) ** 2 * 0.04;
+// difficulty by depth (how many areas you have crossed)
+const hpScale = (d) => 1 + d * 0.22 + d * d * 0.011;
+const spawnRate = (d) => 0.85 + d * 0.16;
+const aliveCap = (d) => Math.min(240, 70 + d * 9);
+const gateNeed = (d) => 48 + d * 10;
 const xpNeed = (lv) => Math.floor(5 + lv * 3.4 + lv * lv * 0.45);

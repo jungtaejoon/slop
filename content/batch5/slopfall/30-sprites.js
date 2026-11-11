@@ -15,10 +15,19 @@ function bake(rows, swap, outline = true) {
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (px(x, y)) for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) o.fillRect(x + pad + dx, y + pad + dy, 1, 1);
   }
   f.fillStyle = '#ffffff';
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const ch = px(x, y); if (!ch) continue; o.fillStyle = PAL[ch] || ch; o.fillRect(x + pad, y + pad, 1, 1); f.fillRect(x + pad, y + pad, 1, 1); }
+  // light from above: pixels with nothing over them catch light, pixels with nothing under them fall into shade
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const ch = px(x, y); if (!ch) continue; const base = PAL[ch] || ch, up = y > 0 && px(x, y - 1), dn = y < h - 1 && px(x, y + 1), lf = x > 0 && px(x - 1, y);
+    o.fillStyle = !up ? shadeHex(base, 0.22) : !dn ? shadeHex(base, -0.28) : !lf ? shadeHex(base, 0.08) : base;
+    o.fillRect(x + pad, y + pad, 1, 1); f.fillRect(x + pad, y + pad, 1, 1);
+  }
   return { c: out, f: fl, w: w + pad * 2, h: h + pad * 2 };
 }
 const swapRows = (rows, i, row) => rows.map((r, j) => (j === i ? row : r));
+function shadeHex(hex, k) { // k > 0 lightens toward white, k < 0 darkens toward black
+  if (hex[0] !== '#') return hex; const v = parseInt(hex.slice(1), 16), c = [v >> 16 & 255, v >> 8 & 255, v & 255].map((x) => Math.round(k > 0 ? x + (255 - x) * k : x * (1 + k)));
+  return '#' + c.map((x) => x.toString(16).padStart(2, '0')).join('');
+}
 
 // --- curators (16x16), two walk frames each ---
 const MINA = [
@@ -45,6 +54,27 @@ const OK = swapRows(swapRows(MINA, 2, '...wwwwwwwww....'), 1, '.....ww..ww.....'
 const CHAR_ART = [
   [MINA, null], [DOYUN, { h: 'N', b: 'l', B: 'L', r: 'y' }], [OK, { h: 'g', b: 'p', B: 'P', r: 'o', s: 's' }],
 ].map(([rows, sw]) => [bake(rows, sw), bake(walk2(rows), sw)]);
+const CHAR_ROWS = [MINA, DOYUN, OK];
+const MIRROR_SWAP = { h: 'C', b: 'c', B: 'C', r: 'e', s: 'v', S: 'c', G: 'C', m: 'c', y: 'e', N: 'C', l: 'c', L: 'C', p: 'c', P: 'C', o: 'e', w: 'e', g: 'c' };
+const mirrorArt = (ci) => [bake(CHAR_ROWS[ci], MIRROR_SWAP), bake(walk2(CHAR_ROWS[ci]), MIRROR_SWAP)];
+const DIRECTOR = bake([
+  '................',
+  '.....gggggg.....',
+  '....gggggggg....',
+  '...gwwgggggwg...',
+  '...gsssssssg....',
+  '...skkwsskkws...',
+  '...ssssssssss...',
+  '....sSsmmsSs....',
+  '.....SssssS.....',
+  '....nnLLLLnn....',
+  '...snnLwwLnns...',
+  '....nnLLLLnn....',
+  '....nnnnnnnn....',
+  '.....GG..GG.....',
+  '.....GG..GG.....',
+  '.....kk..kk.....',
+]);
 
 // --- the slop (16x16) ---
 const HAND = [
@@ -153,9 +183,25 @@ const JELLY = [
   '................',
 ];
 const JELLY2 = swapRows(swapRows(JELLY, 3, '.....cccccccc...'), 11, '..CCCCCCCCCCCCC.');
+const ECHO = [
+  '................',
+  '.......cc.......',
+  '......cwcc......',
+  '.....cwccCc.....',
+  '....cwcccCCc....',
+  '...cwckcckCCc...',
+  '..ccccccccCCCc..',
+  '...cccmmccCCc...',
+  '....cccccCCc....',
+  '.....cccCCc.....',
+  '......cCCc......',
+  '.......Cc.......',
+  '................',
+];
 const ART = {
   hand: [bake(HAND), bake(HAND2)], glyph: [bake(GLYPH), bake(GLYPH2)], clock: [bake(CLOCK), bake(CLOCK2)],
   worm: [bake(WORM), bake(WORM2)], eye: [bake(EYE), bake(EYE2)], jelly: [bake(JELLY), bake(JELLY2)],
+  echo: [bake(ECHO), bake(swapRows(ECHO, 1, '......cc........'))],
 };
 
 // --- pickups ---
@@ -164,7 +210,8 @@ const GEMS = [bake(GEM), bake(GEM, { b: 'l', B: 'L' }), bake(GEM, { b: 'r', B: '
 const KIMBAP = ['..kkkk..', '.kLLLLk.', 'kLwwwwLk', 'kLwyowLk', 'kLwlrwLk', 'kLwwwwLk', '.kLLLLk.', '..kkkk..'];
 const CLIPBOX = ['.gggggg.', 'gGGGGGGg', 'gGrrRRGg', 'gGrGGRGg', 'gGrGGRGg', 'gGGGGGGg', '.gggggg.'];
 const CHEST = ['..nnnnnnnnnn..', '.nNNNNNNNNNNn.', 'nNyyyyyyyyyyNn', 'nnnnnnyynnnnnn', 'nNNNNNyyNNNNNn', 'nNNNNNNNNNNNNn', 'nNNNNNNNNNNNNn', 'nnnnnnnnnnnnnn'];
-const PICK = { kimbap: bake(KIMBAP), clip: bake(CLIPBOX), chest: bake(CHEST) };
+const COIN = ['..yyyy..', '.yvvvyo.', 'yvyyyyoo', 'yvyooyoo', 'yvyooyoo', 'yyyyyyoo', '.yooooo.', '..oooo..'];
+const PICK = { kimbap: bake(KIMBAP), clip: bake(CLIPBOX), chest: bake(CHEST), gold: bake(COIN) };
 
 // --- 8x8 icons for weapons and passives (HUD and level-up cards) ---
 const ICONS = {
