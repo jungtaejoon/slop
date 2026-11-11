@@ -15,11 +15,11 @@ const MAX_W = 6, MAX_LV = 6;
 // three ways to play. Mina: fragile and fast, hits harder the more she bleeds, and every level sharpens her.
 // Doyun: a chain of kills without being hit speeds every weapon up; crits grow with level; one hit breaks the chain.
 // Granny Ok: slow and hard to kill; armour, regeneration, thorns, and the more health she has the harder she hits.
-// `affinity`: the weapons that come up more often for this curator.
+// `pool`: the six skills this curator can ever learn. No two curators share a pool.
 const CHARS = [
-  { start: 'brush', hp: 70, spd: 1.12, area: 0.1, cd: 0, dash: 0.7, armor: 0, rage: 1.3, perLv: { dmg: 0.035 }, affinity: ['brush', 'scis', 'eraser'] },
-  { start: 'hl', hp: 90, spd: 1, area: 0, cd: 0.1, dash: 1.1, armor: 0, combo: 1, crit: 0.12, perLv: { crit: 0.012 }, affinity: ['hl', 'plane', 'eraser'] },
-  { start: 'stamp', hp: 160, spd: 0.84, area: 0.1, cd: 0, dash: 1.5, armor: 0.3, regen: 0.8, thorns: 0.25, hpPower: 1, perLv: { hp: 8 }, affinity: ['stamp', 'scis', 'brush'] },
+  { start: 'brush', hp: 70, spd: 1.12, area: 0.1, cd: 0, dash: 0.7, armor: 0, rage: 1.3, perLv: { dmg: 0.035 }, pool: ['brush', 'scis', 'knife', 'ink', 'aura', 'tape'] },
+  { start: 'hl', hp: 90, spd: 1, area: 0, cd: 0.1, dash: 1.1, armor: 0, combo: 1, crit: 0.12, perLv: { crit: 0.012 }, pool: ['hl', 'plane', 'strike', 'stapler', 'mine', 'postit'] },
+  { start: 'stamp', hp: 160, spd: 0.84, area: 0.1, cd: 0, dash: 1.5, armor: 0.25, regen: 0.4, thorns: 0.25, hpPower: 1, perLv: { hp: 8 }, pool: ['stamp', 'eraser', 'sun', 'abacus', 'tea', 'bell'] },
 ];
 const critChance = () => { const c = CHARS[pl.ci]; return c.crit ? Math.min(0.6, c.crit + c.perLv.crit * (pl.lv - 1)) : 0; };
 const comboCd = () => (CHARS[pl.ci].combo ? Math.min(0.35, pl.combo * 0.004) : 0);

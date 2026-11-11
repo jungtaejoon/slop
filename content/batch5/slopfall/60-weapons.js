@@ -128,7 +128,7 @@ function updWeapons(dt) {
         w.t = st.cd * cm; const n = st.amt + extra, v = 160 * (1 + (m.speed || 0));
         for (let k = 0; k < n; k++) { const tg = nearest(pl.x, pl.y, 170), a = (tg ? angTo(tg) : facing()) + k * 0.4; shots.push({ k: 'eraser', x: pl.x, y: pl.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, v, t: 0, max: 1.6, dmg: st.dmg * evoK, chain: st.chain + (m.chain || 0), hitSet: new Set(), evo: w.evo, spin: 0, knock: m.knock, dust: m.dust }); }
       }
-    }
+    } else fireNew(w, st, m, am, cm, extra, evoK, dt); // the twelve curator-only skills (62-skills.js)
     for (const s of shots) if (!s.src) s.src = w.id;
   }
   curSrc = null;
@@ -146,7 +146,7 @@ function slash(a, st, am, evo, m = {}) {
   if (m.wave) { const L = R * 2.6, x2 = pl.x + Math.cos(a) * L, y2 = pl.y + Math.sin(a) * L; segHit(pl.x, pl.y, x2, y2, 7 * am, dmg * 0.7, 1); fx.push({ k: 'beam', x1: pl.x, y1: pl.y, x2, y2, t: 0, max: 0.25, w: 7 * am, ink: 1 }); }
   fx.push({ k: 'slash', a, r: R, arc, t: 0, max: 0.2, evo }); sfx('slash');
 }
-function blast(x, y, r, dmg, col) { near(x, y, r + 10, (e) => { if (dist2(x, y, e.x, e.y) < (r + e.r) ** 2) hurt(e, dmg, (e.x - x) / r, (e.y - y) / r, 0.8); }); fx.push({ k: 'blast', x, y, r, t: 0, max: 0.3, col }); }
+function blast(x, y, r, dmg, col, m) { near(x, y, r + 10, (e) => { if (dist2(x, y, e.x, e.y) < (r + e.r) ** 2) (m ? hitWith(e, dmg, m, (e.x - x) / r, (e.y - y) / r, 0.8) : hurt(e, dmg, (e.x - x) / r, (e.y - y) / r, 0.8)); }); fx.push({ k: 'blast', x, y, r, t: 0, max: 0.3, col }); }
 function updShots(dt) {
   for (const s of shots) {
     s.t += dt; curSrc = s.src || null;
@@ -187,7 +187,7 @@ function updShots(dt) {
       near(s.x, s.y, R, (e) => { if (e.boss || e.seg || e.prop) return; const dx = s.x - e.x, dy = s.y - e.y, d = Math.hypot(dx, dy) || 1; if (d < R) { e.x += dx / d * 55 * dt; e.y += dy / d * 55 * dt; } });
       if (s.tick <= 0) { s.tick = 0.25; near(s.x, s.y, 20, (e) => { if (dist2(s.x, s.y, e.x, e.y) < (16 + e.r) ** 2) hurt(e, s.dmg * 0.35, 0, 0, 0); }); }
       if (s.t > s.max) { s.dead = true; near(s.x, s.y, 30, (e) => { if (dist2(s.x, s.y, e.x, e.y) < (26 + e.r) ** 2) hurt(e, s.dmg * 1.2, 0, 0, 0); }); burst(s.x, s.y, 14, '#b07ce8'); sfx('stamp'); }
-    }
+    } else updNewShot(s, dt);
   }
   curSrc = null;
   shots = shots.filter((s) => !s.dead);

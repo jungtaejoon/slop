@@ -40,6 +40,7 @@ function drawHud() {
     panel(ox, 12, ow, 38, false, 'rgba(10,11,13,.72)');
     const k = st.charge / st.need; txt(st.open ? T.gateOpen : T.gate(Math.floor(st.charge), st.need), CW / 2, 24, 11.5, st.open ? '#5eead4' : '#d9dde4', 'center', 700, false);
     bar(ox + 12, 34, ow - 24, 6, st.open ? 1 : k, st.open ? '#5eead4' : '#2dd4bf');
+    if (st.flood > 0) { const a = 0.75 + Math.sin(performance.now() / 180) * 0.25; ctx.globalAlpha = a; txt(T.floodHud(Math.round(Math.min(3, st.flood) / 3 * 100)), CW / 2, 62, 11.5, '#fb7185', 'center', 800); ctx.globalAlpha = 1; }
   } else if (boss) {
     panel(ox, 12, ow, 38, false, 'rgba(10,11,13,.72)'); txt(T.boss[boss.i], CW / 2, 24, 11.5, '#ffd9e8', 'center', 800, false); bar(ox + 12, 34, ow - 24, 6, boss.hp / boss.maxHp, '#fb7185');
   } else if (st.kind === 'gen') { panel(ox, 12, ow, 38, false, 'rgba(10,11,13,.72)'); txt(fmtTime(Math.max(0, 25 - st.t)), CW / 2, 31, 16, '#f1f2f4', 'center', 800, false); }

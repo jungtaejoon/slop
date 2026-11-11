@@ -156,9 +156,9 @@ const onScreen = (e, m = 0) => Math.abs(e.x - cam.x) < LW / 2 + m && Math.abs(e.
 
 // ---------- slop ----------
 function spawnFoe(type, x, y, o = {}) {
-  const d = FOES[type], k = d.prop ? 1 + run.depth * 0.08 : hpScale(run.depth) * (o.elite ? 12 : 1) * (o.mini ? 0.35 : 1) * (st?.mod === 'danger' ? 1.15 : 1);
-  const e = { type, x, y, hp: d.hp * k, maxHp: d.hp * k, spd: d.spd * (o.elite ? 0.9 : 1) * (o.mini ? 1.25 : 1), dmg: d.dmg * (o.elite ? 1.5 : 1) * (0.8 + run.depth * 0.035), r: d.r * (o.elite ? 1.7 : o.mini ? 0.7 : 1),
-    xp: d.xp * (o.elite ? 0 : 1), elite: !!o.elite, mini: !!o.mini, scale: o.elite ? 1.7 : o.mini ? 0.7 : 1, flash: 0, kx: 0, ky: 0, stun: 0, anim: rand() * 2, t: rand() * 2, spawnIn: 0.3,
+  const d = FOES[type], k = d.prop ? 1 + run.depth * 0.08 : hpScale(run.depth) * (o.elite ? 12 : 1) * (o.mini ? 0.35 : 1) * (st?.mod === 'danger' ? 1.15 : 1) * (1 + (st?.flood || 0) * 0.5);
+  const e = { type, x, y, hp: d.hp * k, maxHp: d.hp * k, spd: d.spd * (o.elite ? 0.9 : 1) * (o.mini ? 1.25 : 1), dmg: d.dmg * (o.elite ? 1.5 : 1) * (0.8 + run.depth * 0.035) * (1 + (st?.flood || 0) * 0.25), r: d.r * (o.elite ? 1.7 : o.mini ? 0.7 : 1),
+    xp: d.xp * (o.elite ? 0 : 1) * Math.max(0.15, 1 - (st?.flood || 0) * 0.4) /* flood slop is not worth farming */, elite: !!o.elite, mini: !!o.mini, scale: o.elite ? 1.7 : o.mini ? 0.7 : 1, flash: 0, kx: 0, ky: 0, stun: 0, anim: rand() * 2, t: rand() * 2, spawnIn: 0.3,
     lastScis: -9, dashing: 0, vx: 0, vy: 0, guard: !!o.guard, prop: !!d.prop };
   foes.push(e); return e;
 }
@@ -173,9 +173,12 @@ function spawnSpot(minD = 190, maxD = 430) { // a floor tile out of sight but no
 function spawning(dt) {
   if (st.kind === 'boss' || st.cleared) { if (st.kind === 'boss' && boss && boss.kind !== 'snake') bossAdds(dt); return; }
   if (st.t < 4) return; // a breath at the start of every area
-  const mul = (run.flags.praise ? 1.4 : 1) * (run.flags.unplug ? 0.8 : 1) * (st.open ? 0.6 : 1) * (st.mod === 'danger' ? 1.35 : 1);
+  // linger in one area and the flood rises: more slop, then waves that close in from every side
+  const flood = st.kind === 'fight' || st.kind === 'elite' ? Math.max(0, st.t - 40) / 30 : 0; st.flood = flood;
+  if (flood > 0 && st.t > 55) { st.waveT = (st.waveT ?? 0) - dt; if (st.waveT <= 0) { st.waveT = Math.max(5, 14 - flood * 2.5); floodWave(flood); } }
+  const mul = (run.flags.praise ? 1.4 : 1) * (run.flags.unplug ? 0.8 : 1) * (st.open ? 0.6 : 1) * (st.mod === 'danger' ? 1.35 : 1) * (1 + flood);
   spawnAcc += spawnRate(run.depth) * mul * dt;
-  while (spawnAcc >= 1) { spawnAcc--; if (foes.length < aliveCap(run.depth)) { const p = spawnSpot(); if (p) spawnFoe(weighted(st.B.mix), p[0], p[1]); } }
+  while (spawnAcc >= 1) { spawnAcc--; if (foes.length < Math.min(280, aliveCap(run.depth) * (1 + flood * 0.6))) { const p = spawnSpot(); if (p) spawnFoe(weighted(st.B.mix), p[0], p[1]); } }
   for (const v of st.vents) { // vents near you breathe out small swarms
     v.t -= dt; if (v.t > 0) continue; v.t = rnd(9, 14);
     const d = Math.hypot(v.x - pl.x, v.y - pl.y); if (d > 520 || d < 90 || foes.length > aliveCap(run.depth)) continue;
@@ -261,13 +264,13 @@ function openGate() { if (st.open) return; st.open = true; banner = { text: T.ga
 
 // ---------- level-up choices and chests ----------
 function upgradePool() {
-  const pool = [], aff = CHARS[pl.ci].affinity, kills = (id) => pl.wk[id] || 0;
+  const pool = [], kills = (id) => pl.wk[id] || 0;
   // weapons that have erased more slop come up more, and so do their skill tree tiers
   for (const w of pl.weapons) if (!w.evo && w.lv < MAX_LV) pool.push({ k: 'w', id: w.id, lv: w.lv + 1, wt: 3 * Math.min(2, 1 + kills(w.id) / 150) });
   for (const w of pl.weapons) for (let b = 0; b < 2; b++) {
     const t = w.tr[b]; if (t < 3 && (t > 0 || w.lv >= 2) && kills(w.id) >= TREE_NEED[t] && !(t === 2 && w.tr[1 - b] >= 3)) pool.push({ k: 't', id: w.id, b, t, wt: 1.3 * Math.min(6, 1 + kills(w.id) / 40) });
   }
-  if (pl.weapons.length < MAX_W) for (const id of W_ORDER) if (!weaponOf(id)) pool.push({ k: 'w', id, lv: 1, wt: aff.includes(id) ? 3.2 : 1.1 });
+  if (pl.weapons.length < MAX_W) for (const id of CHARS[pl.ci].pool) if (!weaponOf(id)) pool.push({ k: 'w', id, lv: 1, wt: 2.4 });
   const owned = Object.keys(pl.pas);
   for (const id of P_ORDER) { const lv = pasLv(id); if (lv && lv < PASSIVES[id]) pool.push({ k: 'p', id, lv: lv + 1, wt: 2.5 }); else if (!lv && owned.length < 6) pool.push({ k: 'p', id, lv: 1, wt: 1.5 }); }
   return pool;

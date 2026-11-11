@@ -7,7 +7,7 @@ function updFoes(dt) {
     if (e.seg) continue; // snake segments follow their head (updBoss)
     if (e.spawnIn > 0) { e.spawnIn -= dt; continue; }
     if (e.vuln > 0) e.vuln -= dt; // sealed by a stamp: takes more damage
-    if (e.bleed > 0) { e.bleed -= dt; e.bleedT = (e.bleedT || 0) - dt; if (e.bleedT <= 0) { e.bleedT = 0.5; curSrc = 'scis'; hurt(e, e.bleedDmg); curSrc = null; if (e.dead) continue; } }
+    if (e.bleed > 0) { e.bleed -= dt; e.bleedT = (e.bleedT || 0) - dt; if (e.bleedT <= 0) { e.bleedT = 0.5; curSrc = e.bleedSrc || 'scis'; hurt(e, e.bleedDmg); curSrc = null; if (e.dead) continue; } }
     if (e.prop) continue; // crates and barrels just stand there
     if (e.boss) { updBoss(e, dt); continue; }
     const dx = pl.x - e.x, dy = pl.y - e.y, d = Math.hypot(dx, dy) || 1;
@@ -23,6 +23,7 @@ function updFoes(dt) {
       const want = d < 75 ? -1 : d > 110 ? 1 : 0; vx = (ux * want - uy * 0.6) * e.spd; vy = (uy * want + ux * 0.6) * e.spd;
       if (e.t > 2.4 && onScreen(e, -8)) { e.t = rnd(-0.4, 0); ebul.push({ x: e.x, y: e.y, vx: dx / d * 72, vy: dy / d * 72, t: 0, max: 4, r: 3, dmg: e.dmg + 2, col: '#e0524a' }); sfx('shot'); }
     } else { vx = ux * e.spd; vy = uy * e.spd; }
+    if (e.slowT > 0) { e.slowT -= dt; vx *= 0.5; vy *= 0.5; } // slowed by ink, tea or staples
     e.x += (vx + e.kx) * dt; e.y += (vy + e.ky) * dt; e.kx *= kd; e.ky *= kd; pushOut(e, e.r * 0.8);
     e.anim += dt * (2 + e.spd / 25); if (vx) e.face = vx < 0 ? -1 : 1;
     if (d < e.r + 5) hurtPlayer(e.dmg, e);

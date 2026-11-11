@@ -85,6 +85,7 @@ function drawWorld(t) {
   }
   if (boss && boss.kind === 'mirror' && boss.mode === 'dashw') { g.strokeStyle = 'rgba(251,113,133,.6)'; g.setLineDash([3, 3]); g.beginPath(); g.moveTo(boss.x, boss.y); g.lineTo(boss.x + Math.cos(boss.aim) * 115, boss.y + Math.sin(boss.aim) * 115); g.stroke(); g.setLineDash([]); }
   for (const s of shots) if (s.k === 'stamp' && !s.done && s.t > 0) { const k = clamp(s.t / s.delay, 0, 1); g.strokeStyle = 'rgba(224,82,74,.7)'; g.lineWidth = 1; g.beginPath(); g.arc(s.x, s.y, s.r * k, 0, 7); g.stroke(); }
+  drawGroundShots(t);
   for (const s of shots) if (s.k === 'hole') { const k = s.t / s.max; for (let i = 0; i < 4; i++) { g.strokeStyle = i % 2 ? '#6a3fa0' : '#b07ce8'; g.lineWidth = 1.5; g.beginPath(); g.arc(s.x, s.y, 4 + i * 6 * (1 - k * 0.5), t * 6 + i, t * 6 + i + 3.5); g.stroke(); } g.fillStyle = '#120e1a'; g.beginPath(); g.arc(s.x, s.y, 5, 0, 7); g.fill(); }
   // pickups
   for (const gm of gems) { const b = gm.mag ? 0 : Math.round(Math.sin(t * 4 + gm.x) * 1); spr(GEMS[gm.tier], gm.x, gm.y + b); }
@@ -162,6 +163,7 @@ function drawEffects(t) {
       g.strokeStyle = f.col || '#f6d55c'; g.lineWidth = 2; g.beginPath(); g.arc(f.x, f.y, f.r * (0.5 + k * 0.6), 0, 7); g.stroke(); g.globalAlpha = 1;
     } else if (f.k === 'ghostM' && boss) { g.globalAlpha = 0.3 * (1 - f.t / f.max); spr(boss.art[0], f.x, f.y - 8, f.f < 0, true); g.globalAlpha = 1; }
   }
+  drawAirShots(t);
   const sc = weaponOf('scis');
   if (sc?.blades) for (const b of sc.blades) { g.save(); g.translate(b.x, b.y - 3); g.rotate(b.a + runT * 9); g.fillStyle = sc.evo ? '#f6d55c' : '#d9d4e8'; g.fillRect(-5, -1, 10, 2); g.fillRect(-1, -5, 2, 10); g.fillStyle = '#e0524a'; g.fillRect(-1, -1, 2, 2); g.restore(); }
   for (const s of shots) {

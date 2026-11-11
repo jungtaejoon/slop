@@ -22,12 +22,12 @@ const TXT = {
       '색인을 탑까지 가져가면 탑은 다시 배울 것이다.\n길은 여러 갈래다. 어느 길로 갈지는 당신이 고른다.',
     ],
     chars: [
-      ['미나', '야간 큐레이터', '체력 70 · 빠르고 대시가 자주 된다. 체력이 낮을수록 강해져서, 거의 쓰러질 때는 공격력이 두 배를 넘는다. 레벨마다 공격력 +3.5%. 붓·가위·지우개가 잘 나온다.',
+      ['미나', '야간 큐레이터', '체력 70 · 빠르고 대시가 자주 된다. 체력이 낮을수록 강해져서, 거의 쓰러질 때는 공격력이 두 배를 넘는다. 레벨마다 공격력 +3.5%. 기술: 붓 · 가위 · 커터칼 · 먹물 자국 · 빨간 펜 원 · 테이프. 먹물은 움직여야 남는다.',
         '체력 70 · 빠름 · 체력이 낮을수록 공격력 최대 +130% · 레벨마다 공격력 +3.5%'],
-      ['도윤', '교정 담당', '체력 90. 맞지 않고 계속 지우면 콤보가 쌓여 모든 무기가 최대 35% 빨라진다. 한 대라도 맞으면 콤보가 끊긴다. 치명타 12%에서 시작해 레벨마다 오른다. 형광펜·종이비행기·지우개가 잘 나온다.',
+      ['도윤', '교정 담당', '체력 90. 맞지 않고 계속 지우면 콤보가 쌓여 모든 무기가 최대 35% 빨라진다. 한 대라도 맞으면 콤보가 끊긴다. 치명타 12%에서 시작해 레벨마다 오른다. 기술: 형광펜 · 종이비행기 · 취소선 · 스테이플러 · 쉼표 지뢰 · 포스트잇.',
         '체력 90 · 안 맞고 지우면 콤보로 최대 35% 빨라짐 · 맞으면 끊김 · 치명타가 레벨마다 상승'],
-      ['옥 할머니', '40년 차 감정사', '체력 160 · 느리다. 받는 피해 -30%, 저절로 회복하고, 부딪힌 슬롭에게 반격한다. 레벨마다 최대 체력 +8, 최대 체력이 늘수록 공격력도 오른다. 도장·가위·붓이 잘 나온다.',
-        '체력 160 · 느림 · 받는 피해 -30%, 회복, 반격 · 레벨마다 체력 +8, 체력이 클수록 강해짐'],
+      ['옥 할머니', '40년 차 감정사', '체력 160 · 느리다. 받는 피해 -25%, 저절로 조금씩 회복하고, 부딪힌 슬롭에게 반격한다. 레벨마다 최대 체력 +8, 최대 체력이 늘수록 공격력도 오른다. 기술: 감정 도장 · 지우개 · 돋보기 햇빛 · 주판알 · 찻주전자 · 종.',
+        '체력 160 · 느림 · 받는 피해 -25%, 회복, 반격 · 레벨마다 체력 +8, 체력이 클수록 강해짐'],
     ],
     w: {
       brush: ['붓', '가장 가까운 적 쪽을 앞뒤로 크게 벤다.'], hl: ['형광펜', '가장 가까운 적에게 꿰뚫는 줄을 긋는다.'],
@@ -118,6 +118,7 @@ const TXT = {
       plane: [['편대', ['비행기 +1대', '관통 +1', '폭격: 다 날고 나면 터지며 주변을 친다']], ['추적', ['속도와 선회 +30%', '피해 +30%', '귀환: 두 배 오래 날고 관통 +2']]],
       eraser: [['튕김', ['튕김 +2번', '속도 +30%', '가루: 튕길 때마다 작은 폭발']], ['무거운 지우개', ['피해 +30%', '크게 밀쳐 내고 잠깐 멈춘다', '완전 삭제: 지운 슬롭은 쪼개지지 않고 보석을 더 남긴다']]],
     },
+    flood: '홍수가 차오른다! 출구로 가세요', floodHud: (p) => `홍수 수위 ${p}%`,
     warn: '경고', swarm: '대량 생성이 몰려온다!', next: '▼', skip: '건너뛰기',
   },
   en: {
@@ -130,12 +131,12 @@ const TXT = {
       'Carry it to the tower and the tower can learn again.\nThere are many roads. You choose which to take.',
     ],
     chars: [
-      ['Mina', 'Night curator', '70 HP · fast, dashes often. The lower her health, the harder she hits: near the end, more than double damage. +3.5% damage per level. Brush, Scissors and Eraser come up more.',
+      ['Mina', 'Night curator', '70 HP · fast, dashes often. The lower her health, the harder she hits: near the end, more than double damage. +3.5% damage per level. Skills: Brush, Scissors, Cutter Knife, Ink Trail, Red-Pen Circle, Tape. Ink only flows while she moves.',
         '70 HP · fast · up to +130% damage at low health · +3.5% damage per level'],
-      ['Doyun', 'Proofreader', "90 HP. Keep erasing without getting hit and a combo builds up, making every weapon up to 35% faster. One hit breaks it. Crits start at 12% and grow every level. Highlighter, Paper Plane and Eraser come up more.",
+      ['Doyun', 'Proofreader', "90 HP. Keep erasing without getting hit and a combo builds up, making every weapon up to 35% faster. One hit breaks it. Crits start at 12% and grow every level. Skills: Highlighter, Paper Plane, Strikethrough, Stapler, Comma Mine, Sticky Note.",
         '90 HP · an unbroken combo makes weapons up to 35% faster · crits grow per level'],
-      ['Granny Ok', 'Appraiser for 40 years', '160 HP · slow. Takes 30% less damage, regenerates, and hits back at slop that bumps into her. +8 max HP per level, and the more max HP she has, the harder she hits. Seal Stamp, Scissors and Brush come up more.',
-        '160 HP · slow · -30% damage taken, regen, thorns · +8 HP per level, power grows with HP'],
+      ['Granny Ok', 'Appraiser for 40 years', '160 HP · slow. Takes 25% less damage, slowly regenerates, and hits back at slop that bumps into her. +8 max HP per level, and the more max HP she has, the harder she hits. Skills: Seal Stamp, Eraser, Sunlight Loupe, Abacus Beads, Teapot, Bell.',
+        '160 HP · slow · -25% damage taken, regen, thorns · +8 HP per level, power grows with HP'],
     ],
     w: {
       brush: ['Brush', 'Wide strokes toward the nearest enemy, front and back.'], hl: ['Highlighter', 'A piercing line at the nearest enemy.'],
@@ -226,10 +227,73 @@ const TXT = {
       plane: [['Squadron', ['+1 plane', 'Pierce +1', 'Bombing: planes explode when they are done']], ['Hunter', ['Speed and turning +30%', 'Damage +30%', 'Long flight: twice as long, pierce +2']]],
       eraser: [['Bounce', ['+2 bounces', 'Speed +30%', 'Dust: a small blast on every bounce']], ['Heavy eraser', ['Damage +30%', 'Big knockback and a short stun', 'Full erase: erased slop never splits and leaves an extra gem']]],
     },
+    flood: 'The flood is rising! Get to the exit', floodHud: (p) => `Flood ${p}%`,
     warn: 'WARNING', swarm: 'A mass generation is coming!', next: '▼', skip: 'Skip',
   },
 };
 const T = TXT[LANG];
+
+// ---------- text for the twelve curator-only skills (names, descriptions, evolutions, skill trees) ----------
+Object.assign(TXT.ko.w, {
+  knife: ['커터칼', '가까운 슬롭 쪽으로 짧은 칼날을 부채꼴로 뿌린다.'], ink: ['먹물 자국', '움직이는 동안 지나간 자리에 먹물 웅덩이를 남긴다.'],
+  aura: ['빨간 펜 원', '몸 주위를 태우는 원. 체력이 낮을수록 더 뜨겁다.'], tape: ['테이프', '테이프가 날아갔다가 돌아오며 오가는 길을 친다.'],
+  strike: ['취소선', '화면에서 가장 질긴 슬롭을 겨냥했다가 줄을 긋는다.'], stapler: ['스테이플러', '가까운 슬롭에게 심을 빠르게 박는다.'],
+  mine: ['쉼표 지뢰', '발밑에 쉼표를 떨어뜨린다. 슬롭이 밟으면 터진다.'], postit: ['포스트잇', '붙여 둔 메모가 잠시 동안 알아서 쏜다.'],
+  sun: ['돋보기 햇빛', '가까운 슬롭에게 햇빛을 모은다. 오래 비추면 불이 붙는다.'], abacus: ['주판알', '알이 사방으로 튀어 나가 벽에 맞고 튕긴다.'],
+  tea: ['찻주전자', '슬롭 무리에 차를 던진다. 뜨거운 웅덩이가 남는다.'], bell: ['종', '종을 울려 주위 슬롭을 치고 밀어내고 멈춘다.'],
+});
+Object.assign(TXT.en.w, {
+  knife: ['Cutter Knife', 'Throws a short fan of blades at the nearest slop.'], ink: ['Ink Trail', 'Leaves puddles of ink behind you while you move.'],
+  aura: ['Red-Pen Circle', 'A circle that burns around you, hotter the lower your health.'], tape: ['Tape', 'A roll of tape flies out and back, hitting both ways.'],
+  strike: ['Strikethrough', 'Marks the toughest slop on screen, then strikes it out.'], stapler: ['Stapler', 'Rapid staples at the nearest slop.'],
+  mine: ['Comma Mine', 'Drops a comma at your feet. It goes off when slop steps near.'], postit: ['Sticky Note', 'A note you stick down shoots on its own for a while.'],
+  sun: ['Sunlight Loupe', 'Focuses sunlight on the nearest slop. Hold it long enough and it ignites.'], abacus: ['Abacus Beads', 'Beads fly in every direction and bounce off walls.'],
+  tea: ['Teapot', 'Throws tea into the crowd and leaves a scalding puddle.'], bell: ['Bell', 'Rings to hit, push back and stun everything around you.'],
+});
+Object.assign(TXT.ko.evo, {
+  knife: ['칼날 폭풍', '사방으로 칼날을 뿌리고, 칼날이 관통한다.'], ink: ['먹물 바다', '멈춰 있어도 넓은 웅덩이가 생긴다.'],
+  aura: ['핏빛 교정', '원이 넓어지고, 여럿을 태우면 체력이 돌아온다.'], tape: ['끝없는 테이프', '굵은 테이프 여러 개가 사방으로 오간다.'],
+  strike: ['전면 삭제', '질긴 슬롭 다섯을 한꺼번에 지운다.'], stapler: ['제본기', '세 갈래로 박히고 관통한다.'],
+  mine: ['마침표 폭격', '터질 때 작은 지뢰 넷을 흩뿌린다.'], postit: ['메모 벽', '메모가 세 갈래로 쏜다.'],
+  sun: ['한낮', '햇빛이 세 갈래로 나뉜다.'], abacus: ['계산 끝', '알 열두 개가 멈추지 않고 튕긴다.'],
+  tea: ['찻잎 폭풍', '웅덩이가 넓고 오래가며 슬롭을 느리게 한다.'], bell: ['새벽 종', '두 번 울리고 더 멀리, 더 오래 멈춘다.'],
+});
+Object.assign(TXT.en.evo, {
+  knife: ['Blade Storm', 'Blades in every direction, and they pierce.'], ink: ['Sea of Ink', 'Wide puddles even when you stand still.'],
+  aura: ['Crimson Mark', 'A wider circle that heals you when it burns a crowd.'], tape: ['Endless Tape', 'Thick rolls of tape fly out in every direction.'],
+  strike: ['Redact All', 'Strikes out the five toughest at once.'], stapler: ['Binding Machine', 'Three-way staples that pierce.'],
+  mine: ['Full Stop', 'Each blast scatters four little mines.'], postit: ['Memo Wall', 'Notes fire three ways.'],
+  sun: ['High Noon', 'The sunlight splits three ways.'], abacus: ['Final Tally', 'Twelve beads that never stop bouncing.'],
+  tea: ['Tea Storm', 'Wider, longer puddles that slow slop down.'], bell: ['Dawn Bell', 'Rings twice, farther, with a longer stun.'],
+});
+Object.assign(TXT.ko.tree, {
+  knife: [['칼날 수', ['칼날 +2개', '관통 +1', '폭발: 칼날이 맞은 자리에서 터진다']], ['날카로움', ['피해 +25%', '재사용 대기 -15%', '출혈: 맞은 슬롭이 2초 동안 피해를 입는다']]],
+  ink: [['번짐', ['웅덩이 +25%', '오래 남음 +50%', '끈적임: 웅덩이 위의 슬롭이 느려진다']], ['진한 먹', ['피해 +30%', '더 자주 떨어뜨림', '터짐: 웅덩이가 마를 때 터진다']]],
+  aura: [['넓은 원', ['범위 +20%', '범위 +20%', '끌어당김: 원 안으로 슬롭을 당긴다']], ['뜨거운 원', ['피해 +30%', '더 자주 태운다', '흡혈: 여럿을 태우면 체력 회복']]],
+  tape: [['여러 롤', ['테이프 +1개', '더 멀리, 더 크게', '두 번: 한 번 더 던진다']], ['질긴 테이프', ['피해 +30%', '속도 +30%', '감기: 맞은 슬롭이 잠깐 멈춘다']]],
+  strike: [['여러 줄', ['표적 +1', '폭발 범위 +50%', '연쇄: 표적을 지우면 다음 표적으로 두 번 넘어간다']], ['굵은 줄', ['피해 +30%', '재사용 대기 -15%', '처형: 체력 25% 이하면 바로 지운다']]],
+  stapler: [['연사', ['심 +1개', '관통 +1', '두 번: 한 번 더 쏜다']], ['깊은 심', ['피해 +25%', '재사용 대기 -15%', '고정: 맞은 슬롭이 느려진다']]],
+  mine: [['지뢰밭', ['지뢰 최대 +2', '폭발 범위 +30%', '두 개씩: 한 번에 두 개를 놓는다']], ['큰 쉼표', ['피해 +30%', '재사용 대기 -20%', '기절: 터진 자리의 슬롭이 멈춘다']]],
+  postit: [['메모 더미', ['메모 +1장', '오래 붙어 있음 +50%', '두 발: 메모가 두 발씩 쏜다']], ['강한 접착', ['피해 +30%', '더 빨리 쏜다', '끈끈이: 맞은 슬롭이 느려진다']]],
+  sun: [['여러 줄기', ['햇빛 +1줄기', '사거리 +30%', '큰 불: 불이 붙으면 크게 터진다']], ['뜨거운 빛', ['피해 +30%', '더 자주 태운다', '아지랑이: 비춘 슬롭이 느려진다']]],
+  abacus: [['알 더하기', ['알 +2개', '튕김 +2번', '두 번: 한 번 더 굴린다']], ['무거운 알', ['피해 +30%', '속도 +30%', '쾅: 맞을 때마다 작은 폭발']]],
+  tea: [['넓은 웅덩이', ['범위 +25%', '오래 남음 +50%', '찻잎: 웅덩이가 슬롭을 느리게 한다']], ['진한 차', ['피해 +30%', '재사용 대기 -15%', '두 번: 한 번 더 던진다']]],
+  bell: [['멀리 울림', ['범위 +20%', '기절 +0.4초', '두 번: 한 번 더 울린다']], ['무거운 종', ['피해 +30%', '재사용 대기 -20%', '봉인: 울린 슬롭이 피해를 30% 더 받는다']]],
+});
+Object.assign(TXT.en.tree, {
+  knife: [['More blades', ['+2 blades', 'Pierce +1', 'Burst: blades explode where they hit']], ['Keen edge', ['Damage +25%', 'Cooldown -15%', 'Bleed: hit slop keeps taking damage for 2s']]],
+  ink: [['Spread', ['Puddles +25%', 'Last 50% longer', 'Sticky: slop in the ink slows down']], ['Dark ink', ['Damage +30%', 'Drops more often', 'Pop: puddles burst as they dry']]],
+  aura: [['Wide circle', ['Area +20%', 'Area +20%', 'Pull: drags slop into the circle']], ['Hot circle', ['Damage +30%', 'Burns more often', 'Leech: burning a crowd heals you']]],
+  tape: [['More rolls', ['+1 roll', 'Farther and bigger', 'Twice: throws again']], ['Tough tape', ['Damage +30%', 'Speed +30%', 'Wrap: hit slop is stopped briefly']]],
+  strike: [['More lines', ['+1 target', 'Blast area +50%', 'Chain: a cleared target jumps to the next one, twice']], ['Bold line', ['Damage +30%', 'Cooldown -15%', 'Execute: below 25% health it is gone']]],
+  stapler: [['Rapid fire', ['+1 staple', 'Pierce +1', 'Twice: fires again']], ['Deep staples', ['Damage +25%', 'Cooldown -15%', 'Pinned: hit slop slows down']]],
+  mine: [['Minefield', ['+2 max mines', 'Blast area +30%', 'Pairs: drops two at once']], ['Big comma', ['Damage +30%', 'Cooldown -20%', 'Stun: slop in the blast stops']]],
+  postit: [['Note pile', ['+1 note', 'Stays 50% longer', 'Double tap: notes fire two at a time']], ['Strong glue', ['Damage +30%', 'Fires faster', 'Sticky: hit slop slows down']]],
+  sun: [['More rays', ['+1 ray', 'Reach +30%', 'Blaze: ignitions explode bigger']], ['Hot light', ['Damage +30%', 'Burns more often', 'Haze: lit slop slows down']]],
+  abacus: [['Add beads', ['+2 beads', '+2 bounces', 'Twice: rolls again']], ['Heavy beads', ['Damage +30%', 'Speed +30%', 'Bang: a small blast on every hit']]],
+  tea: [['Wide puddle', ['Area +25%', 'Lasts 50% longer', 'Leaves: puddles slow slop down']], ['Strong tea', ['Damage +30%', 'Cooldown -15%', 'Twice: throws again']]],
+  bell: [['Far ring', ['Area +20%', 'Stun +0.4s', 'Twice: rings again']], ['Heavy bell', ['Damage +30%', 'Cooldown -20%', 'Seal: rung slop takes 30% more damage']]],
+});
 
 // ---------- canvas, scaling, input, math, sound ----------
 const cv = document.getElementById('c'), ctx = cv.getContext('2d');
@@ -605,11 +669,11 @@ const MAX_W = 6, MAX_LV = 6;
 // three ways to play. Mina: fragile and fast, hits harder the more she bleeds, and every level sharpens her.
 // Doyun: a chain of kills without being hit speeds every weapon up; crits grow with level; one hit breaks the chain.
 // Granny Ok: slow and hard to kill; armour, regeneration, thorns, and the more health she has the harder she hits.
-// `affinity`: the weapons that come up more often for this curator.
+// `pool`: the six skills this curator can ever learn. No two curators share a pool.
 const CHARS = [
-  { start: 'brush', hp: 70, spd: 1.12, area: 0.1, cd: 0, dash: 0.7, armor: 0, rage: 1.3, perLv: { dmg: 0.035 }, affinity: ['brush', 'scis', 'eraser'] },
-  { start: 'hl', hp: 90, spd: 1, area: 0, cd: 0.1, dash: 1.1, armor: 0, combo: 1, crit: 0.12, perLv: { crit: 0.012 }, affinity: ['hl', 'plane', 'eraser'] },
-  { start: 'stamp', hp: 160, spd: 0.84, area: 0.1, cd: 0, dash: 1.5, armor: 0.3, regen: 0.8, thorns: 0.25, hpPower: 1, perLv: { hp: 8 }, affinity: ['stamp', 'scis', 'brush'] },
+  { start: 'brush', hp: 70, spd: 1.12, area: 0.1, cd: 0, dash: 0.7, armor: 0, rage: 1.3, perLv: { dmg: 0.035 }, pool: ['brush', 'scis', 'knife', 'ink', 'aura', 'tape'] },
+  { start: 'hl', hp: 90, spd: 1, area: 0, cd: 0.1, dash: 1.1, armor: 0, combo: 1, crit: 0.12, perLv: { crit: 0.012 }, pool: ['hl', 'plane', 'strike', 'stapler', 'mine', 'postit'] },
+  { start: 'stamp', hp: 160, spd: 0.84, area: 0.1, cd: 0, dash: 1.5, armor: 0.25, regen: 0.4, thorns: 0.25, hpPower: 1, perLv: { hp: 8 }, pool: ['stamp', 'eraser', 'sun', 'abacus', 'tea', 'bell'] },
 ];
 const critChance = () => { const c = CHARS[pl.ci]; return c.crit ? Math.min(0.6, c.crit + c.perLv.crit * (pl.lv - 1)) : 0; };
 const comboCd = () => (CHARS[pl.ci].combo ? Math.min(0.35, pl.combo * 0.004) : 0);
@@ -984,9 +1048,9 @@ const onScreen = (e, m = 0) => Math.abs(e.x - cam.x) < LW / 2 + m && Math.abs(e.
 
 // ---------- slop ----------
 function spawnFoe(type, x, y, o = {}) {
-  const d = FOES[type], k = d.prop ? 1 + run.depth * 0.08 : hpScale(run.depth) * (o.elite ? 12 : 1) * (o.mini ? 0.35 : 1) * (st?.mod === 'danger' ? 1.15 : 1);
-  const e = { type, x, y, hp: d.hp * k, maxHp: d.hp * k, spd: d.spd * (o.elite ? 0.9 : 1) * (o.mini ? 1.25 : 1), dmg: d.dmg * (o.elite ? 1.5 : 1) * (0.8 + run.depth * 0.035), r: d.r * (o.elite ? 1.7 : o.mini ? 0.7 : 1),
-    xp: d.xp * (o.elite ? 0 : 1), elite: !!o.elite, mini: !!o.mini, scale: o.elite ? 1.7 : o.mini ? 0.7 : 1, flash: 0, kx: 0, ky: 0, stun: 0, anim: rand() * 2, t: rand() * 2, spawnIn: 0.3,
+  const d = FOES[type], k = d.prop ? 1 + run.depth * 0.08 : hpScale(run.depth) * (o.elite ? 12 : 1) * (o.mini ? 0.35 : 1) * (st?.mod === 'danger' ? 1.15 : 1) * (1 + (st?.flood || 0) * 0.5);
+  const e = { type, x, y, hp: d.hp * k, maxHp: d.hp * k, spd: d.spd * (o.elite ? 0.9 : 1) * (o.mini ? 1.25 : 1), dmg: d.dmg * (o.elite ? 1.5 : 1) * (0.8 + run.depth * 0.035) * (1 + (st?.flood || 0) * 0.25), r: d.r * (o.elite ? 1.7 : o.mini ? 0.7 : 1),
+    xp: d.xp * (o.elite ? 0 : 1) * Math.max(0.15, 1 - (st?.flood || 0) * 0.4) /* flood slop is not worth farming */, elite: !!o.elite, mini: !!o.mini, scale: o.elite ? 1.7 : o.mini ? 0.7 : 1, flash: 0, kx: 0, ky: 0, stun: 0, anim: rand() * 2, t: rand() * 2, spawnIn: 0.3,
     lastScis: -9, dashing: 0, vx: 0, vy: 0, guard: !!o.guard, prop: !!d.prop };
   foes.push(e); return e;
 }
@@ -1001,9 +1065,12 @@ function spawnSpot(minD = 190, maxD = 430) { // a floor tile out of sight but no
 function spawning(dt) {
   if (st.kind === 'boss' || st.cleared) { if (st.kind === 'boss' && boss && boss.kind !== 'snake') bossAdds(dt); return; }
   if (st.t < 4) return; // a breath at the start of every area
-  const mul = (run.flags.praise ? 1.4 : 1) * (run.flags.unplug ? 0.8 : 1) * (st.open ? 0.6 : 1) * (st.mod === 'danger' ? 1.35 : 1);
+  // linger in one area and the flood rises: more slop, then waves that close in from every side
+  const flood = st.kind === 'fight' || st.kind === 'elite' ? Math.max(0, st.t - 40) / 30 : 0; st.flood = flood;
+  if (flood > 0 && st.t > 55) { st.waveT = (st.waveT ?? 0) - dt; if (st.waveT <= 0) { st.waveT = Math.max(5, 14 - flood * 2.5); floodWave(flood); } }
+  const mul = (run.flags.praise ? 1.4 : 1) * (run.flags.unplug ? 0.8 : 1) * (st.open ? 0.6 : 1) * (st.mod === 'danger' ? 1.35 : 1) * (1 + flood);
   spawnAcc += spawnRate(run.depth) * mul * dt;
-  while (spawnAcc >= 1) { spawnAcc--; if (foes.length < aliveCap(run.depth)) { const p = spawnSpot(); if (p) spawnFoe(weighted(st.B.mix), p[0], p[1]); } }
+  while (spawnAcc >= 1) { spawnAcc--; if (foes.length < Math.min(280, aliveCap(run.depth) * (1 + flood * 0.6))) { const p = spawnSpot(); if (p) spawnFoe(weighted(st.B.mix), p[0], p[1]); } }
   for (const v of st.vents) { // vents near you breathe out small swarms
     v.t -= dt; if (v.t > 0) continue; v.t = rnd(9, 14);
     const d = Math.hypot(v.x - pl.x, v.y - pl.y); if (d > 520 || d < 90 || foes.length > aliveCap(run.depth)) continue;
@@ -1089,13 +1156,13 @@ function openGate() { if (st.open) return; st.open = true; banner = { text: T.ga
 
 // ---------- level-up choices and chests ----------
 function upgradePool() {
-  const pool = [], aff = CHARS[pl.ci].affinity, kills = (id) => pl.wk[id] || 0;
+  const pool = [], kills = (id) => pl.wk[id] || 0;
   // weapons that have erased more slop come up more, and so do their skill tree tiers
   for (const w of pl.weapons) if (!w.evo && w.lv < MAX_LV) pool.push({ k: 'w', id: w.id, lv: w.lv + 1, wt: 3 * Math.min(2, 1 + kills(w.id) / 150) });
   for (const w of pl.weapons) for (let b = 0; b < 2; b++) {
     const t = w.tr[b]; if (t < 3 && (t > 0 || w.lv >= 2) && kills(w.id) >= TREE_NEED[t] && !(t === 2 && w.tr[1 - b] >= 3)) pool.push({ k: 't', id: w.id, b, t, wt: 1.3 * Math.min(6, 1 + kills(w.id) / 40) });
   }
-  if (pl.weapons.length < MAX_W) for (const id of W_ORDER) if (!weaponOf(id)) pool.push({ k: 'w', id, lv: 1, wt: aff.includes(id) ? 3.2 : 1.1 });
+  if (pl.weapons.length < MAX_W) for (const id of CHARS[pl.ci].pool) if (!weaponOf(id)) pool.push({ k: 'w', id, lv: 1, wt: 2.4 });
   const owned = Object.keys(pl.pas);
   for (const id of P_ORDER) { const lv = pasLv(id); if (lv && lv < PASSIVES[id]) pool.push({ k: 'p', id, lv: lv + 1, wt: 2.5 }); else if (!lv && owned.length < 6) pool.push({ k: 'p', id, lv: 1, wt: 1.5 }); }
   return pool;
@@ -1135,7 +1202,7 @@ function updFoes(dt) {
     if (e.seg) continue; // snake segments follow their head (updBoss)
     if (e.spawnIn > 0) { e.spawnIn -= dt; continue; }
     if (e.vuln > 0) e.vuln -= dt; // sealed by a stamp: takes more damage
-    if (e.bleed > 0) { e.bleed -= dt; e.bleedT = (e.bleedT || 0) - dt; if (e.bleedT <= 0) { e.bleedT = 0.5; curSrc = 'scis'; hurt(e, e.bleedDmg); curSrc = null; if (e.dead) continue; } }
+    if (e.bleed > 0) { e.bleed -= dt; e.bleedT = (e.bleedT || 0) - dt; if (e.bleedT <= 0) { e.bleedT = 0.5; curSrc = e.bleedSrc || 'scis'; hurt(e, e.bleedDmg); curSrc = null; if (e.dead) continue; } }
     if (e.prop) continue; // crates and barrels just stand there
     if (e.boss) { updBoss(e, dt); continue; }
     const dx = pl.x - e.x, dy = pl.y - e.y, d = Math.hypot(dx, dy) || 1;
@@ -1151,6 +1218,7 @@ function updFoes(dt) {
       const want = d < 75 ? -1 : d > 110 ? 1 : 0; vx = (ux * want - uy * 0.6) * e.spd; vy = (uy * want + ux * 0.6) * e.spd;
       if (e.t > 2.4 && onScreen(e, -8)) { e.t = rnd(-0.4, 0); ebul.push({ x: e.x, y: e.y, vx: dx / d * 72, vy: dy / d * 72, t: 0, max: 4, r: 3, dmg: e.dmg + 2, col: '#e0524a' }); sfx('shot'); }
     } else { vx = ux * e.spd; vy = uy * e.spd; }
+    if (e.slowT > 0) { e.slowT -= dt; vx *= 0.5; vy *= 0.5; } // slowed by ink, tea or staples
     e.x += (vx + e.kx) * dt; e.y += (vy + e.ky) * dt; e.kx *= kd; e.ky *= kd; pushOut(e, e.r * 0.8);
     e.anim += dt * (2 + e.spd / 25); if (vx) e.face = vx < 0 ? -1 : 1;
     if (d < e.r + 5) hurtPlayer(e.dmg, e);
@@ -1380,7 +1448,7 @@ function updWeapons(dt) {
         w.t = st.cd * cm; const n = st.amt + extra, v = 160 * (1 + (m.speed || 0));
         for (let k = 0; k < n; k++) { const tg = nearest(pl.x, pl.y, 170), a = (tg ? angTo(tg) : facing()) + k * 0.4; shots.push({ k: 'eraser', x: pl.x, y: pl.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, v, t: 0, max: 1.6, dmg: st.dmg * evoK, chain: st.chain + (m.chain || 0), hitSet: new Set(), evo: w.evo, spin: 0, knock: m.knock, dust: m.dust }); }
       }
-    }
+    } else fireNew(w, st, m, am, cm, extra, evoK, dt); // the twelve curator-only skills (62-skills.js)
     for (const s of shots) if (!s.src) s.src = w.id;
   }
   curSrc = null;
@@ -1398,7 +1466,7 @@ function slash(a, st, am, evo, m = {}) {
   if (m.wave) { const L = R * 2.6, x2 = pl.x + Math.cos(a) * L, y2 = pl.y + Math.sin(a) * L; segHit(pl.x, pl.y, x2, y2, 7 * am, dmg * 0.7, 1); fx.push({ k: 'beam', x1: pl.x, y1: pl.y, x2, y2, t: 0, max: 0.25, w: 7 * am, ink: 1 }); }
   fx.push({ k: 'slash', a, r: R, arc, t: 0, max: 0.2, evo }); sfx('slash');
 }
-function blast(x, y, r, dmg, col) { near(x, y, r + 10, (e) => { if (dist2(x, y, e.x, e.y) < (r + e.r) ** 2) hurt(e, dmg, (e.x - x) / r, (e.y - y) / r, 0.8); }); fx.push({ k: 'blast', x, y, r, t: 0, max: 0.3, col }); }
+function blast(x, y, r, dmg, col, m) { near(x, y, r + 10, (e) => { if (dist2(x, y, e.x, e.y) < (r + e.r) ** 2) (m ? hitWith(e, dmg, m, (e.x - x) / r, (e.y - y) / r, 0.8) : hurt(e, dmg, (e.x - x) / r, (e.y - y) / r, 0.8)); }); fx.push({ k: 'blast', x, y, r, t: 0, max: 0.3, col }); }
 function updShots(dt) {
   for (const s of shots) {
     s.t += dt; curSrc = s.src || null;
@@ -1439,10 +1507,246 @@ function updShots(dt) {
       near(s.x, s.y, R, (e) => { if (e.boss || e.seg || e.prop) return; const dx = s.x - e.x, dy = s.y - e.y, d = Math.hypot(dx, dy) || 1; if (d < R) { e.x += dx / d * 55 * dt; e.y += dy / d * 55 * dt; } });
       if (s.tick <= 0) { s.tick = 0.25; near(s.x, s.y, 20, (e) => { if (dist2(s.x, s.y, e.x, e.y) < (16 + e.r) ** 2) hurt(e, s.dmg * 0.35, 0, 0, 0); }); }
       if (s.t > s.max) { s.dead = true; near(s.x, s.y, 30, (e) => { if (dist2(s.x, s.y, e.x, e.y) < (26 + e.r) ** 2) hurt(e, s.dmg * 1.2, 0, 0, 0); }); burst(s.x, s.y, 14, '#b07ce8'); sfx('stamp'); }
-    }
+    } else updNewShot(s, dt);
   }
   curSrc = null;
   shots = shots.filter((s) => !s.dead);
+}
+
+// ---------- the curators' own skills ----------
+// Each curator learns six skills and no two share any. The first six (brush, highlighter, stamp, scissors,
+// paper plane, eraser) live in 40-data.js and 60-weapons.js; these are the other twelve.
+// Mina (close and reckless): brush, scissors, cutter knife, ink trail, red-pen circle, tape.
+// Doyun (aim and rhythm): highlighter, paper plane, strikethrough, stapler, comma mines, sticky-note turrets.
+// Granny Ok (hold the ground): seal stamp, eraser, sunlight loupe, abacus beads, teapot, bell.
+Object.assign(WEAPONS, {
+  knife: { evoWith: 'coffee', st: (lv) => ({ dmg: 9 + lv * 3, cd: 0.95 - lv * 0.05, amt: 3 + (lv >= 3) + (lv >= 5), range: 95 + lv * 6 }) },
+  ink: { evoWith: 'clip', st: (lv) => ({ dmg: 8 + lv * 3, cd: 0.32 - lv * 0.02, r: 13 + lv, dur: 2.2 + lv * 0.3 }) },
+  aura: { evoWith: 'vita', st: (lv) => ({ dmg: 7 + lv * 3, r: 34 + lv * 3, tick: 0.4 }) },
+  tape: { evoWith: 'copier', st: (lv) => ({ dmg: 12 + lv * 4, cd: 1.7 - lv * 0.08, amt: 1 + (lv >= 3) + (lv >= 5), range: 105 + lv * 8 }) },
+  strike: { evoWith: 'loupe', st: (lv) => ({ dmg: 40 + lv * 14, cd: 2.3 - lv * 0.12, amt: 1 + (lv >= 3) + (lv >= 5), r: 14 }) },
+  stapler: { evoWith: 'vita', st: (lv) => ({ dmg: 5 + lv * 2, cd: 0.34 - lv * 0.02, amt: 1 + (lv >= 4) }) },
+  mine: { evoWith: 'clip', st: (lv) => ({ dmg: 36 + lv * 12, cd: 1.6 - lv * 0.08, r: 34 + lv * 3, max: 6 + lv }) },
+  postit: { evoWith: 'shoes', st: (lv) => ({ dmg: 6 + lv * 2, cd: 6 - lv * 0.3, dur: 6 + lv * 0.5, max: 2 + (lv >= 4) }) },
+  sun: { evoWith: 'loupe', st: (lv) => ({ dmg: 3 + lv * 1.6, range: 110 + lv * 6 }) },
+  abacus: { evoWith: 'copier', st: (lv) => ({ dmg: 9 + lv * 3, cd: 1.9 - lv * 0.08, amt: 4 + (lv >= 3) * 2 + (lv >= 5) * 2, bounce: 2 + (lv >> 1) }) },
+  tea: { evoWith: 'shoes', st: (lv) => ({ dmg: 18 + lv * 6, cd: 2.4 - lv * 0.1, amt: 1 + (lv >= 3) + (lv >= 5), r: 22 + lv * 2 }) },
+  bell: { evoWith: 'coffee', st: (lv) => ({ dmg: 15 + lv * 6, cd: 4 - lv * 0.25, r: 70 + lv * 8 }) },
+});
+// two branches x three tiers. Shared keys: dmg/area/cd/dur/speed are fractions, amt/pierce/chain are counts.
+// Switches: twin (fire again 0.2s later), boom (small blast on hit), slow, stunHit, bleed, exec, pull, leech, rate, seal, double
+Object.assign(TREES, {
+  knife: [[{ amt: 2 }, { pierce: 1 }, { boom: 1 }], [{ dmg: 0.25 }, { cd: 0.15 }, { bleed: 1 }]],
+  ink: [[{ area: 0.25 }, { dur: 0.5 }, { slow: 1 }], [{ dmg: 0.3 }, { cd: 0.2 }, { boom: 1 }]],
+  aura: [[{ area: 0.2 }, { area: 0.2 }, { pull: 1 }], [{ dmg: 0.3 }, { rate: 1 }, { leech: 1 }]],
+  tape: [[{ amt: 1 }, { area: 0.3 }, { twin: 1 }], [{ dmg: 0.3 }, { speed: 0.3 }, { stunHit: 1 }]],
+  strike: [[{ amt: 1 }, { area: 0.5 }, { chain: 2 }], [{ dmg: 0.3 }, { cd: 0.15 }, { exec: 0.25 }]],
+  stapler: [[{ amt: 1 }, { pierce: 1 }, { twin: 1 }], [{ dmg: 0.25 }, { cd: 0.15 }, { slow: 1 }]],
+  mine: [[{ amt: 2 }, { area: 0.3 }, { twin: 1 }], [{ dmg: 0.3 }, { cd: 0.2 }, { stunHit: 1 }]],
+  postit: [[{ amt: 1 }, { dur: 0.5 }, { double: 1 }], [{ dmg: 0.3 }, { rate: 1 }, { slow: 1 }]],
+  sun: [[{ amt: 1 }, { area: 0.3 }, { boom: 1 }], [{ dmg: 0.3 }, { rate: 1 }, { slow: 1 }]],
+  abacus: [[{ amt: 2 }, { chain: 2 }, { twin: 1 }], [{ dmg: 0.3 }, { speed: 0.3 }, { boom: 1 }]],
+  tea: [[{ area: 0.25 }, { dur: 0.5 }, { slow: 1 }], [{ dmg: 0.3 }, { cd: 0.15 }, { twin: 1 }]],
+  bell: [[{ area: 0.2 }, { stunHit: 1 }, { twin: 1 }], [{ dmg: 0.3 }, { cd: 0.2 }, { seal: 1 }]],
+});
+Object.assign(ICONS, {
+  knife: bake(['.......g', '......gw', '.....gw.', '....gw..', '...gw...', '..nn....', '.nn.....', 'nn......']),
+  ink: bake(['...B....', '..BBB...', '.BBbBB..', '.BBBBB..', '..BBB...', '........', 'BB..BBB.', 'BBBBBBBB']),
+  aura: bake(['..rrrr..', '.r....r.', 'r..rr..r', 'r.r..r.r', 'r.r..r.r', 'r..rr..r', '.r....r.', '..rrrr..']),
+  tape: bake(['..gggg..', '.gGGGGg.', 'gGg..gGg', 'gG.kk.Gg', 'gG.kk.Gg', 'gGg..gGg', '.gGGGGg.', '..gggg..']),
+  strike: bake(['r......r', '.r....r.', '..r..r..', 'wwwwwwww', '..r..r..', '.r....r.', 'r......r', '........']),
+  stapler: bake(['........', '.GGGGGG.', 'GggggggG', 'GGGGGGGG', '.....kk.', '.GGGGGGG', 'Gggggggg', '........']),
+  mine: bake(['..kk....', '.kkkk...', 'kkrrkk..', 'kkrrkk..', '.kkkk...', '..kk.k..', '.....k..', '....k...']),
+  postit: bake(['yyyyyyy.', 'yvvvvvy.', 'yyyyyyy.', 'yvvvvy..', 'yyyyyy..', 'yvvvy...', 'yyyyy...', '........']),
+  sun: bake(['...y....', '.y.y.y..', '..yyy...', 'yyyvyyy.', '..yyy...', '.y.y.y..', '...y....', '........']),
+  abacus: bake(['nnnnnnnn', 'n.ro.r.n', 'nnnnnnnn', 'n.o.ro.n', 'nnnnnnnn', 'n.r.o.rn', 'nnnnnnnn', '........']),
+  tea: bake(['..ll....', '.llll.l.', 'lllllll.', 'lLlllll.', 'lllllll.', '.LLLLL..', '........', '........']),
+  bell: bake(['...y....', '..yyy...', '.yyyyy..', '.yyyyy..', 'yyyyyyy.', 'yyyyyyy.', '...n....', '........']),
+});
+
+// a hit that carries the skill tree's switches along
+function hitWith(e, dmg, m, kx = 0, ky = 0, kb = 0.6) {
+  hurt(e, dmg, kx, ky, kb); if (e.dead || e.prop) return;
+  const tgt = e.seg ? e.parent : e;
+  if (m.slow) tgt.slowT = 1.5;
+  if (m.stunHit && !tgt.boss) tgt.stun = Math.max(tgt.stun || 0, 0.45);
+  if (m.seal) tgt.vuln = 3;
+  if (m.bleed) { tgt.bleed = 2; tgt.bleedDmg = dmg * 0.12; tgt.bleedSrc = curSrc; }
+}
+const visibleFoes = () => foes.filter((e) => !e.dead && !e.prop && !e.seg && e.spawnIn <= 0 && onScreen(e, -10));
+const CONT = { ink: 1, aura: 1, sun: 1 }; // these work every frame instead of on a cooldown
+function fireNew(w, st, m, am, cm, extra, evoK, dt) {
+  const f = FIRE[w.id]; if (!f) return;
+  if (CONT[w.id]) return f(w, st, m, am, extra, evoK, dt, cm);
+  if (w.t <= 0) { w.t = st.cd * cm * (w.evo ? 0.8 : 1); f(w, st, m, am, extra, evoK); if (m.twin) w.tw = 0.2; }
+  if (w.tw > 0 && (w.tw -= dt) <= 0) f(w, st, m, am, extra, evoK);
+}
+const FIRE = {
+  knife(w, st, m, am, extra, evoK) { // a fan of short blades, or a full circle once evolved
+    const tg = nearest(pl.x, pl.y, 160), base = tg ? angTo(tg) : facing(), n = w.evo ? 12 + extra * 2 : st.amt + extra;
+    for (let k = 0; k < n; k++) { const a = w.evo ? base + k / n * Math.PI * 2 : base + (k - (n - 1) / 2) * 0.16; shots.push({ k: 'knife', x: pl.x, y: pl.y - 3, a, v: 270, t: 0, max: st.range * am / 270, dmg: st.dmg * evoK, pierce: (w.evo ? 2 : 0) + (m.pierce || 0), hitSet: new Set(), m }); }
+    sfx('slash');
+  },
+  ink(w, st, m, am, extra, evoK, dt, cm) { // puddles of ink behind you while you move (anywhere, once evolved)
+    w.acc = (w.acc || 0) + dt; if (!(pl.moving || w.evo) || w.acc < st.cd * cm) return; w.acc = 0;
+    if (shots.filter((s) => s.k === 'puddle').length > 44) return;
+    shots.push({ k: 'puddle', col: 'ink', x: pl.x, y: pl.y + 2, r: st.r * am * (w.evo ? 1.8 : 1), t: 0, max: st.dur * (1 + (m.dur || 0)), dmg: st.dmg * evoK, tick: 0, m });
+  },
+  aura(w, st, m, am, extra, evoK, dt) { // a red circle that burns harder the more you bleed
+    const R = st.r * am * (w.evo ? 1.5 : 1); w.R = R; w.tick = (w.tick || 0) - dt; if (w.tick > 0) return;
+    w.tick = st.tick * (m.rate ? 0.7 : 1); const rk = 1 + 1.5 * (1 - pl.hp / pl.maxHp); let n = 0;
+    near(pl.x, pl.y, R + 10, (e) => {
+      if (dist2(e.x, e.y, pl.x, pl.y) > (R + e.r) ** 2) return; hitWith(e, st.dmg * evoK * rk, m, 0, 0, 0); if (!e.prop) n++;
+      if (m.pull && !e.boss && !e.seg && !e.prop) { e.x += (pl.x - e.x) * 0.06; e.y += (pl.y - e.y) * 0.06; }
+    });
+    if ((w.evo || m.leech) && n >= 3) pl.hp = Math.min(pl.maxHp, pl.hp + 0.5);
+  },
+  tape(w, st, m, am, extra, evoK) { // a roll of tape that flies out and comes back
+    const n = st.amt + extra + (w.evo ? 3 : 0), tg = nearest(pl.x, pl.y, 200), base = tg ? angTo(tg) : facing();
+    for (let k = 0; k < n; k++) shots.push({ k: 'tape', x: pl.x, y: pl.y - 3, a: base + k / n * Math.PI * 2, out: st.range * am, d: 0, back: false, v: 170 * (1 + (m.speed || 0)), t: 0, dmg: st.dmg * evoK, hitSet: new Set(), m, size: w.evo ? 1.6 : 1, spin: 0 });
+    sfx('dash');
+  },
+  strike(w, st, m, am, extra, evoK) { // marks the toughest slop on screen, then strikes it out
+    const vis = visibleFoes().sort((a, b) => b.hp - a.hp); if (!vis.length) { w.t = 0.2; return; }
+    const n = (w.evo ? 5 : st.amt) + extra;
+    for (let k = 0; k < n; k++) { const e = vis[k % vis.length]; shots.push({ k: 'strike', tgt: e, x: e.x, y: e.y, t: 0, at: 0.7, dmg: st.dmg * evoK, r: st.r * am * (w.evo ? 2 : 1), m, hops: m.chain || 0 }); }
+  },
+  stapler(w, st, m, am, extra, evoK) { // quick staples at the nearest slop
+    const tg = nearest(pl.x, pl.y, 210), base = tg ? angTo(tg) : facing(), n = (w.evo ? 3 : st.amt) + extra;
+    for (let k = 0; k < n; k++) shots.push({ k: 'staple', x: pl.x, y: pl.y - 3, a: base + (k - (n - 1) / 2) * 0.12 + rnd(-0.04, 0.04), v: 300, t: 0, max: 0.75, dmg: st.dmg * evoK, pierce: (w.evo ? 1 : 0) + (m.pierce || 0), hitSet: new Set(), m });
+    sfx('shot');
+  },
+  mine(w, st, m, am, extra, evoK) { // drops a comma; it goes off when slop steps near
+    if (shots.filter((s) => s.k === 'mine').length >= st.max + extra + (m.amt || 0) * 2) return;
+    shots.push({ k: 'mine', x: pl.x + rnd(-6, 6), y: pl.y + rnd(-4, 6), t: 0, arm: 0.5, r: st.r * am, dmg: st.dmg * evoK, m, evo: w.evo, max: 30 });
+  },
+  postit(w, st, m, am, extra, evoK) { // sticks a note that shoots for a while
+    const mine = shots.filter((s) => s.k === 'turret'); if (mine.length >= st.max + extra + (m.amt || 0)) mine[0].dead = true;
+    shots.push({ k: 'turret', x: pl.x, y: pl.y, t: 0, max: st.dur * (1 + (m.dur || 0)), fire: 0.2, dmg: st.dmg * evoK, m, evo: w.evo, rate: m.rate ? 0.35 : 0.5, reach: 140 * am });
+  },
+  sun(w, st, m, am, extra, evoK, dt) { // a beam of focused sunlight on the nearest slop; held long enough, it ignites
+    const R = st.range * am, n = (w.evo ? 3 : 1) + (m.amt || 0);
+    w.beams = visibleFoes().filter((e) => dist2(e.x, e.y, pl.x, pl.y) < R * R).sort((a, b) => dist2(a.x, a.y, pl.x, pl.y) - dist2(b.x, b.y, pl.x, pl.y)).slice(0, n);
+    w.tick = (w.tick || 0) - dt; if (w.tick > 0) return; w.tick = m.rate ? 0.1 : 0.15;
+    for (const e of w.beams) {
+      hitWith(e, st.dmg * evoK, m, 0, 0, 0); e.heat = (e.heat || 0) + 0.15;
+      if (e.heat > 1.2) { e.heat = 0; blast(e.x, e.y, m.boom ? 28 : 14, st.dmg * evoK * 3, '#fde047'); }
+    }
+  },
+  abacus(w, st, m, am, extra, evoK) { // beads that fly out and bounce off walls
+    const n = (w.evo ? 12 : st.amt) + extra * 2, off = rand() * Math.PI * 2, v = 180 * (1 + (m.speed || 0));
+    for (let k = 0; k < n; k++) { const a = off + k / n * Math.PI * 2; shots.push({ k: 'bead', x: pl.x, y: pl.y - 2, vx: Math.cos(a) * v, vy: Math.sin(a) * v, t: 0, max: w.evo ? 3.5 : 2.5, dmg: st.dmg * evoK, bounce: st.bounce + (m.chain || 0) + (w.evo ? 99 : 0), hitSet: new Set(), m }); }
+    sfx('pick');
+  },
+  tea(w, st, m, am, extra, evoK) { // a teapot lobbed at the slop: a scalding splash and a hot puddle
+    const vis = visibleFoes(), n = st.amt + extra;
+    for (let k = 0; k < n; k++) { const e = vis.length ? pick(vis) : null; shots.push({ k: 'tea', sx: pl.x, sy: pl.y, x: e ? e.x : pl.x + rnd(-70, 70), y: e ? e.y : pl.y + rnd(-60, 60), t: -k * 0.15, at: 0.6, r: st.r * am, dmg: st.dmg * evoK, m, evo: w.evo }); }
+  },
+  bell(w, st, m, am, extra, evoK) { // one ring: everything nearby is hit, pushed back and stunned
+    shots.push({ k: 'ring', x: pl.x, y: pl.y, t: 0, max: 0.45, R: st.r * am * (w.evo ? 1.4 : 1), dmg: st.dmg * evoK, m, stun: (w.evo ? 1.2 : 0.6) + (m.stunHit ? 0.4 : 0) });
+    if (w.evo && !w.tw) w.tw = 0.5; sfx('stamp'); shake = Math.max(shake, 2);
+  },
+};
+function moveHit(s, dt, rad) { // straight shots: knives and staples
+  s.x += Math.cos(s.a) * s.v * dt; s.y += Math.sin(s.a) * s.v * dt;
+  if (solid(s.x, s.y)) { s.dead = true; return; }
+  near(s.x, s.y, rad + 8, (e) => {
+    if (s.dead || s.hitSet.has(e) || dist2(s.x, s.y, e.x, e.y) > (e.r + rad) ** 2) return; s.hitSet.add(e);
+    hitWith(e, s.dmg, s.m, Math.cos(s.a), Math.sin(s.a), 0.5); if (s.m.boom) blast(s.x, s.y, 14, s.dmg * 0.5, '#fca5a5');
+    if (--s.pierce < 0) s.dead = true;
+  });
+  if (s.t > s.max) s.dead = true;
+}
+function updNewShot(s, dt) {
+  const m = s.m || {};
+  if (s.k === 'knife') moveHit(s, dt, 4);
+  else if (s.k === 'staple') moveHit(s, dt, 3);
+  else if (s.k === 'puddle') { // ink and tea puddles burn whatever stands in them
+    s.tick -= dt;
+    if (s.tick <= 0) { s.tick = m.rate ? 0.2 : 0.3; near(s.x, s.y, s.r + 8, (e) => { if (dist2(s.x, s.y, e.x, e.y) < (s.r + e.r * 0.5) ** 2) hitWith(e, s.dmg, m, 0, 0, 0); }); }
+    if (s.t > s.max) { s.dead = true; if (m.boom && s.col === 'ink') blast(s.x, s.y, s.r * 1.4, s.dmg * 2, '#93c5fd'); }
+  } else if (s.k === 'tape') {
+    s.spin += dt * 12; const v = s.v * dt;
+    if (!s.back) { s.x += Math.cos(s.a) * v; s.y += Math.sin(s.a) * v; s.d += v; if (s.d >= s.out || solid(s.x, s.y)) { s.back = true; s.hitSet.clear(); } }
+    else { const dx = pl.x - s.x, dy = pl.y - 3 - s.y, d = Math.hypot(dx, dy) || 1; s.x += dx / d * v * 1.1; s.y += dy / d * v * 1.1; if (d < 10) s.dead = true; }
+    near(s.x, s.y, 10 * s.size, (e) => { if (s.hitSet.has(e) || dist2(s.x, s.y, e.x, e.y) > (e.r + 6 * s.size) ** 2) return; s.hitSet.add(e); hitWith(e, s.dmg, m, Math.cos(s.a), Math.sin(s.a), 0.8); });
+    if (s.t > 4) s.dead = true;
+  } else if (s.k === 'strike') {
+    if (s.tgt && !s.tgt.dead) { s.x = s.tgt.x; s.y = s.tgt.y; }
+    if (s.t >= s.at) {
+      const e = s.tgt;
+      if (e && !e.dead) { const fin = m.exec && !e.boss && e.hp < e.maxHp * m.exec; hitWith(e, fin ? e.hp * 3 + 10 : s.dmg, m, 0, 0, 0); }
+      blast(s.x, s.y, s.r, s.dmg * 0.4, '#fb7185', m); fx.push({ k: 'strikeFx', x: s.x, y: s.y, t: 0, max: 0.3 }); sfx('slash'); shake = Math.max(shake, 2);
+      if (s.hops > 0 && (!e || e.dead)) { const nx = visibleFoes().sort((a, b) => b.hp - a.hp)[0]; if (nx) { s.tgt = nx; s.t = 0.3; s.hops--; return; } }
+      s.dead = true;
+    }
+  } else if (s.k === 'mine') {
+    if (s.t < s.arm) return;
+    let go = false; near(s.x, s.y, 30, (e) => { if (!e.prop && dist2(s.x, s.y, e.x, e.y) < (22 + e.r) ** 2) { go = true; return false; } });
+    if (go || s.t > s.max) {
+      s.dead = true; blast(s.x, s.y, s.r, s.dmg, '#fb923c', m); sfx('boom'); shake = Math.max(shake, 2);
+      if (s.evo && !s.mini) for (let k = 0; k < 4; k++) shots.push({ k: 'mine', x: s.x + Math.cos(k * 1.57) * 22, y: s.y + Math.sin(k * 1.57) * 22, t: 0, arm: 0.3, r: s.r * 0.5, dmg: s.dmg * 0.4, m, mini: true, max: 6, src: s.src });
+    }
+  } else if (s.k === 'turret') {
+    s.fire -= dt; if (s.t > s.max) { s.dead = true; return; }
+    if (s.fire <= 0) {
+      s.fire = s.rate; const tg = nearest(s.x, s.y, s.reach); if (!tg) return;
+      const a = Math.atan2(tg.y - s.y, tg.x - s.x), n = (s.evo ? 3 : 1) * (m.double ? 2 : 1);
+      for (let k = 0; k < n; k++) shots.push({ k: 'staple', x: s.x, y: s.y - 6, a: a + (k - (n - 1) / 2) * 0.14, v: 280, t: 0, max: 0.6, dmg: s.dmg, pierce: 0, hitSet: new Set(), m, src: s.src });
+    }
+  } else if (s.k === 'bead') {
+    const nx = s.x + s.vx * dt, ny = s.y + s.vy * dt;
+    if (solid(nx, s.y)) { s.vx = -s.vx; s.bounce--; s.hitSet.clear(); } else s.x = nx;
+    if (solid(s.x, ny)) { s.vy = -s.vy; s.bounce--; s.hitSet.clear(); } else s.y = ny;
+    near(s.x, s.y, 10, (e) => { if (s.hitSet.has(e) || dist2(s.x, s.y, e.x, e.y) > (e.r + 3) ** 2) return; s.hitSet.add(e); hitWith(e, s.dmg, m, s.vx / 180, s.vy / 180, 0.5); if (m.boom) blast(s.x, s.y, 14, s.dmg * 0.5, '#fdba74'); });
+    if (s.bounce < 0 || s.t > s.max) s.dead = true;
+  } else if (s.k === 'tea') {
+    if (s.t >= s.at) {
+      s.dead = true; blast(s.x, s.y, s.r, s.dmg, '#86efac', m); sfx('stamp');
+      shots.push({ k: 'puddle', col: 'tea', x: s.x, y: s.y, r: s.r * (s.evo ? 1.3 : 0.9), t: 0, max: 2.5 * (1 + (m.dur || 0)) * (s.evo ? 1.6 : 1), dmg: s.dmg * 0.18, tick: 0, m: s.evo ? { ...m, slow: 1 } : m, src: s.src });
+    }
+  } else if (s.k === 'ring') {
+    if (!s.done) {
+      s.done = true;
+      near(s.x, s.y, s.R + 10, (e) => {
+        if (dist2(s.x, s.y, e.x, e.y) > (s.R + e.r) ** 2) return; const d = Math.hypot(e.x - s.x, e.y - s.y) || 1;
+        hitWith(e, s.dmg, m, (e.x - s.x) / d, (e.y - s.y) / d, 2); if (!e.boss && !e.seg && !e.prop) e.stun = Math.max(e.stun || 0, s.stun);
+      });
+    }
+    if (s.t > s.max) s.dead = true;
+  }
+}
+// drawn under everyone: puddles, mines, sticky notes, the red circle
+function drawGroundShots(t) {
+  for (const s of shots) {
+    if (s.k === 'puddle') { const k = 1 - Math.max(0, (s.t - s.max + 0.5) / 0.5); g.globalAlpha = (s.col === 'ink' ? 0.55 : 0.32) * k; g.fillStyle = s.col === 'ink' ? '#1e3a8a' : '#15803d'; g.beginPath(); g.ellipse(s.x, s.y, s.r, s.r * 0.6, 0, 0, 7); g.fill(); g.globalAlpha = 0.8 * k; g.fillStyle = s.col === 'ink' ? '#60a5fa' : '#86efac'; g.fillRect(s.x - s.r * 0.4, s.y - 1, 2, 1); g.fillRect(s.x + s.r * 0.2, s.y + 1, 1, 1); g.globalAlpha = 1; }
+    else if (s.k === 'mine') { g.fillStyle = '#120e1a'; g.beginPath(); g.arc(s.x, s.y, s.mini ? 3 : 4.5, 0, 7); g.fill(); g.fillStyle = s.t > s.arm && Math.floor(t * 4) % 2 ? '#fb7185' : '#4a4458'; g.fillRect(s.x - 1, s.y - 1, 2, 2); g.fillStyle = '#120e1a'; g.fillRect(s.x + 1, s.y + 3, 1, 3); }
+    else if (s.k === 'turret') { shadow(s.x, s.y + 4, 6); const fade = s.t > s.max - 1 && Math.floor(t * 8) % 2; if (fade) continue; g.fillStyle = s.evo ? '#fb923c' : '#f6d55c'; g.fillRect(s.x - 6, s.y - 14, 12, 12); g.fillStyle = 'rgba(0,0,0,.18)'; g.fillRect(s.x - 6, s.y - 4, 12, 2); g.fillStyle = '#a16207'; g.fillRect(s.x - 4, s.y - 11, 8, 1); g.fillRect(s.x - 4, s.y - 8, 6, 1); g.fillStyle = '#4a4458'; g.fillRect(s.x - 1, s.y - 2, 2, 4); }
+  }
+  const au = weaponOf('aura');
+  if (au?.R) { const k = 0.5 + Math.sin(t * 4) * 0.2; g.strokeStyle = `rgba(239,68,68,${0.35 + 0.4 * (1 - pl.hp / pl.maxHp)})`; g.lineWidth = 1.5; g.beginPath(); g.arc(pl.x, pl.y - 3, au.R, 0, 7); g.stroke(); g.fillStyle = `rgba(239,68,68,${0.05 + 0.08 * k})`; g.beginPath(); g.arc(pl.x, pl.y - 3, au.R, 0, 7); g.fill(); }
+}
+// drawn over everyone: blades, staples, tape, beads, teapots, strike marks, bell rings, sunlight
+function drawAirShots(t) {
+  const sw = weaponOf('sun');
+  if (sw?.beams) for (const e of sw.beams) { if (e.dead) continue; g.strokeStyle = 'rgba(253,224,71,.45)'; g.lineWidth = 4; g.beginPath(); g.moveTo(pl.x, pl.y - 6); g.lineTo(e.x, e.y - 6); g.stroke(); g.strokeStyle = '#fef9c3'; g.lineWidth = 1; g.stroke(); g.fillStyle = 'rgba(253,224,71,.6)'; g.beginPath(); g.arc(e.x, e.y - 6, 3 + (e.heat || 0) * 3, 0, 7); g.fill(); }
+  for (const s of shots) {
+    if (s.k === 'knife') { g.save(); g.translate(s.x, s.y); g.rotate(s.a); g.fillStyle = '#e5e7eb'; g.fillRect(-4, -1, 8, 2); g.fillStyle = '#fff'; g.fillRect(2, -1, 3, 1); g.restore(); }
+    else if (s.k === 'staple') { g.save(); g.translate(s.x, s.y); g.rotate(s.a); g.fillStyle = '#cbd5e1'; g.fillRect(-2, -1, 4, 2); g.restore(); }
+    else if (s.k === 'tape') { const r = 4 * s.size; g.strokeStyle = '#d6d3d1'; g.lineWidth = 2.5 * s.size; g.beginPath(); g.arc(s.x, s.y, r, s.spin, s.spin + 5.5); g.stroke(); g.fillStyle = '#78716c'; g.beginPath(); g.arc(s.x, s.y, r * 0.4, 0, 7); g.fill(); }
+    else if (s.k === 'bead') { g.fillStyle = '#b45309'; g.beginPath(); g.arc(s.x, s.y, 3, 0, 7); g.fill(); g.fillStyle = '#fbbf24'; g.fillRect(Math.round(s.x) - 1, Math.round(s.y) - 2, 1, 1); }
+    else if (s.k === 'tea' && s.t > 0) { const k = clamp(s.t / s.at, 0, 1), x = lerp(s.sx, s.x, k), y = lerp(s.sy, s.y, k) - Math.sin(k * Math.PI) * 40; g.fillStyle = '#16a34a'; g.beginPath(); g.arc(x, y - 4, 4, 0, 7); g.fill(); g.fillStyle = '#86efac'; g.fillRect(x - 2, y - 6, 2, 1); g.strokeStyle = 'rgba(134,239,172,.6)'; g.lineWidth = 1; g.beginPath(); g.arc(s.x, s.y, s.r * k, 0, 7); g.stroke(); }
+    else if (s.k === 'strike') { const k = clamp(s.t / s.at, 0, 1), r = 12 - k * 6; g.strokeStyle = `rgba(251,113,133,${0.5 + k * 0.5})`; g.lineWidth = 1.5; g.beginPath(); g.arc(s.x, s.y - 6, r, 0, 7); g.stroke(); g.beginPath(); g.moveTo(s.x - r - 3, s.y - 6); g.lineTo(s.x + r + 3, s.y - 6); g.stroke(); }
+    else if (s.k === 'ring') { const k = s.t / s.max; g.globalAlpha = 1 - k; g.strokeStyle = '#fde68a'; g.lineWidth = 3 * (1 - k) + 1; g.beginPath(); g.arc(s.x, s.y - 3, s.R * (0.3 + k * 0.7), 0, 7); g.stroke(); g.globalAlpha = 1; }
+  }
+  for (const f of fx) if (f.k === 'strikeFx') { const k = f.t / f.max; g.globalAlpha = 1 - k; g.strokeStyle = '#fb7185'; g.lineWidth = 3; g.beginPath(); g.moveTo(f.x - 14, f.y - 10); g.lineTo(f.x + 14, f.y - 2); g.stroke(); g.globalAlpha = 1; }
+}
+// the flood: a ring of slop closing in on someone who will not move on
+function floodWave(p) {
+  const n = Math.min(44, 10 + run.depth + Math.floor(p * 8));
+  for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2, [x, y] = floorNear(pl.x + Math.cos(a) * 130, pl.y + Math.sin(a) * 105); spawnFoe(i % 3 === 0 ? 'eye' : weighted(st.B.mix), x, y).spawnIn = 0.6; } // a third of every wave shoots from afar
+  for (let k = 0; k < Math.min(4, Math.floor(p)); k++) { const a = rand() * 7, [x, y] = floorNear(pl.x + Math.cos(a) * 140, pl.y + Math.sin(a) * 110); const e = spawnFoe(weighted(st.B.mix), x, y, { elite: true }); e.xp = 0; e.dmg *= 1 + p * 0.2; }
+  banner = { text: T.flood, t: 0 }; sfx('warn');
 }
 
 // ---------- drawing the pixel layer: the area (pre-drawn), actors, effects, light ----------
@@ -1532,6 +1836,7 @@ function drawWorld(t) {
   }
   if (boss && boss.kind === 'mirror' && boss.mode === 'dashw') { g.strokeStyle = 'rgba(251,113,133,.6)'; g.setLineDash([3, 3]); g.beginPath(); g.moveTo(boss.x, boss.y); g.lineTo(boss.x + Math.cos(boss.aim) * 115, boss.y + Math.sin(boss.aim) * 115); g.stroke(); g.setLineDash([]); }
   for (const s of shots) if (s.k === 'stamp' && !s.done && s.t > 0) { const k = clamp(s.t / s.delay, 0, 1); g.strokeStyle = 'rgba(224,82,74,.7)'; g.lineWidth = 1; g.beginPath(); g.arc(s.x, s.y, s.r * k, 0, 7); g.stroke(); }
+  drawGroundShots(t);
   for (const s of shots) if (s.k === 'hole') { const k = s.t / s.max; for (let i = 0; i < 4; i++) { g.strokeStyle = i % 2 ? '#6a3fa0' : '#b07ce8'; g.lineWidth = 1.5; g.beginPath(); g.arc(s.x, s.y, 4 + i * 6 * (1 - k * 0.5), t * 6 + i, t * 6 + i + 3.5); g.stroke(); } g.fillStyle = '#120e1a'; g.beginPath(); g.arc(s.x, s.y, 5, 0, 7); g.fill(); }
   // pickups
   for (const gm of gems) { const b = gm.mag ? 0 : Math.round(Math.sin(t * 4 + gm.x) * 1); spr(GEMS[gm.tier], gm.x, gm.y + b); }
@@ -1609,6 +1914,7 @@ function drawEffects(t) {
       g.strokeStyle = f.col || '#f6d55c'; g.lineWidth = 2; g.beginPath(); g.arc(f.x, f.y, f.r * (0.5 + k * 0.6), 0, 7); g.stroke(); g.globalAlpha = 1;
     } else if (f.k === 'ghostM' && boss) { g.globalAlpha = 0.3 * (1 - f.t / f.max); spr(boss.art[0], f.x, f.y - 8, f.f < 0, true); g.globalAlpha = 1; }
   }
+  drawAirShots(t);
   const sc = weaponOf('scis');
   if (sc?.blades) for (const b of sc.blades) { g.save(); g.translate(b.x, b.y - 3); g.rotate(b.a + runT * 9); g.fillStyle = sc.evo ? '#f6d55c' : '#d9d4e8'; g.fillRect(-5, -1, 10, 2); g.fillRect(-1, -5, 2, 10); g.fillStyle = '#e0524a'; g.fillRect(-1, -1, 2, 2); g.restore(); }
   for (const s of shots) {
@@ -1759,6 +2065,7 @@ function drawHud() {
     panel(ox, 12, ow, 38, false, 'rgba(10,11,13,.72)');
     const k = st.charge / st.need; txt(st.open ? T.gateOpen : T.gate(Math.floor(st.charge), st.need), CW / 2, 24, 11.5, st.open ? '#5eead4' : '#d9dde4', 'center', 700, false);
     bar(ox + 12, 34, ow - 24, 6, st.open ? 1 : k, st.open ? '#5eead4' : '#2dd4bf');
+    if (st.flood > 0) { const a = 0.75 + Math.sin(performance.now() / 180) * 0.25; ctx.globalAlpha = a; txt(T.floodHud(Math.round(Math.min(3, st.flood) / 3 * 100)), CW / 2, 62, 11.5, '#fb7185', 'center', 800); ctx.globalAlpha = 1; }
   } else if (boss) {
     panel(ox, 12, ow, 38, false, 'rgba(10,11,13,.72)'); txt(T.boss[boss.i], CW / 2, 24, 11.5, '#ffd9e8', 'center', 800, false); bar(ox + 12, 34, ow - 24, 6, boss.hp / boss.maxHp, '#fb7185');
   } else if (st.kind === 'gen') { panel(ox, 12, ow, 38, false, 'rgba(10,11,13,.72)'); txt(fmtTime(Math.max(0, 25 - st.t)), CW / 2, 31, 16, '#f1f2f4', 'center', 800, false); }

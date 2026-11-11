@@ -13,12 +13,12 @@ const TXT = {
       '색인을 탑까지 가져가면 탑은 다시 배울 것이다.\n길은 여러 갈래다. 어느 길로 갈지는 당신이 고른다.',
     ],
     chars: [
-      ['미나', '야간 큐레이터', '체력 70 · 빠르고 대시가 자주 된다. 체력이 낮을수록 강해져서, 거의 쓰러질 때는 공격력이 두 배를 넘는다. 레벨마다 공격력 +3.5%. 붓·가위·지우개가 잘 나온다.',
+      ['미나', '야간 큐레이터', '체력 70 · 빠르고 대시가 자주 된다. 체력이 낮을수록 강해져서, 거의 쓰러질 때는 공격력이 두 배를 넘는다. 레벨마다 공격력 +3.5%. 기술: 붓 · 가위 · 커터칼 · 먹물 자국 · 빨간 펜 원 · 테이프. 먹물은 움직여야 남는다.',
         '체력 70 · 빠름 · 체력이 낮을수록 공격력 최대 +130% · 레벨마다 공격력 +3.5%'],
-      ['도윤', '교정 담당', '체력 90. 맞지 않고 계속 지우면 콤보가 쌓여 모든 무기가 최대 35% 빨라진다. 한 대라도 맞으면 콤보가 끊긴다. 치명타 12%에서 시작해 레벨마다 오른다. 형광펜·종이비행기·지우개가 잘 나온다.',
+      ['도윤', '교정 담당', '체력 90. 맞지 않고 계속 지우면 콤보가 쌓여 모든 무기가 최대 35% 빨라진다. 한 대라도 맞으면 콤보가 끊긴다. 치명타 12%에서 시작해 레벨마다 오른다. 기술: 형광펜 · 종이비행기 · 취소선 · 스테이플러 · 쉼표 지뢰 · 포스트잇.',
         '체력 90 · 안 맞고 지우면 콤보로 최대 35% 빨라짐 · 맞으면 끊김 · 치명타가 레벨마다 상승'],
-      ['옥 할머니', '40년 차 감정사', '체력 160 · 느리다. 받는 피해 -30%, 저절로 회복하고, 부딪힌 슬롭에게 반격한다. 레벨마다 최대 체력 +8, 최대 체력이 늘수록 공격력도 오른다. 도장·가위·붓이 잘 나온다.',
-        '체력 160 · 느림 · 받는 피해 -30%, 회복, 반격 · 레벨마다 체력 +8, 체력이 클수록 강해짐'],
+      ['옥 할머니', '40년 차 감정사', '체력 160 · 느리다. 받는 피해 -25%, 저절로 조금씩 회복하고, 부딪힌 슬롭에게 반격한다. 레벨마다 최대 체력 +8, 최대 체력이 늘수록 공격력도 오른다. 기술: 감정 도장 · 지우개 · 돋보기 햇빛 · 주판알 · 찻주전자 · 종.',
+        '체력 160 · 느림 · 받는 피해 -25%, 회복, 반격 · 레벨마다 체력 +8, 체력이 클수록 강해짐'],
     ],
     w: {
       brush: ['붓', '가장 가까운 적 쪽을 앞뒤로 크게 벤다.'], hl: ['형광펜', '가장 가까운 적에게 꿰뚫는 줄을 긋는다.'],
@@ -109,6 +109,7 @@ const TXT = {
       plane: [['편대', ['비행기 +1대', '관통 +1', '폭격: 다 날고 나면 터지며 주변을 친다']], ['추적', ['속도와 선회 +30%', '피해 +30%', '귀환: 두 배 오래 날고 관통 +2']]],
       eraser: [['튕김', ['튕김 +2번', '속도 +30%', '가루: 튕길 때마다 작은 폭발']], ['무거운 지우개', ['피해 +30%', '크게 밀쳐 내고 잠깐 멈춘다', '완전 삭제: 지운 슬롭은 쪼개지지 않고 보석을 더 남긴다']]],
     },
+    flood: '홍수가 차오른다! 출구로 가세요', floodHud: (p) => `홍수 수위 ${p}%`,
     warn: '경고', swarm: '대량 생성이 몰려온다!', next: '▼', skip: '건너뛰기',
   },
   en: {
@@ -121,12 +122,12 @@ const TXT = {
       'Carry it to the tower and the tower can learn again.\nThere are many roads. You choose which to take.',
     ],
     chars: [
-      ['Mina', 'Night curator', '70 HP · fast, dashes often. The lower her health, the harder she hits: near the end, more than double damage. +3.5% damage per level. Brush, Scissors and Eraser come up more.',
+      ['Mina', 'Night curator', '70 HP · fast, dashes often. The lower her health, the harder she hits: near the end, more than double damage. +3.5% damage per level. Skills: Brush, Scissors, Cutter Knife, Ink Trail, Red-Pen Circle, Tape. Ink only flows while she moves.',
         '70 HP · fast · up to +130% damage at low health · +3.5% damage per level'],
-      ['Doyun', 'Proofreader', "90 HP. Keep erasing without getting hit and a combo builds up, making every weapon up to 35% faster. One hit breaks it. Crits start at 12% and grow every level. Highlighter, Paper Plane and Eraser come up more.",
+      ['Doyun', 'Proofreader', "90 HP. Keep erasing without getting hit and a combo builds up, making every weapon up to 35% faster. One hit breaks it. Crits start at 12% and grow every level. Skills: Highlighter, Paper Plane, Strikethrough, Stapler, Comma Mine, Sticky Note.",
         '90 HP · an unbroken combo makes weapons up to 35% faster · crits grow per level'],
-      ['Granny Ok', 'Appraiser for 40 years', '160 HP · slow. Takes 30% less damage, regenerates, and hits back at slop that bumps into her. +8 max HP per level, and the more max HP she has, the harder she hits. Seal Stamp, Scissors and Brush come up more.',
-        '160 HP · slow · -30% damage taken, regen, thorns · +8 HP per level, power grows with HP'],
+      ['Granny Ok', 'Appraiser for 40 years', '160 HP · slow. Takes 25% less damage, slowly regenerates, and hits back at slop that bumps into her. +8 max HP per level, and the more max HP she has, the harder she hits. Skills: Seal Stamp, Eraser, Sunlight Loupe, Abacus Beads, Teapot, Bell.',
+        '160 HP · slow · -25% damage taken, regen, thorns · +8 HP per level, power grows with HP'],
     ],
     w: {
       brush: ['Brush', 'Wide strokes toward the nearest enemy, front and back.'], hl: ['Highlighter', 'A piercing line at the nearest enemy.'],
@@ -217,6 +218,7 @@ const TXT = {
       plane: [['Squadron', ['+1 plane', 'Pierce +1', 'Bombing: planes explode when they are done']], ['Hunter', ['Speed and turning +30%', 'Damage +30%', 'Long flight: twice as long, pierce +2']]],
       eraser: [['Bounce', ['+2 bounces', 'Speed +30%', 'Dust: a small blast on every bounce']], ['Heavy eraser', ['Damage +30%', 'Big knockback and a short stun', 'Full erase: erased slop never splits and leaves an extra gem']]],
     },
+    flood: 'The flood is rising! Get to the exit', floodHud: (p) => `Flood ${p}%`,
     warn: 'WARNING', swarm: 'A mass generation is coming!', next: '▼', skip: 'Skip',
   },
 };
