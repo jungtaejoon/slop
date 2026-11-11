@@ -56,7 +56,10 @@ function drawHud() {
       ctx.save(); ctx.translate(px, py); ctx.rotate(a); ctx.fillStyle = st.open ? '#5eead4' : 'rgba(45,212,191,.5)'; ctx.beginPath(); ctx.moveTo(12, 0); ctx.lineTo(-6, -8); ctx.lineTo(-2, 0); ctx.lineTo(-6, 8); ctx.closePath(); ctx.fill(); ctx.restore();
     }
   }
-  if (banner) { const a = banner.t < 0.3 ? banner.t / 0.3 : banner.t > 2.2 ? Math.max(0, (2.6 - banner.t) / 0.4) : 1; ctx.globalAlpha = a; txt(banner.text, CW / 2, CH * 0.26, 17, '#ffd36b', 'center', 800); ctx.globalAlpha = 1; }
+  if (banner) { // long hints (a gimmick's first appearance) stay longer and wrap on narrow screens
+    const L = banner.long ? 4.6 : 2.6, a = banner.t < 0.3 ? banner.t / 0.3 : banner.t > L - 0.4 ? Math.max(0, (L - banner.t) / 0.4) : 1, sz = banner.long ? 15 : 17;
+    ctx.globalAlpha = a; wrapLines(banner.text, Math.min(CW - 40, 620), sz, 800).forEach((ln, i) => txt(ln, CW / 2, CH * 0.26 + i * (sz + 6), sz, banner.long ? '#fde68a' : '#ffd36b', 'center', 800)); ctx.globalAlpha = 1;
+  }
   if (bossBanner) {
     const b = bossBanner, a = b.t < 0.3 ? b.t / 0.3 : b.t > 3.3 ? Math.max(0, (3.8 - b.t) / 0.5) : 1; ctx.globalAlpha = a;
     const gr = ctx.createLinearGradient(0, 0, CW, 0); gr.addColorStop(0, 'rgba(251,113,133,0)'); gr.addColorStop(0.5, 'rgba(251,113,133,.28)'); gr.addColorStop(1, 'rgba(251,113,133,0)'); ctx.fillStyle = gr; ctx.fillRect(0, CH * 0.3 - 30, CW, 62);

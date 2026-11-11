@@ -190,7 +190,8 @@ function updNewShot(s, dt) {
       s.dead = true; blast(s.x, s.y, s.r, s.dmg, '#86efac', m); sfx('stamp');
       shots.push({ k: 'puddle', col: 'tea', x: s.x, y: s.y, r: s.r * (s.evo ? 1.3 : 0.9), t: 0, max: 2.5 * (1 + (m.dur || 0)) * (s.evo ? 1.6 : 1), dmg: s.dmg * 0.18, tick: 0, m: s.evo ? { ...m, slow: 1 } : m, src: s.src });
     }
-  } else if (s.k === 'ring') {
+  } else if (GIM_SHOT[s.k]) GIM_SHOT[s.k](s, dt);
+  else if (s.k === 'ring') {
     if (!s.done) {
       s.done = true;
       near(s.x, s.y, s.R + 10, (e) => {
@@ -213,6 +214,7 @@ function drawGroundShots(t) {
 }
 // drawn over everyone: blades, staples, tape, beads, teapots, strike marks, bell rings, sunlight
 function drawAirShots(t) {
+  drawAllies(t);
   const sw = weaponOf('sun');
   if (sw?.beams) for (const e of sw.beams) { if (e.dead) continue; g.strokeStyle = 'rgba(253,224,71,.45)'; g.lineWidth = 4; g.beginPath(); g.moveTo(pl.x, pl.y - 6); g.lineTo(e.x, e.y - 6); g.stroke(); g.strokeStyle = '#fef9c3'; g.lineWidth = 1; g.stroke(); g.fillStyle = 'rgba(253,224,71,.6)'; g.beginPath(); g.arc(e.x, e.y - 6, 3 + (e.heat || 0) * 3, 0, 7); g.fill(); }
   for (const s of shots) {

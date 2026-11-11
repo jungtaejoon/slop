@@ -34,7 +34,7 @@ const weaponOf = (id) => pl.weapons.find((w) => w.id === id);
 const irand = (a, b) => a + Math.floor(rand() * (b - a + 1));
 function genStage(kind, biome, depth, mod = null) {
   const s = { kind, biome, B: BIOMES[biome], depth, mod, t: 0, charge: 0, open: false, cleared: false, kills0: pl.kills, props: [], vents: [], eliteDead: true,
-    crates: [], barrels: [], shrines: [], vault: null };
+    crates: [], barrels: [], shrines: [], vault: null, gims: [], shards: [] };
   if (kind === 'boss' || kind === 'ambush' || kind === 'gen') {
     const W = kind === 'boss' ? 40 : 34, H = kind === 'boss' ? 28 : 24; s.W = W; s.H = H; s.tiles = new Uint8Array(W * H).fill(1);
     for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) s.tiles[y * W + x] = 0;
@@ -92,6 +92,7 @@ function genStage(kind, biome, depth, mod = null) {
       const far = mid.slice().sort((a, b) => d[b.cy * W + b.cx] - d[a.cy * W + a.cx])[0], p = far && { x: (far.cx + 0.5) * TS, y: (far.cy + 0.5) * TS };
       if (p && free(p)) s.vault = { ...p, open: false };
     }
+    placeGimmicks(s, rooms, startR, exitR, d); // each region's own gimmicks (63-gimmicks.js)
   }
   s.floor = []; for (let y = 0; y < s.H; y++) for (let x = 0; x < s.W; x++) if (s.tiles[y * s.W + x] !== 1) s.floor.push(y * s.W + x);
   // props sit on floor tiles that touch a wall: purely decorative
@@ -173,9 +174,10 @@ function spawnSpot(minD = 190, maxD = 430) { // a floor tile out of sight but no
 function spawning(dt) {
   if (st.kind === 'boss' || st.cleared) { if (st.kind === 'boss' && boss && boss.kind !== 'snake') bossAdds(dt); return; }
   if (st.t < 4) return; // a breath at the start of every area
-  // linger in one area and the flood rises: more slop, then waves that close in from every side
-  const flood = st.kind === 'fight' || st.kind === 'elite' ? Math.max(0, st.t - 40) / 30 : 0; st.flood = flood;
-  if (flood > 0 && st.t > 55) { st.waveT = (st.waveT ?? 0) - dt; if (st.waveT <= 0) { st.waveT = Math.max(5, 14 - flood * 2.5); floodWave(flood); } }
+  // linger in one area and the flood rises: it starts 20s after the gate opens (or at 90s at the latest),
+  // then more slop, tougher, and waves that close in from every side
+  const flood = st.kind === 'fight' || st.kind === 'elite' ? Math.max(0, st.open ? st.t - (st.openT ?? st.t) - 20 : st.t - 90) / 30 : 0; st.flood = flood;
+  if (flood > 0.5) { st.waveT = (st.waveT ?? 0) - dt; if (st.waveT <= 0) { st.waveT = Math.max(5, 14 - flood * 2.5); floodWave(flood); } }
   const mul = (run.flags.praise ? 1.4 : 1) * (run.flags.unplug ? 0.8 : 1) * (st.open ? 0.6 : 1) * (st.mod === 'danger' ? 1.35 : 1) * (1 + flood);
   spawnAcc += spawnRate(run.depth) * mul * dt;
   while (spawnAcc >= 1) { spawnAcc--; if (foes.length < Math.min(280, aliveCap(run.depth) * (1 + flood * 0.6))) { const p = spawnSpot(); if (p) spawnFoe(weighted(st.B.mix), p[0], p[1]); } }
@@ -225,13 +227,8 @@ function kill(e) {
 }
 function breakProp(e) {
   burst(e.x, e.y, 10, e.type === 'barrel' ? '#fb923c' : '#c08a52'); sfx('kill');
-  if (e.type === 'barrel') { // the blast hurts slop and you, and sets off barrels nearby
-    const prev = curSrc; curSrc = 'boom'; shake = Math.max(shake, 5); sfx('boom'); fx.push({ k: 'blast', x: e.x, y: e.y, r: 44, t: 0, max: 0.35 });
-    const dmg = 30 + run.depth * 10;
-    near(e.x, e.y, 56, (o) => { if (o !== e && dist2(e.x, e.y, o.x, o.y) < (44 + o.r) ** 2) hurt(o, dmg, (o.x - e.x) / 44, (o.y - e.y) / 44, 1.5); });
-    if (dist2(e.x, e.y, pl.x, pl.y) < 34 * 34) hurtPlayer(6 + run.depth * 0.5, e);
-    curSrc = prev; return;
-  }
+  if (e.type === 'barrel') { st.gims.push({ k: 'fuse', x: e.x, y: e.y, t: 0.55 }); sfx('hit'); return; } // lit: it blows a moment later (63-gimmicks.js)
+  if (e.type === 'shard') { breakShard(e); return; }
   const r = rand();
   if (r < 0.45) dropGem(e.x, e.y, 3 + Math.floor(run.depth / 4)); else if (r < 0.7) items.push({ k: 'gold', x: e.x, y: e.y, t: 0 });
   else if (r < 0.82) items.push({ k: 'kimbap', x: e.x, y: e.y, t: 0 }); else if (r < 0.88) items.push({ k: 'clip', x: e.x, y: e.y, t: 0 });
@@ -252,7 +249,7 @@ function hurtPlayer(d, from) {
   const c = CHARS[pl.ci]; d *= 1 - c.armor;
   pl.hp -= d; pl.inv = 0.55; pl.hurtFlash = 0.25; shake = Math.max(shake, 3); sfx('hurt'); pl.combo = 0;
   if (c.thorns && from && from.maxHp && !from.dead && !from.prop) { const prev = curSrc; curSrc = 'thorns'; hurt(from, pl.maxHp * c.thorns, 0, 0, 2); curSrc = prev; }
-  if (from) { const a = Math.atan2(pl.y - from.y, pl.x - from.x); pl.vx += Math.cos(a) * 60; pl.vy += Math.sin(a) * 60; }
+  if (from && Number.isFinite(from.x) && Number.isFinite(from.y)) { const a = Math.atan2(pl.y - from.y, pl.x - from.x); pl.vx += Math.cos(a) * 60; pl.vy += Math.sin(a) * 60; } // only with a real position
   if (pl.hp <= 0) { pl.hp = 0; endRun('over'); }
 }
 function gainXp(v) {
@@ -260,7 +257,7 @@ function gainXp(v) {
   if (st && st.need && !st.open) { st.charge = Math.min(st.need, st.charge + v * (run.choice === 'A' ? 1.2 : 1)); if (st.charge >= st.need && st.eliteDead) openGate(); }
   while (pl.xp >= pl.need) { pl.xp -= pl.need; pl.lv++; pl.need = xpNeed(pl.lv); pendingLv++; const ph = CHARS[pl.ci].perLv.hp; if (ph) { pl.maxHp += ph; pl.hp += ph; } }
 }
-function openGate() { if (st.open) return; st.open = true; banner = { text: T.gateOpen, t: 0 }; sfx('chest'); burst(st.exit.x, st.exit.y, 30, '#2dd4bf'); }
+function openGate() { if (st.open) return; st.open = true; st.openT = st.t; banner = { text: T.gateOpen, t: 0 }; sfx('chest'); burst(st.exit.x, st.exit.y, 30, '#2dd4bf'); }
 
 // ---------- level-up choices and chests ----------
 function upgradePool() {

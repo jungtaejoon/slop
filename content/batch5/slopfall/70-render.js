@@ -69,6 +69,7 @@ function drawWorld(t) {
   g.save(); g.translate(-ox, -oy);
   // vents and the exit gate
   for (const v of st.vents) { const k = 0.5 + Math.sin(t * 3 + v.x) * 0.5; g.fillStyle = '#0b0c10'; g.beginPath(); g.ellipse(v.x, v.y, 9, 5, 0, 0, 7); g.fill(); g.strokeStyle = hexA(st.B.accent, 0.35 + k * 0.4); g.lineWidth = 1.5; g.stroke(); g.fillStyle = hexA(st.B.accent, 0.25 * k); g.beginPath(); g.ellipse(v.x, v.y, 6, 3, 0, 0, 7); g.fill(); }
+  drawGims(t);
   for (const sh of st.shrines) drawShrine(sh, t);
   if (st.vault) drawVault(st.vault, t);
   if (st.exit && (st.need || st.open)) drawGate(st.exit.x, st.exit.y, t);
@@ -125,6 +126,7 @@ function drawVault(v, t) {
 }
 // crates and barrels: drawn with shapes
 function drawProp2(e, t) {
+  if (e.type === 'shard') return drawShard(e, t);
   shadow(e.x, e.y + 5, 7); const fl = e.flash > 0, x = Math.round(e.x), y = Math.round(e.y) - 4;
   if (e.type === 'crate') {
     g.fillStyle = fl ? '#fff' : '#8a5636'; g.fillRect(x - 7, y - 6, 14, 12); g.fillStyle = fl ? '#fff' : '#b07548'; g.fillRect(x - 7, y - 6, 14, 2);
@@ -187,6 +189,7 @@ function drawLight(t, ox, oy) {
   if (st.exit && (st.need || st.open)) hole(st.exit.x, st.exit.y - 10, st.open ? 110 + Math.sin(t * 3) * 8 : 55, st.open ? 1 : 0.6);
   for (const v of st.vents) hole(v.x, v.y, 26, 0.5);
   for (const sh of st.shrines) if (!sh.used) hole(sh.x, sh.y - 6, 34, 0.7);
+  gimLight(hole, null);
   if (st.vault && !st.vault.paid) hole(st.vault.x, st.vault.y - 6, 40, 0.7);
   for (const f of fx) if (f.k === 'blast') hole(f.x, f.y, f.r * 1.4, 0.8 * (1 - f.t / f.max));
   let n = 0; for (const gm of gems) { if (n++ > 50) break; hole(gm.x, gm.y, 16, 0.5); }
@@ -201,6 +204,7 @@ function drawLight(t, ox, oy) {
   if (st.exit && (st.need || st.open)) glow(st.exit.x, st.exit.y - 12, st.open ? 60 : 26, st.open ? 'rgba(94,234,212,.35)' : 'rgba(45,212,191,.15)');
   for (const v of st.vents) glow(v.x, v.y, 18, hexA(st.B.accent, 0.18));
   for (const sh of st.shrines) if (!sh.used) glow(sh.x, sh.y - 14, 22, hexA(SHRINE_COL[sh.k], 0.3));
+  gimLight(null, glow);
   if (st.vault && !st.vault.open) glow(st.vault.x, st.vault.y - 6, 26, 'rgba(246,213,92,.25)');
   for (const b of ebul) glow(b.x, b.y, 9, hexA(b.col.length === 7 ? b.col : '#ff7ab8', 0.45));
   n = 0; for (const gm of gems) { if (n++ > 60) break; glow(gm.x, gm.y, 7, ['rgba(90,167,224,.35)', 'rgba(143,214,107,.35)', 'rgba(224,82,74,.35)', 'rgba(176,124,232,.4)'][gm.tier]); }

@@ -44,6 +44,7 @@ function updPlayer(dt) {
 
 // shrines charge while you stand on them; a vault wakes its guards and pays out once they are gone
 function updGimmicks(dt) {
+  updGims(dt);
   for (const sh of st.shrines) {
     if (sh.used) continue;
     if (dist2(sh.x, sh.y, pl.x, pl.y) < 15 * 15) { sh.charge += dt; if (sh.charge >= 1.5) useShrine(sh); } else sh.charge = Math.max(0, sh.charge - dt * 2);

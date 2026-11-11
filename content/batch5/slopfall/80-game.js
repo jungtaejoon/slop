@@ -40,7 +40,7 @@ function update(dt) {
     shake = Math.max(0, shake - 30 * dt);
     cam.x = lerp(cam.x, pl.x, Math.min(1, dt * 8)); cam.y = lerp(cam.y, pl.y, Math.min(1, dt * 8));
     if (bossBanner && (bossBanner.t += dt) > 3.8) bossBanner = null;
-    if (banner && (banner.t += dt) > 2.6) banner = null;
+    if (banner && (banner.t += dt) > (banner.long ? 4.6 : 2.6)) banner = null;
     if (st.kind === 'gen' && st.t > 25 && !st.cleared) { stageWon(); return; }
     if (winT > 0 && (winT += dt) > 2.4) { winT = 0; const k = run.choice === 'B' ? 'b' : 'a'; say(T.story[k === 'a' ? 'endA' : 'endB'], () => endRun(k)); return; }
     if (state === 'play' && pendingLv > 0) { offer = rollOffer(); offerSel = 0; setState('lvl'); sfx('lvl'); }

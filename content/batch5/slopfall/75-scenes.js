@@ -27,6 +27,7 @@ function startStage(kind, biome, from = 'node', mod = null) {
   pl.x = st.start.x; pl.y = st.start.y; pl.vx = pl.vy = 0; pl.inv = 1; cam.x = pl.x; cam.y = pl.y;
   for (const c of st.crates) spawnFoe('crate', c.x, c.y).spawnIn = 0;
   for (const b of st.barrels) spawnFoe('barrel', b.x, b.y).spawnIn = 0;
+  for (const m of st.shards) spawnFoe('shard', m.x, m.y).spawnIn = 0;
   if (kind === 'elite') { st.eliteDead = false; spawnFoe(weighted(st.B.mix), st.exit.x + 30, st.exit.y + 10, { elite: true, guard: true }).spawnIn = 0; }
   if (kind === 'ambush') { st.eliteDead = false; const e = spawnFoe(weighted(st.B.mix), st.W / 2 * TS, 6 * TS, { elite: true, guard: true }); e.spawnIn = 0; e.woke = true; }
   if (kind === 'boss') spawnBoss(ACTS[run.act].boss);

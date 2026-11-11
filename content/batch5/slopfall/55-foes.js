@@ -24,6 +24,7 @@ function updFoes(dt) {
       if (e.t > 2.4 && onScreen(e, -8)) { e.t = rnd(-0.4, 0); ebul.push({ x: e.x, y: e.y, vx: dx / d * 72, vy: dy / d * 72, t: 0, max: 4, r: 3, dmg: e.dmg + 2, col: '#e0524a' }); sfx('shot'); }
     } else { vx = ux * e.spd; vy = uy * e.spd; }
     if (e.slowT > 0) { e.slowT -= dt; vx *= 0.5; vy *= 0.5; } // slowed by ink, tea or staples
+    if (st.B.hazard === 'paint' && tileAt(e.x, e.y) === 2) { vx *= 0.55; vy *= 0.55; } // gallery paint holds slop too
     e.x += (vx + e.kx) * dt; e.y += (vy + e.ky) * dt; e.kx *= kd; e.ky *= kd; pushOut(e, e.r * 0.8);
     e.anim += dt * (2 + e.spd / 25); if (vx) e.face = vx < 0 ? -1 : 1;
     if (d < e.r + 5) hurtPlayer(e.dmg, e);
