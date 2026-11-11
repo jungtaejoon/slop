@@ -30,6 +30,10 @@ function drawHud() {
   txt(`${Math.ceil(pl.hp)}`, 110, 29.5, 9, '#fff', 'center', 800);
   pl.weapons.forEach((w, i) => slot(10 + i * 26, 54, w.id, w.lv, MAX_LV, w.evo));
   P_ORDER.filter((id) => pl.pas[id]).forEach((id, i) => slot(10 + i * 26, 82, id, pl.pas[id], PASSIVES[id], false, true));
+  // the curator's own trait, live, and a shrine blessing if one is running
+  const ty = Object.keys(pl.pas).length ? 122 : 94;
+  txt(traitText(), 12, ty, 11.5, ['#fb7185', '#5eead4', '#fde68a'][pl.ci], 'left', 800);
+  if (pl.buff) txt(`${T.buffName[pl.buff.k]} ${Math.ceil(pl.buff.t)}`, 12, ty + 17, 11, SHRINE_COL[pl.buff.k], 'left', 800);
   // centre: the objective
   const ow = Math.min(300, CW - 220), ox = (CW - ow) / 2;
   if (st.kind === 'fight' || st.kind === 'elite') {
@@ -61,8 +65,14 @@ function drawHud() {
   if (usingTouch) {
     if (joy.id !== null) { ctx.strokeStyle = 'rgba(255,255,255,.3)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(joy.ox, joy.oy, 40, 0, 7); ctx.stroke(); const dx = joy.x - joy.ox, dy = joy.y - joy.oy, d = Math.min(40, Math.hypot(dx, dy)), a = Math.atan2(dy, dx); ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.beginPath(); ctx.arc(joy.ox + Math.cos(a) * d, joy.oy + Math.sin(a) * d, 16, 0, 7); ctx.fill(); }
     const b = dashBtn(); ctx.fillStyle = pl.dashCd > 0 ? 'rgba(255,255,255,.08)' : 'rgba(45,212,191,.22)'; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, 7); ctx.fill();
-    ctx.strokeStyle = 'rgba(94,234,212,.85)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (1 - pl.dashCd / 1.1)); ctx.stroke(); txt(T.dash, b.x, b.y, 13, '#e9fffb', 'center', 800);
+    ctx.strokeStyle = 'rgba(94,234,212,.85)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (1 - pl.dashCd / CHARS[pl.ci].dash)); ctx.stroke(); txt(T.dash, b.x, b.y, 13, '#e9fffb', 'center', 800);
   }
+}
+function traitText() {
+  const pct = (k) => Math.round(k * 100);
+  if (pl.ci === 0) return T.trait.rage(pct(charPower() - 1));
+  if (pl.ci === 1) return T.trait.combo(pl.combo, pct(comboCd()), pct(critChance()));
+  return T.trait.tank(pct(CHARS[2].armor), pct(Math.max(0, pl.maxHp - CHARS[2].hp) / 250));
 }
 function slot(x, y, id, lv, max, evo, pas) {
   rr(x, y, 23, 23, 6); ctx.fillStyle = evo ? 'rgba(90,64,12,.92)' : 'rgba(10,11,13,.72)'; ctx.fill(); ctx.strokeStyle = evo ? '#f6d55c' : 'rgba(255,255,255,.1)'; ctx.lineWidth = 1; ctx.stroke(); icon(id, x + 3.5, y + 3, 16);
@@ -71,7 +81,7 @@ function slot(x, y, id, lv, max, evo, pas) {
 function drawNums() {
   for (const n of nums) {
     const sx = (n.x - cam.x + LW / 2) * S / DPR, sy = (n.y - cam.y + LH / 2 - n.t * 18) * S / DPR, a = n.t > 0.4 ? Math.max(0, 1 - (n.t - 0.4) / 0.3) : 1;
-    ctx.globalAlpha = a; txt(String(n.v), sx, sy, n.big ? 15 : 11, n.heal ? '#8fd66b' : n.gold ? '#f6d55c' : n.big ? '#ffd36b' : '#fff', 'center', 800); ctx.globalAlpha = 1;
+    ctx.globalAlpha = a; txt(String(n.v), sx, sy, n.big ? 15 : 11, n.heal ? '#8fd66b' : n.gold ? '#f6d55c' : n.crit ? '#fb923c' : n.big ? '#ffd36b' : '#fff', 'center', 800); ctx.globalAlpha = 1;
   }
 }
 // ---------- dialogue with portraits ----------
@@ -111,6 +121,7 @@ function drawDialog() {
 let offerSel = 0;
 function optionInfo(o) {
   if (o.k === 'w') { const [n, d] = T.w[o.id], p = WEAPONS[o.id].evoWith; return { icon: o.id, name: n, tag: o.lv === 1 ? T.newItem : T.lvl(o.lv), desc: d, hint: T.evoNeed(n, T.p[p][0]), color: '#5eead4' }; }
+  if (o.k === 't') { const [bn, tiers] = T.tree[o.id][o.b]; return { icon: o.id, name: `${T.w[o.id][0]} · ${bn}`, tag: T.treeTag(o.t + 1), desc: tiers[o.t], hint: T.treeKills(T.w[o.id][0], pl.wk[o.id] || 0) + (o.t < 2 ? ` · ${T.treeNext}: ${tiers[o.t + 1]}` : ''), color: '#a78bfa' }; }
   if (o.k === 'p') { const [n, d] = T.p[o.id]; return { icon: o.id, name: n, tag: o.lv === 1 ? T.newItem : T.lvl(o.lv), desc: d, color: '#8fd66b' }; }
   if (o.k === 'evo') { const [n, d] = T.evo[o.id]; return { icon: o.id, name: n, tag: T.evolve, desc: d, color: '#f6d55c' }; }
   if (o.k === 'heal') return { icon: null, name: T.kimbap[0], tag: '', desc: T.kimbap[1], color: '#8fd66b', pic: 'kimbap' };

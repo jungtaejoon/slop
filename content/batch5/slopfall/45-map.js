@@ -12,7 +12,9 @@ function genAct(a) {
       if (c < 2) w.camp = 0; if (c === A.cols - 1) w.shop *= 0.5;
       let s = 0; for (const k in w) s += w[k]; let x = rand() * s; for (const k in w) { if ((x -= w[k]) <= 0) { type = k; break; } }
     }
-    nodes.push({ id: `${c}-${r}`, col: c, row: r, type, biome: A.biomes[r], next: [], jx: rnd(-0.25, 0.25), jy: rnd(-0.18, 0.18) });
+    // some fights carry a twist you can see on the map: a treasure road or a dangerous one
+    const mod = (type === 'fight' || type === 'elite') && c > 0 && rand() < 0.28 ? (rand() < 0.5 ? 'rich' : 'danger') : null;
+    nodes.push({ id: `${c}-${r}`, col: c, row: r, type, mod, biome: A.biomes[r], next: [], jx: rnd(-0.25, 0.25), jy: rnd(-0.18, 0.18) });
   }
   const at = (c, r) => nodes.find((n) => n.col === c && n.row === r);
   // the last column before the boss always offers a camp somewhere
@@ -87,6 +89,7 @@ function drawMap() {
     if (isAv && live) { const k = 0.5 + Math.sin(mapT * 4) * 0.5; ctx.strokeStyle = hexA(col, 0.35 + k * 0.35); ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(p.x, p.y, R + 5 + k * 3, 0, 7); ctx.stroke(); button(p.x - R - 6, p.y - R - 6, R * 2 + 12, R * 2 + 12, () => { if (sel === n) enterNode(n); else mapSel = av.indexOf(n); }); }
     ctx.fillStyle = done ? '#10302c' : '#15181d'; ctx.beginPath(); ctx.arc(p.x, p.y, R, 0, 7); ctx.fill();
     ctx.lineWidth = sel === n ? 3 : 1.5; ctx.strokeStyle = sel === n ? '#f1f2f4' : done ? '#2dd4bf' : isAv ? hexA(col, 0.9) : 'rgba(255,255,255,.12)'; ctx.stroke();
+    if (n.mod) { const bx = p.x - R * 0.72, by = p.y - R * 0.72; ctx.fillStyle = n.mod === 'rich' ? '#f6d55c' : '#fb7185'; ctx.beginPath(); ctx.arc(bx, by, 7, 0, 7); ctx.fill(); ctx.fillStyle = '#121418'; ctx.font = `900 10px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(n.mod === 'rich' ? '★' : '!', bx, by + 0.5); }
     if (n.biome !== 'out' && run.act === 1) { ctx.fillStyle = BIOMES[n.biome].accent; ctx.beginPath(); ctx.arc(p.x + R * 0.7, p.y - R * 0.7, 3.5, 0, 7); ctx.fill(); }
     ctx.globalAlpha = reach && !reach.has(n.id) && !done && !cur ? 0.18 : isAv || done || n.type === 'boss' || (reach && reach.has(n.id)) ? 1 : 0.4; nodeIcon(n.type, p.x, p.y, R * 0.75, done && !cur ? '#5eead4' : col); ctx.globalAlpha = 1;
     if (cur) { ctx.fillStyle = '#f1f2f4'; ctx.beginPath(); const by = p.y - R - 10 + Math.sin(mapT * 3) * 2; ctx.moveTo(p.x, by); ctx.lineTo(p.x - 6, by - 9); ctx.lineTo(p.x + 6, by - 9); ctx.fill(); }
@@ -97,7 +100,7 @@ function drawMap() {
     nodeIcon(sel.type, x + 34, y + 34, 16, NODE_COL[sel.type]);
     txt(T.node[sel.type][0], x + 62, y + 28, 17, '#f1f2f4', 'left', 800); txt(T.biome[sel.biome][0], x + 62, y + 48, 12, hexA(BIOMES[sel.biome].accent, 1), 'left', 700, false);
     const nx = nextText(sel); if (nx) txt(nx, x + 20, y + 74, 12.5, '#f6d55c', 'left', 700, false);
-    wrapLines(T.node[sel.type][1] + ' ' + (sel.type === 'boss' ? '' : T.biome[sel.biome][1]), w - 40, 12.5).slice(0, vert ? 3 : 2).forEach((l, i) => txt(l, x + 20, y + 74 + (nx ? 17 : 0) + i * 17, 12.5, '#b8bdc6', 'left', 500, false));
+    wrapLines((sel.mod ? `${T.mod[sel.mod][0]}: ${T.mod[sel.mod][1]} ` : '') + T.node[sel.type][1] + ' ' + (sel.type === 'boss' ? '' : T.biome[sel.biome][1]), w - 40, 12.5).slice(0, vert ? 3 : 2).forEach((l, i) => txt(l, x + 20, y + 74 + (nx ? 17 : 0) + i * 17, 12.5, '#b8bdc6', 'left', 500, false));
     const b = button(x + w - 150, y + 18, 132, 40, () => enterNode(sel)); ctx.fillStyle = '#f1f2f4'; rr(b.x, b.y, b.w, b.h, 10); ctx.fill(); txt(T.mapGo, b.x + b.w / 2, b.y + 20, 14, '#0a0b0d', 'center', 800, false);
   }
   if (live) txt(T.mapPick, 150, 86, 12, '#6f7580', 'left', 600, false);
@@ -118,7 +121,7 @@ function mapTip(n, p, R, canGo, reach) {
   const status = here ? T.mapHere : done ? T.mapDone : canGo ? '' : !available().some((a) => reachFrom(a).has(n.id)) ? T.mapCant : '';
   const later = reach ? [...reach].filter((id) => id !== n.id && id !== 'boss').length : 0;
   const w = Math.min(280, CW - 24), body = wrapLines(T.node[n.type][1] + (n.type === 'boss' ? '' : ' ' + T.biome[n.biome][1]), w - 28, 12.5);
-  const extra = [nextText(n), canGo && later ? T.mapLater(later) : '', status].filter(Boolean);
+  const extra = [nextText(n), n.mod ? `${T.mod[n.mod][0]}: ${T.mod[n.mod][1]}` : '', canGo && later ? T.mapLater(later) : '', status].filter(Boolean);
   const extraLines = extra.flatMap((e) => wrapLines(e, w - 28, 12, 600));
   const h = 46 + body.length * 17 + extraLines.length * 16 + (extraLines.length ? 8 : 0);
   let x = p.x + R + 14, y = p.y - h / 2;
@@ -129,7 +132,7 @@ function mapTip(n, p, R, canGo, reach) {
   if (n.type !== 'boss') { ctx.font = `800 14.5px ${FONT}`; const tw = ctx.measureText(T.node[n.type][0]).width; txt(T.biome[n.biome][0], x + 48 + tw, y + 23.5, 11.5, hexA(BIOMES[n.biome].accent, 1), 'left', 700, false); }
   body.forEach((l, i) => txt(l, x + 14, y + 48 + i * 17, 12.5, '#c9cdd3', 'left', 500, false));
   let yy = y + 48 + body.length * 17 + 6;
-  extra.forEach((e, k) => { const col = e === status ? (here || done ? '#5eead4' : '#fb7185') : k === 0 ? '#f6d55c' : '#9aa0aa'; for (const l of wrapLines(e, w - 28, 12, 600)) { txt(l, x + 14, yy, 12, col, 'left', 600, false); yy += 16; } });
+  extra.forEach((e, k) => { const col = e === status ? (here || done ? '#5eead4' : '#fb7185') : k === 0 ? '#f6d55c' : n.mod && e.startsWith(T.mod[n.mod][0]) ? (n.mod === 'rich' ? '#fde68a' : '#fda4af') : '#9aa0aa'; for (const l of wrapLines(e, w - 28, 12, 600)) { txt(l, x + 14, yy, 12, col, 'left', 600, false); yy += 16; } });
 }
 function mapStatus(vert) { // HP, level, gold, weapons, top right
   const x = CW - 24, w = vert ? 150 : 200;

@@ -9,24 +9,32 @@ let offer = null, pendingLv = 0;
 function newRun(ci) {
   const c = CHARS[ci];
   pl = { x: 0, y: 0, ci, hp: c.hp, maxHp: c.hp, face: 1, dx: 1, dy: 0, inv: 0, dashT: 0, dashCd: 0, vx: 0, vy: 0, anim: 0, moving: false,
-    lv: 1, xp: 0, need: xpNeed(1), weapons: [], pas: {}, rerolls: 3, kills: 0, gems: 0, score: 0, regenAcc: 0, hurtFlash: 0 };
+    lv: 1, xp: 0, need: xpNeed(1), weapons: [], pas: {}, rerolls: 3, kills: 0, gems: 0, score: 0, regenAcc: 0, hurtFlash: 0, combo: 0, bestCombo: 0, wk: {}, buff: null };
   addWeapon(c.start);
 }
 // derived stats
 const pasLv = (id) => pl.pas[id] || 0;
 const areaMul = () => 1 + pasLv('loupe') * 0.1 + CHARS[pl.ci].area;
-const cdMul = () => (1 - pasLv('coffee') * 0.08) * (1 - CHARS[pl.ci].cd);
+const cdMul = () => (1 - pasLv('coffee') * 0.08) * (1 - CHARS[pl.ci].cd) * (1 - comboCd()) * (pl.buff?.k === 'haste' ? 0.8 : 1);
 const amtAdd = () => pasLv('copier');
-const magnetR = () => 34 * (1 + pasLv('clip') * 0.3);
-const speed = () => 56 * CHARS[pl.ci].spd * (1 + pasLv('shoes') * 0.08) * (st && tileAt(pl.x, pl.y) === 2 && st.B.hazard === 'paint' ? 0.6 : 1);
-const dmgMul = () => (run && run.choice === 'B' ? 1.25 : 1);
-function addWeapon(id) { pl.weapons.push({ id, lv: 1, evo: false, t: 0.4, ang: 0, ph: 0 }); }
+const magnetR = () => 34 * (1 + pasLv('clip') * 0.3) * (pl.buff?.k === 'magnet' ? 3 : 1);
+const speed = () => 56 * CHARS[pl.ci].spd * (1 + pasLv('shoes') * 0.08) * (pl.buff?.k === 'haste' ? 1.3 : 1) * (st && tileAt(pl.x, pl.y) === 2 && st.B.hazard === 'paint' ? 0.6 : 1);
+// each curator's own power curve: Mina's rage, Doyun's (none: his edge is speed and crits), Granny Ok's health
+function charPower() {
+  const c = CHARS[pl.ci]; let k = 1 + (c.perLv.dmg || 0) * (pl.lv - 1);
+  if (c.rage) k *= 1 + c.rage * (1 - pl.hp / pl.maxHp);
+  if (c.hpPower) k *= 1 + Math.max(0, pl.maxHp - c.hp) / 250;
+  return k;
+}
+const dmgMul = () => (run && run.choice === 'B' ? 1.25 : 1) * charPower() * (pl.buff?.k === 'might' ? 1.5 : 1);
+function addWeapon(id) { pl.weapons.push({ id, lv: 1, evo: false, t: 0.4, ang: 0, ph: 0, tr: [0, 0], m: {} }); }
 const weaponOf = (id) => pl.weapons.find((w) => w.id === id);
 
 // ---------- area generation: rooms joined by corridors, more than one way through ----------
 const irand = (a, b) => a + Math.floor(rand() * (b - a + 1));
-function genStage(kind, biome, depth) {
-  const s = { kind, biome, B: BIOMES[biome], depth, t: 0, charge: 0, open: false, cleared: false, kills0: pl.kills, props: [], vents: [], eliteDead: true };
+function genStage(kind, biome, depth, mod = null) {
+  const s = { kind, biome, B: BIOMES[biome], depth, mod, t: 0, charge: 0, open: false, cleared: false, kills0: pl.kills, props: [], vents: [], eliteDead: true,
+    crates: [], barrels: [], shrines: [], vault: null };
   if (kind === 'boss' || kind === 'ambush' || kind === 'gen') {
     const W = kind === 'boss' ? 40 : 34, H = kind === 'boss' ? 28 : 24; s.W = W; s.H = H; s.tiles = new Uint8Array(W * H).fill(1);
     for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) s.tiles[y * W + x] = 0;
@@ -73,6 +81,17 @@ function genStage(kind, biome, depth) {
     }
     for (const r of rooms) if (r !== startR && rand() < 0.75) s.vents.push({ x: (r.x + irand(1, r.w - 2) + 0.5) * TS, y: (r.y + irand(1, r.h - 2) + 0.5) * TS, t: rand() * 3 });
     s.rooms = rooms;
+    // gimmicks: crates to break, barrels that blow up (and set each other off), maybe a shrine, maybe a sealed vault far away
+    const others = rooms.filter((r) => r !== startR), free = (p) => s.tiles[Math.floor(p.y / TS) * W + Math.floor(p.x / TS)] === 0;
+    const spot = (r, m = 1) => ({ x: (r.x + irand(m, r.w - 1 - m) + 0.5) * TS, y: (r.y + irand(m, r.h - 1 - m) + 0.5) * TS });
+    for (let i = irand(5, 9) * (mod === 'rich' ? 2 : 1); i > 0; i--) { const p = spot(pick(others)); if (free(p)) s.crates.push(p); }
+    for (let i = irand(2, 4); i > 0; i--) { const p = spot(pick(others)); if (!free(p)) continue; s.barrels.push(p); const q = { x: p.x + TS, y: p.y }; if (rand() < 0.6 && free(q)) s.barrels.push(q); }
+    const mid = others.filter((r) => r !== exitR);
+    if (rand() < 0.6 && mid.length) { const p = spot(pick(mid), 2); if (free(p)) s.shrines.push({ ...p, k: pick(['might', 'haste', 'magnet', 'mend']), charge: 0, used: false }); }
+    if (mod === 'rich' || (kind === 'fight' && rand() < 0.35)) {
+      const far = mid.slice().sort((a, b) => d[b.cy * W + b.cx] - d[a.cy * W + a.cx])[0], p = far && { x: (far.cx + 0.5) * TS, y: (far.cy + 0.5) * TS };
+      if (p && free(p)) s.vault = { ...p, open: false };
+    }
   }
   s.floor = []; for (let y = 0; y < s.H; y++) for (let x = 0; x < s.W; x++) if (s.tiles[y * s.W + x] !== 1) s.floor.push(y * s.W + x);
   // props sit on floor tiles that touch a wall: purely decorative
@@ -130,17 +149,17 @@ function near(x, y, r, cb) {
 }
 function nearest(x, y, maxR) {
   let best = null, bd = maxR * maxR;
-  for (const e of foes) { if (e.dead || e.spawnIn > 0) continue; const d = dist2(x, y, e.x, e.y); if (d < bd) { bd = d; best = e; } }
+  for (const e of foes) { if (e.dead || e.spawnIn > 0 || e.prop) continue; const d = dist2(x, y, e.x, e.y); if (d < bd) { bd = d; best = e; } }
   return best;
 }
 const onScreen = (e, m = 0) => Math.abs(e.x - cam.x) < LW / 2 + m && Math.abs(e.y - cam.y) < LH / 2 + m;
 
 // ---------- slop ----------
 function spawnFoe(type, x, y, o = {}) {
-  const d = FOES[type], k = hpScale(run.depth) * (o.elite ? 12 : 1) * (o.mini ? 0.35 : 1);
+  const d = FOES[type], k = d.prop ? 1 + run.depth * 0.08 : hpScale(run.depth) * (o.elite ? 12 : 1) * (o.mini ? 0.35 : 1) * (st?.mod === 'danger' ? 1.15 : 1);
   const e = { type, x, y, hp: d.hp * k, maxHp: d.hp * k, spd: d.spd * (o.elite ? 0.9 : 1) * (o.mini ? 1.25 : 1), dmg: d.dmg * (o.elite ? 1.5 : 1) * (0.8 + run.depth * 0.035), r: d.r * (o.elite ? 1.7 : o.mini ? 0.7 : 1),
     xp: d.xp * (o.elite ? 0 : 1), elite: !!o.elite, mini: !!o.mini, scale: o.elite ? 1.7 : o.mini ? 0.7 : 1, flash: 0, kx: 0, ky: 0, stun: 0, anim: rand() * 2, t: rand() * 2, spawnIn: 0.3,
-    lastScis: -9, dashing: 0, vx: 0, vy: 0, guard: !!o.guard };
+    lastScis: -9, dashing: 0, vx: 0, vy: 0, guard: !!o.guard, prop: !!d.prop };
   foes.push(e); return e;
 }
 function weighted(mix) { let s = 0; for (const [, w] of mix) s += w; let r = rand() * s; for (const [t, w] of mix) { if ((r -= w) <= 0) return t; } return mix[0][0]; }
@@ -154,7 +173,7 @@ function spawnSpot(minD = 190, maxD = 430) { // a floor tile out of sight but no
 function spawning(dt) {
   if (st.kind === 'boss' || st.cleared) { if (st.kind === 'boss' && boss && boss.kind !== 'snake') bossAdds(dt); return; }
   if (st.t < 4) return; // a breath at the start of every area
-  const mul = (run.flags.praise ? 1.4 : 1) * (run.flags.unplug ? 0.8 : 1) * (st.open ? 0.6 : 1);
+  const mul = (run.flags.praise ? 1.4 : 1) * (run.flags.unplug ? 0.8 : 1) * (st.open ? 0.6 : 1) * (st.mod === 'danger' ? 1.35 : 1);
   spawnAcc += spawnRate(run.depth) * mul * dt;
   while (spawnAcc >= 1) { spawnAcc--; if (foes.length < aliveCap(run.depth)) { const p = spawnSpot(); if (p) spawnFoe(weighted(st.B.mix), p[0], p[1]); } }
   for (const v of st.vents) { // vents near you breathe out small swarms
@@ -166,23 +185,28 @@ function spawning(dt) {
 }
 function bossAdds(dt) { spawnAcc += (0.6 + run.depth * 0.05) * dt; while (spawnAcc >= 1) { spawnAcc--; if (foes.length < 60) { const p = spawnSpot(120, 300); if (p) spawnFoe(weighted(st.B.mix), p[0], p[1]); } } }
 function recycle(e) {
-  if (e.boss || e.seg || e.guard) return;
+  if (e.boss || e.seg || e.guard || e.prop) return;
   if (Math.abs(e.x - pl.x) > 640 || Math.abs(e.y - pl.y) > 480) { const p = spawnSpot(); if (p) { e.x = p[0]; e.y = p[1]; } }
 }
 
 // ---------- damage ----------
+let curSrc = null; // the weapon dealing damage right now: kills count toward its skill tree
 function hurt(e, dmg, kx = 0, ky = 0, kb = 1) {
   if (e.dead) return;
   const tgt = e.seg ? e.parent : e; if (tgt.dead) return;
+  const crit = !!WEAPONS[curSrc] && rand() < critChance();
   // tail segments share the head's health: a wide hit across the tail shouldn't count 16 times
-  dmg = Math.round(dmg * dmgMul() * rnd(0.9, 1.1) * (e.seg ? 0.2 : 1)); tgt.hp -= dmg; e.flash = 0.1; if (e.seg) tgt.flash = 0.1;
+  dmg = Math.round(dmg * dmgMul() * rnd(0.9, 1.1) * (e.seg ? 0.2 : 1) * (crit ? 2.2 : 1) * (tgt.vuln > 0 ? 1.3 : 1)); tgt.hp -= dmg; e.flash = 0.1; if (e.seg) tgt.flash = 0.1;
   if (!tgt.boss) { const k = kb * (FOES[tgt.type]?.heavy ? 0.4 : 1) * (tgt.elite ? 0.3 : 1); e.kx += kx * 70 * k; e.ky += ky * 70 * k; }
-  if (nums.length < 120 && !e.seg) nums.push({ x: e.x + rnd(-3, 3), y: e.y - e.r - 2, v: dmg, t: 0, big: dmg >= 60 });
+  if (nums.length < 120 && !e.seg && !e.prop) nums.push({ x: e.x + rnd(-3, 3), y: e.y - e.r - 2, v: dmg, t: 0, big: dmg >= 60 || crit, crit });
   sfx('hit');
   if (tgt.hp <= 0) kill(tgt);
 }
 function kill(e) {
-  if (e.dead) return; e.dead = true; pl.kills++; pl.score += Math.round(e.maxHp);
+  if (e.dead) return; e.dead = true;
+  if (e.prop) { breakProp(e); return; }
+  pl.kills++; pl.score += Math.round(e.maxHp); pl.combo++; pl.bestCombo = Math.max(pl.bestCombo, pl.combo);
+  if (WEAPONS[curSrc]) pl.wk[curSrc] = (pl.wk[curSrc] || 0) + 1;
   burst(e.x, e.y, e.boss ? 40 : e.elite ? 18 : 7, e.boss ? '#f6d55c' : e.elite ? '#fb7185' : '#e9e4ff');
   sfx(e.boss ? 'boom' : 'kill');
   if (e.boss) { bossDown(e); return; }
@@ -191,9 +215,23 @@ function kill(e) {
     if (e.guard) { st.eliteDead = true; if (st.kind === 'ambush') stageWon(); }
     return;
   }
-  if (FOES[e.type].splits && !e.mini) for (let i = 0; i < 2; i++) spawnFoe(e.type, e.x + rnd(-5, 5), e.y + rnd(-5, 5), { mini: true }).spawnIn = 0;
-  dropGem(e.x, e.y, e.xp);
+  const clean = curSrc === 'eraser' && weaponOf('eraser')?.m.clean; // the heavy eraser's last tier erases copies for good
+  if (FOES[e.type].splits && !e.mini && !clean) for (let i = 0; i < 2; i++) spawnFoe(e.type, e.x + rnd(-5, 5), e.y + rnd(-5, 5), { mini: true }).spawnIn = 0;
+  dropGem(e.x, e.y, e.xp + (clean ? 1 : 0));
   const r = rand(); if (r < 0.012) items.push({ k: 'kimbap', x: e.x, y: e.y, t: 0 }); else if (r < 0.016) items.push({ k: 'clip', x: e.x, y: e.y, t: 0 }); else if (r < 0.026) items.push({ k: 'gold', x: e.x, y: e.y, t: 0 });
+}
+function breakProp(e) {
+  burst(e.x, e.y, 10, e.type === 'barrel' ? '#fb923c' : '#c08a52'); sfx('kill');
+  if (e.type === 'barrel') { // the blast hurts slop and you, and sets off barrels nearby
+    const prev = curSrc; curSrc = 'boom'; shake = Math.max(shake, 5); sfx('boom'); fx.push({ k: 'blast', x: e.x, y: e.y, r: 44, t: 0, max: 0.35 });
+    const dmg = 30 + run.depth * 10;
+    near(e.x, e.y, 56, (o) => { if (o !== e && dist2(e.x, e.y, o.x, o.y) < (44 + o.r) ** 2) hurt(o, dmg, (o.x - e.x) / 44, (o.y - e.y) / 44, 1.5); });
+    if (dist2(e.x, e.y, pl.x, pl.y) < 34 * 34) hurtPlayer(6 + run.depth * 0.5, e);
+    curSrc = prev; return;
+  }
+  const r = rand();
+  if (r < 0.45) dropGem(e.x, e.y, 3 + Math.floor(run.depth / 4)); else if (r < 0.7) items.push({ k: 'gold', x: e.x, y: e.y, t: 0 });
+  else if (r < 0.82) items.push({ k: 'kimbap', x: e.x, y: e.y, t: 0 }); else if (r < 0.88) items.push({ k: 'clip', x: e.x, y: e.y, t: 0 });
 }
 function floorNear(x, y) { // the closest walkable spot, so nothing ever lands inside a wall
   if (!solid(x, y)) return [x, y]; const tx = Math.floor(x / TS), ty = Math.floor(y / TS);
@@ -208,22 +246,28 @@ function dropGem(x, y, v) {
 function burst(x, y, n, col) { for (let i = 0; i < n && fx.length < 600; i++) { const a = rand() * 7, s = rnd(20, 80); fx.push({ k: 'p', x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, t: 0, max: rnd(0.25, 0.55), col }); } }
 function hurtPlayer(d, from) {
   if (pl.inv > 0 || pl.dashT > 0 || state !== 'play') return;
-  pl.hp -= d; pl.inv = 0.55; pl.hurtFlash = 0.25; shake = Math.max(shake, 3); sfx('hurt');
+  const c = CHARS[pl.ci]; d *= 1 - c.armor;
+  pl.hp -= d; pl.inv = 0.55; pl.hurtFlash = 0.25; shake = Math.max(shake, 3); sfx('hurt'); pl.combo = 0;
+  if (c.thorns && from && from.maxHp && !from.dead && !from.prop) { const prev = curSrc; curSrc = 'thorns'; hurt(from, pl.maxHp * c.thorns, 0, 0, 2); curSrc = prev; }
   if (from) { const a = Math.atan2(pl.y - from.y, pl.x - from.x); pl.vx += Math.cos(a) * 60; pl.vy += Math.sin(a) * 60; }
   if (pl.hp <= 0) { pl.hp = 0; endRun('over'); }
 }
 function gainXp(v) {
   pl.xp += v; pl.gems += v; pl.score += v * 5;
   if (st && st.need && !st.open) { st.charge = Math.min(st.need, st.charge + v * (run.choice === 'A' ? 1.2 : 1)); if (st.charge >= st.need && st.eliteDead) openGate(); }
-  while (pl.xp >= pl.need) { pl.xp -= pl.need; pl.lv++; pl.need = xpNeed(pl.lv); pendingLv++; }
+  while (pl.xp >= pl.need) { pl.xp -= pl.need; pl.lv++; pl.need = xpNeed(pl.lv); pendingLv++; const ph = CHARS[pl.ci].perLv.hp; if (ph) { pl.maxHp += ph; pl.hp += ph; } }
 }
 function openGate() { if (st.open) return; st.open = true; banner = { text: T.gateOpen, t: 0 }; sfx('chest'); burst(st.exit.x, st.exit.y, 30, '#2dd4bf'); }
 
 // ---------- level-up choices and chests ----------
 function upgradePool() {
-  const pool = [];
-  for (const w of pl.weapons) if (!w.evo && w.lv < MAX_LV) pool.push({ k: 'w', id: w.id, lv: w.lv + 1, wt: 3 });
-  if (pl.weapons.length < MAX_W) for (const id of W_ORDER) if (!weaponOf(id)) pool.push({ k: 'w', id, lv: 1, wt: 2 });
+  const pool = [], aff = CHARS[pl.ci].affinity, kills = (id) => pl.wk[id] || 0;
+  // weapons that have erased more slop come up more, and so do their skill tree tiers
+  for (const w of pl.weapons) if (!w.evo && w.lv < MAX_LV) pool.push({ k: 'w', id: w.id, lv: w.lv + 1, wt: 3 * Math.min(2, 1 + kills(w.id) / 150) });
+  for (const w of pl.weapons) for (let b = 0; b < 2; b++) {
+    const t = w.tr[b]; if (t < 3 && (t > 0 || w.lv >= 2) && kills(w.id) >= TREE_NEED[t] && !(t === 2 && w.tr[1 - b] >= 3)) pool.push({ k: 't', id: w.id, b, t, wt: 1.3 * Math.min(6, 1 + kills(w.id) / 40) });
+  }
+  if (pl.weapons.length < MAX_W) for (const id of W_ORDER) if (!weaponOf(id)) pool.push({ k: 'w', id, lv: 1, wt: aff.includes(id) ? 3.2 : 1.1 });
   const owned = Object.keys(pl.pas);
   for (const id of P_ORDER) { const lv = pasLv(id); if (lv && lv < PASSIVES[id]) pool.push({ k: 'p', id, lv: lv + 1, wt: 2.5 }); else if (!lv && owned.length < 6) pool.push({ k: 'p', id, lv: 1, wt: 1.5 }); }
   return pool;
@@ -241,6 +285,7 @@ function rollOffer() {
 function applyChoice(o) {
   if (o.k === 'w') { const w = weaponOf(o.id); if (w) w.lv = o.lv; else addWeapon(o.id); }
   else if (o.k === 'p') { pl.pas[o.id] = o.lv; if (o.id === 'vita') { pl.maxHp += 20; pl.hp = Math.min(pl.maxHp, pl.hp + 20); } }
+  else if (o.k === 't') { const w = weaponOf(o.id); if (w && w.tr[o.b] === o.t) { w.tr[o.b]++; w.m = treeMods(w); } }
   else if (o.k === 'heal') { pl.hp = Math.min(pl.maxHp, pl.hp + 30); sfx('heal'); }
   else if (o.k === 'gold') run.gold += 40;
 }

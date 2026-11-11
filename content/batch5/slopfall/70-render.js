@@ -69,6 +69,8 @@ function drawWorld(t) {
   g.save(); g.translate(-ox, -oy);
   // vents and the exit gate
   for (const v of st.vents) { const k = 0.5 + Math.sin(t * 3 + v.x) * 0.5; g.fillStyle = '#0b0c10'; g.beginPath(); g.ellipse(v.x, v.y, 9, 5, 0, 0, 7); g.fill(); g.strokeStyle = hexA(st.B.accent, 0.35 + k * 0.4); g.lineWidth = 1.5; g.stroke(); g.fillStyle = hexA(st.B.accent, 0.25 * k); g.beginPath(); g.ellipse(v.x, v.y, 6, 3, 0, 0, 7); g.fill(); }
+  for (const sh of st.shrines) drawShrine(sh, t);
+  if (st.vault) drawVault(st.vault, t);
   if (st.exit && (st.need || st.open)) drawGate(st.exit.x, st.exit.y, t);
   for (const f of fx) if (f.k === 'mark') {
     const k = f.t / f.max; g.globalAlpha = 1 - k * k; g.strokeStyle = f.evo ? '#f6d55c' : '#e0524a'; g.lineWidth = 2;
@@ -100,6 +102,39 @@ function drawWorld(t) {
   g.restore();
   drawLight(t, ox, oy);
 }
+function drawShrine(sh, t) {
+  const col = SHRINE_COL[sh.k], k = sh.used ? 0.25 : 0.6 + Math.sin(t * 3 + sh.x) * 0.25;
+  g.fillStyle = '#0b0c10'; g.beginPath(); g.ellipse(sh.x, sh.y + 2, 13, 6, 0, 0, 7); g.fill();
+  g.strokeStyle = hexA(col, k); g.lineWidth = 1.5; g.beginPath(); g.ellipse(sh.x, sh.y + 2, 13, 6, 0, 0, 7); g.stroke();
+  if (!sh.used && sh.charge > 0) { g.strokeStyle = col; g.lineWidth = 2; g.beginPath(); g.ellipse(sh.x, sh.y + 2, 13, 6, 0, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * sh.charge / 1.5); g.stroke(); }
+  // a small stone with the shrine's sign floating over it
+  g.fillStyle = sh.used ? '#2a2e36' : '#3a404b'; g.fillRect(sh.x - 4, sh.y - 9, 8, 10); g.fillStyle = sh.used ? '#3a404b' : '#4a5260'; g.fillRect(sh.x - 4, sh.y - 9, 8, 2);
+  if (sh.used) return; const y = sh.y - 17 + Math.sin(t * 2.4 + sh.x) * 1.5; g.fillStyle = col;
+  if (sh.k === 'might') { g.fillRect(sh.x - 1, y - 4, 2, 8); g.fillRect(sh.x - 3, y + 1, 6, 1); }
+  else if (sh.k === 'haste') { g.beginPath(); g.moveTo(sh.x + 2, y - 4); g.lineTo(sh.x - 3, y + 1); g.lineTo(sh.x, y + 1); g.lineTo(sh.x - 2, y + 5); g.lineTo(sh.x + 3, y - 1); g.lineTo(sh.x, y - 1); g.fill(); }
+  else if (sh.k === 'magnet') { g.fillRect(sh.x - 4, y - 3, 2, 6); g.fillRect(sh.x + 2, y - 3, 2, 6); g.fillRect(sh.x - 4, y + 2, 8, 2); }
+  else { g.fillRect(sh.x - 1, y - 4, 2, 8); g.fillRect(sh.x - 4, y - 1, 8, 2); }
+}
+function drawVault(v, t) {
+  shadow(v.x, v.y + 6, 10);
+  const big = !v.open, y = v.y - 6;
+  if (big) { g.fillStyle = `rgba(246,213,92,${0.12 + Math.sin(t * 4) * 0.06})`; g.beginPath(); g.arc(v.x, y, 18, 0, 7); g.fill(); }
+  spr(PICK.chest, v.x, y, false, false, v.open ? 1 : 1.6);
+  if (big) { g.strokeStyle = '#a29db0'; g.lineWidth = 1; g.beginPath(); g.moveTo(v.x - 11, y - 6); g.lineTo(v.x + 11, y + 6); g.moveTo(v.x + 11, y - 6); g.lineTo(v.x - 11, y + 6); g.stroke(); g.fillStyle = '#f6d55c'; g.fillRect(v.x - 2, y - 2, 4, 4); }
+}
+// crates and barrels: drawn with shapes
+function drawProp2(e, t) {
+  shadow(e.x, e.y + 5, 7); const fl = e.flash > 0, x = Math.round(e.x), y = Math.round(e.y) - 4;
+  if (e.type === 'crate') {
+    g.fillStyle = fl ? '#fff' : '#8a5636'; g.fillRect(x - 7, y - 6, 14, 12); g.fillStyle = fl ? '#fff' : '#b07548'; g.fillRect(x - 7, y - 6, 14, 2);
+    g.fillStyle = '#4b2c22'; g.fillRect(x - 7, y - 1, 14, 1); g.fillRect(x - 1, y - 6, 1, 12); g.strokeStyle = '#120e1a'; g.lineWidth = 1; g.strokeRect(x - 7.5, y - 6.5, 15, 13);
+  } else {
+    g.fillStyle = fl ? '#fff' : '#c2410c'; g.fillRect(x - 6, y - 7, 12, 14); g.fillStyle = fl ? '#fff' : '#ea580c'; g.fillRect(x - 6, y - 7, 12, 2);
+    g.fillStyle = '#7c2d12'; g.fillRect(x - 6, y - 2, 12, 1); g.fillRect(x - 6, y + 3, 12, 1);
+    g.fillStyle = '#f6d55c'; g.beginPath(); g.moveTo(x, y - 4); g.lineTo(x + 3, y + 1); g.lineTo(x - 3, y + 1); g.fill(); g.fillStyle = '#120e1a'; g.fillRect(x, y - 2, 1, 2);
+    g.strokeStyle = '#120e1a'; g.lineWidth = 1; g.strokeRect(x - 6.5, y - 7.5, 13, 15);
+  }
+}
 function drawGate(x, y, t) {
   const k = st.need ? st.charge / st.need : 1, open = st.open;
   g.fillStyle = '#0b0c10'; g.beginPath(); g.ellipse(x, y + 4, 15, 7, 0, 0, 7); g.fill();
@@ -120,8 +155,11 @@ function drawEffects(t) {
       const k = f.t / f.max; g.globalAlpha = 1 - k; g.strokeStyle = '#fb7185'; g.lineWidth = 4 * (1 - k) + 1; g.beginPath(); g.arc(f.x, f.y - 3, f.r * (0.8 + k * 0.2), f.a - 1.15, f.a + 1.15); g.stroke(); g.globalAlpha = 1;
     } else if (f.k === 'beam') {
       const k = f.t / f.max; g.globalAlpha = f.evo ? 0.85 : 1 - k; g.lineCap = 'round';
-      g.strokeStyle = f.evo ? 'rgba(127,227,214,.55)' : 'rgba(246,213,92,.55)'; g.lineWidth = f.w * 2.2; g.beginPath(); g.moveTo(f.x1, f.y1 - 3); g.lineTo(f.x2, f.y2 - 3); g.stroke();
-      g.strokeStyle = f.evo ? '#e9fffb' : '#fff6c2'; g.lineWidth = Math.max(1, f.w * 0.7); g.beginPath(); g.moveTo(f.x1, f.y1 - 3); g.lineTo(f.x2, f.y2 - 3); g.stroke(); g.globalAlpha = 1; g.lineCap = 'butt';
+      g.strokeStyle = f.ink ? 'rgba(90,120,224,.6)' : f.burn ? 'rgba(251,146,60,.6)' : f.evo ? 'rgba(127,227,214,.55)' : 'rgba(246,213,92,.55)'; g.lineWidth = f.w * 2.2; g.beginPath(); g.moveTo(f.x1, f.y1 - 3); g.lineTo(f.x2, f.y2 - 3); g.stroke();
+      g.strokeStyle = f.ink ? '#dbe4ff' : f.burn ? '#ffedd5' : f.evo ? '#e9fffb' : '#fff6c2'; g.lineWidth = Math.max(1, f.w * 0.7); g.beginPath(); g.moveTo(f.x1, f.y1 - 3); g.lineTo(f.x2, f.y2 - 3); g.stroke(); g.globalAlpha = 1; g.lineCap = 'butt';
+    } else if (f.k === 'blast') {
+      const k = f.t / f.max; g.globalAlpha = 1 - k; g.fillStyle = hexA(f.col || '#fb923c', 0.35); g.beginPath(); g.arc(f.x, f.y, f.r * (0.4 + k * 0.6), 0, 7); g.fill();
+      g.strokeStyle = f.col || '#f6d55c'; g.lineWidth = 2; g.beginPath(); g.arc(f.x, f.y, f.r * (0.5 + k * 0.6), 0, 7); g.stroke(); g.globalAlpha = 1;
     } else if (f.k === 'ghostM' && boss) { g.globalAlpha = 0.3 * (1 - f.t / f.max); spr(boss.art[0], f.x, f.y - 8, f.f < 0, true); g.globalAlpha = 1; }
   }
   const sc = weaponOf('scis');
@@ -146,6 +184,9 @@ function drawLight(t, ox, oy) {
   hole(pl.x, pl.y - 4, 125 * (1 + pasLv('loupe') * 0.04), 1);
   if (st.exit && (st.need || st.open)) hole(st.exit.x, st.exit.y - 10, st.open ? 110 + Math.sin(t * 3) * 8 : 55, st.open ? 1 : 0.6);
   for (const v of st.vents) hole(v.x, v.y, 26, 0.5);
+  for (const sh of st.shrines) if (!sh.used) hole(sh.x, sh.y - 6, 34, 0.7);
+  if (st.vault && !st.vault.paid) hole(st.vault.x, st.vault.y - 6, 40, 0.7);
+  for (const f of fx) if (f.k === 'blast') hole(f.x, f.y, f.r * 1.4, 0.8 * (1 - f.t / f.max));
   let n = 0; for (const gm of gems) { if (n++ > 50) break; hole(gm.x, gm.y, 16, 0.5); }
   for (const b of ebul) hole(b.x, b.y, 14, 0.6);
   for (const it of items) hole(it.x, it.y, 26, 0.6);
@@ -157,6 +198,8 @@ function drawLight(t, ox, oy) {
   const glow = (x, y, r, col) => { const sx = x - ox, sy = y - oy; if (sx < -r || sy < -r || sx > LW + r || sy > LH + r) return; const gr = g.createRadialGradient(sx, sy, 0, sx, sy, r); gr.addColorStop(0, col); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(sx - r, sy - r, r * 2, r * 2); };
   if (st.exit && (st.need || st.open)) glow(st.exit.x, st.exit.y - 12, st.open ? 60 : 26, st.open ? 'rgba(94,234,212,.35)' : 'rgba(45,212,191,.15)');
   for (const v of st.vents) glow(v.x, v.y, 18, hexA(st.B.accent, 0.18));
+  for (const sh of st.shrines) if (!sh.used) glow(sh.x, sh.y - 14, 22, hexA(SHRINE_COL[sh.k], 0.3));
+  if (st.vault && !st.vault.open) glow(st.vault.x, st.vault.y - 6, 26, 'rgba(246,213,92,.25)');
   for (const b of ebul) glow(b.x, b.y, 9, hexA(b.col.length === 7 ? b.col : '#ff7ab8', 0.45));
   n = 0; for (const gm of gems) { if (n++ > 60) break; glow(gm.x, gm.y, 7, ['rgba(90,167,224,.35)', 'rgba(143,214,107,.35)', 'rgba(224,82,74,.35)', 'rgba(176,124,232,.4)'][gm.tier]); }
   glow(pl.x + pl.face * 6, pl.y - 6, 14, 'rgba(246,213,92,.25)');
@@ -171,6 +214,7 @@ function drawPlayer(t) {
   g.fillStyle = 'rgba(246,213,92,.95)'; g.fillRect(Math.round(pl.x + pl.face * 6), Math.round(pl.y - 6 + bob), 2, 2); // lantern
 }
 function drawFoe(e, t) {
+  if (e.prop) return drawProp2(e, t);
   const a = ART[e.type][Math.floor(e.anim) % 2], sc = e.scale;
   shadow(e.x, e.y + 1, e.r * 0.9);
   if (e.spawnIn > 0) g.globalAlpha = 1 - e.spawnIn / 0.3;

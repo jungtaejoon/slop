@@ -22,9 +22,12 @@ const TXT = {
       '색인을 탑까지 가져가면 탑은 다시 배울 것이다.\n길은 여러 갈래다. 어느 길로 갈지는 당신이 고른다.',
     ],
     chars: [
-      ['미나', '야간 큐레이터', '붓으로 시작 · 범위 +15%'],
-      ['도윤', '교정 담당', '형광펜으로 시작 · 재사용 대기 -10%'],
-      ['옥 할머니', '40년 차 감정사', '감정 도장으로 시작 · 체력 +30, 조금 느림'],
+      ['미나', '야간 큐레이터', '체력 70 · 빠르고 대시가 자주 된다. 체력이 낮을수록 강해져서, 거의 쓰러질 때는 공격력이 두 배를 넘는다. 레벨마다 공격력 +3.5%. 붓·가위·지우개가 잘 나온다.',
+        '체력 70 · 빠름 · 체력이 낮을수록 공격력 최대 +130% · 레벨마다 공격력 +3.5%'],
+      ['도윤', '교정 담당', '체력 90. 맞지 않고 계속 지우면 콤보가 쌓여 모든 무기가 최대 35% 빨라진다. 한 대라도 맞으면 콤보가 끊긴다. 치명타 12%에서 시작해 레벨마다 오른다. 형광펜·종이비행기·지우개가 잘 나온다.',
+        '체력 90 · 안 맞고 지우면 콤보로 최대 35% 빨라짐 · 맞으면 끊김 · 치명타가 레벨마다 상승'],
+      ['옥 할머니', '40년 차 감정사', '체력 160 · 느리다. 받는 피해 -30%, 저절로 회복하고, 부딪힌 슬롭에게 반격한다. 레벨마다 최대 체력 +8, 최대 체력이 늘수록 공격력도 오른다. 도장·가위·붓이 잘 나온다.',
+        '체력 160 · 느림 · 받는 피해 -30%, 회복, 반격 · 레벨마다 체력 +8, 체력이 클수록 강해짐'],
     ],
     w: {
       brush: ['붓', '가장 가까운 적 쪽을 앞뒤로 크게 벤다.'], hl: ['형광펜', '가장 가까운 적에게 꿰뚫는 줄을 긋는다.'],
@@ -101,6 +104,20 @@ const TXT = {
     over: '홍수에 휩쓸렸다', overSub: '색인은 아카이브로 돌아갔다. 다음 큐레이터가 이어 갈 것이다.',
     stats: (t, k, g, lv, n) => [`걸린 시간 ${t}`, `지운 슬롭 ${k}`, `주운 보석 ${g}`, `레벨 ${lv}`, `지나온 구역 ${n}`],
     again: '다시 하기', toTitle: '처음으로', score: '점수', dash: '대시', boss: ['그럴듯한 얼굴', '스팸 우체통', '거울 큐레이터', '모델 붕괴'],
+    trait: { rage: (p) => `분노: 공격력 +${p}%`, combo: (n, c, cr) => `콤보 ${n} · 대기 -${c}% · 치명 ${cr}%`, tank: (a, p) => `받는 피해 -${a}% · 체력 보너스 +${p}%` },
+    buffName: { might: '힘', haste: '바람', magnet: '자석', mend: '치유' },
+    shrine: { might: '힘의 제단: 20초 동안 공격력 +50%', haste: '바람의 제단: 20초 동안 더 빠르게', magnet: '자석의 제단: 20초 동안 보석을 멀리서 끌어온다', mend: '치유의 제단: 체력 절반 회복' },
+    vault: '봉인된 보관함이 열렸다! 지키던 슬롭이 깨어난다', vaultDone: '보관함을 지켜 냈다! 상자를 가져가세요',
+    mod: { rich: ['보물 길', '부술 상자가 많고 봉인된 보관함이 있어요'], danger: ['위험한 길', '슬롭이 더 많고 질기지만 금박을 두 배로 얻어요'] },
+    treeTag: (n) => `스킬 트리 ${n}단계`, treeNext: '다음', treeKills: (w, n) => `${w} 처치 ${n}`,
+    tree: {
+      brush: [['넓은 획', ['범위 +20%', '휘두르기 +1번', '먹물 파도: 휘두를 때마다 앞으로 먹물 물결이 뻗어 나간다']], ['날 선 획', ['피해 +25%', '흡혈: 한 번에 3마리 이상 베면 체력 1 회복', '처형: 체력이 15% 이하인 슬롭은 한 번에 지운다']]],
+      hl: [['여러 줄', ['줄 +1개', '줄 굵기 +60%', '격자: 양옆으로도 줄을 긋는다']], ['진한 잉크', ['피해 +25%', '재사용 대기 -15%', '잔상: 그은 줄이 잠시 뒤 한 번 더 탄다']]],
+      stamp: [['큰 도장', ['범위 +20%', '멈추는 시간 +0.7초', '메아리: 찍힌 자리 옆에 작은 도장 둘이 더 찍힌다']], ['많은 도장', ['도장 +1개', '재사용 대기 -15%', '봉인: 찍힌 슬롭은 3초 동안 피해를 30% 더 받는다']]],
+      scis: [['회전', ['가위 +1개', '회전 속도 +40%', '도는 범위 +35%']], ['날카로움', ['피해 +30%', '같은 슬롭을 더 자주 자른다', '출혈: 잘린 슬롭이 2초 동안 피해를 입는다']]],
+      plane: [['편대', ['비행기 +1대', '관통 +1', '폭격: 다 날고 나면 터지며 주변을 친다']], ['추적', ['속도와 선회 +30%', '피해 +30%', '귀환: 두 배 오래 날고 관통 +2']]],
+      eraser: [['튕김', ['튕김 +2번', '속도 +30%', '가루: 튕길 때마다 작은 폭발']], ['무거운 지우개', ['피해 +30%', '크게 밀쳐 내고 잠깐 멈춘다', '완전 삭제: 지운 슬롭은 쪼개지지 않고 보석을 더 남긴다']]],
+    },
     warn: '경고', swarm: '대량 생성이 몰려온다!', next: '▼', skip: '건너뛰기',
   },
   en: {
@@ -113,9 +130,12 @@ const TXT = {
       'Carry it to the tower and the tower can learn again.\nThere are many roads. You choose which to take.',
     ],
     chars: [
-      ['Mina', 'Night curator', 'Starts with the Brush · area +15%'],
-      ['Doyun', 'Proofreader', 'Starts with the Highlighter · cooldown -10%'],
-      ['Granny Ok', 'Appraiser for 40 years', 'Starts with the Seal Stamp · +30 HP, a bit slower'],
+      ['Mina', 'Night curator', '70 HP · fast, dashes often. The lower her health, the harder she hits: near the end, more than double damage. +3.5% damage per level. Brush, Scissors and Eraser come up more.',
+        '70 HP · fast · up to +130% damage at low health · +3.5% damage per level'],
+      ['Doyun', 'Proofreader', "90 HP. Keep erasing without getting hit and a combo builds up, making every weapon up to 35% faster. One hit breaks it. Crits start at 12% and grow every level. Highlighter, Paper Plane and Eraser come up more.",
+        '90 HP · an unbroken combo makes weapons up to 35% faster · crits grow per level'],
+      ['Granny Ok', 'Appraiser for 40 years', '160 HP · slow. Takes 30% less damage, regenerates, and hits back at slop that bumps into her. +8 max HP per level, and the more max HP she has, the harder she hits. Seal Stamp, Scissors and Brush come up more.',
+        '160 HP · slow · -30% damage taken, regen, thorns · +8 HP per level, power grows with HP'],
     ],
     w: {
       brush: ['Brush', 'Wide strokes toward the nearest enemy, front and back.'], hl: ['Highlighter', 'A piercing line at the nearest enemy.'],
@@ -192,6 +212,20 @@ const TXT = {
     over: 'Swept away', overSub: 'The Index went back to the Archive. The next curator will carry it on.',
     stats: (t, k, g, lv, n) => [`Time ${t}`, `Slop erased ${k}`, `Gems found ${g}`, `Level ${lv}`, `Areas crossed ${n}`],
     again: 'Play again', toTitle: 'Title', score: 'Score', dash: 'Dash', boss: ['The Plausible Face', 'The Spam Box', 'Mirror Curator', 'Model Collapse'],
+    trait: { rage: (p) => `Rage: +${p}% damage`, combo: (n, c, cr) => `Combo ${n} · -${c}% cooldown · ${cr}% crit`, tank: (a, p) => `-${a}% damage taken · +${p}% from health` },
+    buffName: { might: 'Might', haste: 'Haste', magnet: 'Magnet', mend: 'Mend' },
+    shrine: { might: 'Shrine of Might: +50% damage for 20s', haste: 'Shrine of Wind: faster for 20s', magnet: 'Shrine of the Magnet: gems fly to you from afar for 20s', mend: 'Shrine of Mending: half your health back' },
+    vault: 'The sealed vault opens! Its guards wake up', vaultDone: 'Vault defended! Take the chest',
+    mod: { rich: ['Treasure road', 'Lots of crates to break and a sealed vault'], danger: ['Dangerous road', 'More and tougher slop, but double gold leaf'] },
+    treeTag: (n) => `Skill tree, tier ${n}`, treeNext: 'Next', treeKills: (w, n) => `${w} kills: ${n}`,
+    tree: {
+      brush: [['Wide strokes', ['Area +20%', '+1 swing', 'Ink wave: every swing sends a wave of ink forward']], ['Sharp strokes', ['Damage +25%', 'Leech: hit 3 or more at once to heal 1', 'Execute: slop under 15% health is erased in one stroke']]],
+      hl: [['More lines', ['+1 line', 'Lines 60% thicker', 'Grid: also draws lines to both sides']], ['Dark ink', ['Damage +25%', 'Cooldown -15%', 'After-image: each line burns once more a moment later']]],
+      stamp: [['Big stamp', ['Area +20%', 'Stun +0.7s', 'Echo: two small stamps land next to each one']], ['Many stamps', ['+1 stamp', 'Cooldown -15%', 'Seal: stamped slop takes 30% more damage for 3s']]],
+      scis: [['Spin', ['+1 blade', 'Spin speed +40%', 'Orbit +35%']], ['Edge', ['Damage +30%', 'Cuts the same slop more often', 'Bleed: cut slop keeps taking damage for 2s']]],
+      plane: [['Squadron', ['+1 plane', 'Pierce +1', 'Bombing: planes explode when they are done']], ['Hunter', ['Speed and turning +30%', 'Damage +30%', 'Long flight: twice as long, pierce +2']]],
+      eraser: [['Bounce', ['+2 bounces', 'Speed +30%', 'Dust: a small blast on every bounce']], ['Heavy eraser', ['Damage +30%', 'Big knockback and a short stun', 'Full erase: erased slop never splits and leaves an extra gem']]],
+    },
     warn: 'WARNING', swarm: 'A mass generation is coming!', next: '▼', skip: 'Skip',
   },
 };
@@ -568,11 +602,30 @@ const W_ORDER = ['brush', 'hl', 'stamp', 'scis', 'plane', 'eraser'];
 const PASSIVES = { coffee: 5, loupe: 5, shoes: 5, clip: 5, vita: 5, copier: 2 }; // max level
 const P_ORDER = ['coffee', 'loupe', 'shoes', 'clip', 'vita', 'copier'];
 const MAX_W = 6, MAX_LV = 6;
+// three ways to play. Mina: fragile and fast, hits harder the more she bleeds, and every level sharpens her.
+// Doyun: a chain of kills without being hit speeds every weapon up; crits grow with level; one hit breaks the chain.
+// Granny Ok: slow and hard to kill; armour, regeneration, thorns, and the more health she has the harder she hits.
+// `affinity`: the weapons that come up more often for this curator.
 const CHARS = [
-  { start: 'brush', area: 0.15, cd: 0, hp: 100, spd: 1 },
-  { start: 'hl', area: 0, cd: 0.1, hp: 100, spd: 1 },
-  { start: 'stamp', area: 0, cd: 0, hp: 130, spd: 0.92 },
+  { start: 'brush', hp: 70, spd: 1.12, area: 0.1, cd: 0, dash: 0.7, armor: 0, rage: 1.3, perLv: { dmg: 0.035 }, affinity: ['brush', 'scis', 'eraser'] },
+  { start: 'hl', hp: 90, spd: 1, area: 0, cd: 0.1, dash: 1.1, armor: 0, combo: 1, crit: 0.12, perLv: { crit: 0.012 }, affinity: ['hl', 'plane', 'eraser'] },
+  { start: 'stamp', hp: 160, spd: 0.84, area: 0.1, cd: 0, dash: 1.5, armor: 0.3, regen: 0.8, thorns: 0.25, hpPower: 1, perLv: { hp: 8 }, affinity: ['stamp', 'scis', 'brush'] },
 ];
+const critChance = () => { const c = CHARS[pl.ci]; return c.crit ? Math.min(0.6, c.crit + c.perLv.crit * (pl.lv - 1)) : 0; };
+const comboCd = () => (CHARS[pl.ci].combo ? Math.min(0.35, pl.combo * 0.004) : 0);
+// skill trees: two branches per weapon, three tiers each. A tier unlocks once that weapon has erased enough slop,
+// and the more it has erased, the more often its next tiers come up when you level up.
+const TREES = {
+  brush: [[{ area: 0.2 }, { amt: 1 }, { wave: 1 }], [{ dmg: 0.25 }, { leech: 1 }, { exec: 0.15 }]],
+  hl: [[{ amt: 1 }, { width: 0.6 }, { cross: 1 }], [{ dmg: 0.25 }, { cd: 0.15 }, { burn: 1 }]],
+  stamp: [[{ area: 0.2 }, { stun: 0.7 }, { echo: 1 }], [{ amt: 1 }, { cd: 0.15 }, { seal: 1 }]],
+  scis: [[{ amt: 1 }, { spin: 0.4 }, { area: 0.35 }], [{ dmg: 0.3 }, { rate: 1 }, { bleed: 1 }]],
+  plane: [[{ amt: 1 }, { pierce: 1 }, { bomb: 1 }], [{ speed: 0.3 }, { dmg: 0.3 }, { long: 1 }]],
+  eraser: [[{ chain: 2 }, { speed: 0.3 }, { dust: 1 }], [{ dmg: 0.3 }, { knock: 1 }, { clean: 1 }]],
+};
+const TREE_NEED = [0, 50, 180]; // kills with that weapon to open tier 1 / 2 / 3 (tier 1 also needs weapon level 2)
+// only one branch per weapon can reach tier 3: each weapon ends up leaning one way
+function treeMods(w) { const m = {}; TREES[w.id].forEach((br, b) => { for (let t = 0; t < w.tr[b]; t++) for (const k in br[t]) m[k] = (m[k] || 0) + br[t][k]; }); return m; }
 // enemies: hp, speed (px/s), contact damage, radius, xp, behaviour
 const FOES = {
   hand: { hp: 10, spd: 30, dmg: 5, r: 6, xp: 1 },
@@ -582,6 +635,9 @@ const FOES = {
   eye: { hp: 14, spd: 24, dmg: 5, r: 6, xp: 2, shooter: 1 },
   jelly: { hp: 22, spd: 26, dmg: 6, r: 6, xp: 2, splits: 1 },
   echo: { hp: 20, spd: 34, dmg: 6, r: 6, xp: 2, splits: 1 },
+  // area gimmicks: they stand still and break when hit
+  crate: { hp: 16, spd: 0, dmg: 0, r: 6, xp: 0, prop: 1 },
+  barrel: { hp: 8, spd: 0, dmg: 0, r: 6, xp: 0, prop: 1, boom: 1 },
 };
 // regions: look (floor, wall top, wall face, accent, darkness), slop mix, hazard tiles, music
 const BIOMES = {
@@ -632,7 +688,9 @@ function genAct(a) {
       if (c < 2) w.camp = 0; if (c === A.cols - 1) w.shop *= 0.5;
       let s = 0; for (const k in w) s += w[k]; let x = rand() * s; for (const k in w) { if ((x -= w[k]) <= 0) { type = k; break; } }
     }
-    nodes.push({ id: `${c}-${r}`, col: c, row: r, type, biome: A.biomes[r], next: [], jx: rnd(-0.25, 0.25), jy: rnd(-0.18, 0.18) });
+    // some fights carry a twist you can see on the map: a treasure road or a dangerous one
+    const mod = (type === 'fight' || type === 'elite') && c > 0 && rand() < 0.28 ? (rand() < 0.5 ? 'rich' : 'danger') : null;
+    nodes.push({ id: `${c}-${r}`, col: c, row: r, type, mod, biome: A.biomes[r], next: [], jx: rnd(-0.25, 0.25), jy: rnd(-0.18, 0.18) });
   }
   const at = (c, r) => nodes.find((n) => n.col === c && n.row === r);
   // the last column before the boss always offers a camp somewhere
@@ -707,6 +765,7 @@ function drawMap() {
     if (isAv && live) { const k = 0.5 + Math.sin(mapT * 4) * 0.5; ctx.strokeStyle = hexA(col, 0.35 + k * 0.35); ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(p.x, p.y, R + 5 + k * 3, 0, 7); ctx.stroke(); button(p.x - R - 6, p.y - R - 6, R * 2 + 12, R * 2 + 12, () => { if (sel === n) enterNode(n); else mapSel = av.indexOf(n); }); }
     ctx.fillStyle = done ? '#10302c' : '#15181d'; ctx.beginPath(); ctx.arc(p.x, p.y, R, 0, 7); ctx.fill();
     ctx.lineWidth = sel === n ? 3 : 1.5; ctx.strokeStyle = sel === n ? '#f1f2f4' : done ? '#2dd4bf' : isAv ? hexA(col, 0.9) : 'rgba(255,255,255,.12)'; ctx.stroke();
+    if (n.mod) { const bx = p.x - R * 0.72, by = p.y - R * 0.72; ctx.fillStyle = n.mod === 'rich' ? '#f6d55c' : '#fb7185'; ctx.beginPath(); ctx.arc(bx, by, 7, 0, 7); ctx.fill(); ctx.fillStyle = '#121418'; ctx.font = `900 10px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(n.mod === 'rich' ? '★' : '!', bx, by + 0.5); }
     if (n.biome !== 'out' && run.act === 1) { ctx.fillStyle = BIOMES[n.biome].accent; ctx.beginPath(); ctx.arc(p.x + R * 0.7, p.y - R * 0.7, 3.5, 0, 7); ctx.fill(); }
     ctx.globalAlpha = reach && !reach.has(n.id) && !done && !cur ? 0.18 : isAv || done || n.type === 'boss' || (reach && reach.has(n.id)) ? 1 : 0.4; nodeIcon(n.type, p.x, p.y, R * 0.75, done && !cur ? '#5eead4' : col); ctx.globalAlpha = 1;
     if (cur) { ctx.fillStyle = '#f1f2f4'; ctx.beginPath(); const by = p.y - R - 10 + Math.sin(mapT * 3) * 2; ctx.moveTo(p.x, by); ctx.lineTo(p.x - 6, by - 9); ctx.lineTo(p.x + 6, by - 9); ctx.fill(); }
@@ -717,7 +776,7 @@ function drawMap() {
     nodeIcon(sel.type, x + 34, y + 34, 16, NODE_COL[sel.type]);
     txt(T.node[sel.type][0], x + 62, y + 28, 17, '#f1f2f4', 'left', 800); txt(T.biome[sel.biome][0], x + 62, y + 48, 12, hexA(BIOMES[sel.biome].accent, 1), 'left', 700, false);
     const nx = nextText(sel); if (nx) txt(nx, x + 20, y + 74, 12.5, '#f6d55c', 'left', 700, false);
-    wrapLines(T.node[sel.type][1] + ' ' + (sel.type === 'boss' ? '' : T.biome[sel.biome][1]), w - 40, 12.5).slice(0, vert ? 3 : 2).forEach((l, i) => txt(l, x + 20, y + 74 + (nx ? 17 : 0) + i * 17, 12.5, '#b8bdc6', 'left', 500, false));
+    wrapLines((sel.mod ? `${T.mod[sel.mod][0]}: ${T.mod[sel.mod][1]} ` : '') + T.node[sel.type][1] + ' ' + (sel.type === 'boss' ? '' : T.biome[sel.biome][1]), w - 40, 12.5).slice(0, vert ? 3 : 2).forEach((l, i) => txt(l, x + 20, y + 74 + (nx ? 17 : 0) + i * 17, 12.5, '#b8bdc6', 'left', 500, false));
     const b = button(x + w - 150, y + 18, 132, 40, () => enterNode(sel)); ctx.fillStyle = '#f1f2f4'; rr(b.x, b.y, b.w, b.h, 10); ctx.fill(); txt(T.mapGo, b.x + b.w / 2, b.y + 20, 14, '#0a0b0d', 'center', 800, false);
   }
   if (live) txt(T.mapPick, 150, 86, 12, '#6f7580', 'left', 600, false);
@@ -738,7 +797,7 @@ function mapTip(n, p, R, canGo, reach) {
   const status = here ? T.mapHere : done ? T.mapDone : canGo ? '' : !available().some((a) => reachFrom(a).has(n.id)) ? T.mapCant : '';
   const later = reach ? [...reach].filter((id) => id !== n.id && id !== 'boss').length : 0;
   const w = Math.min(280, CW - 24), body = wrapLines(T.node[n.type][1] + (n.type === 'boss' ? '' : ' ' + T.biome[n.biome][1]), w - 28, 12.5);
-  const extra = [nextText(n), canGo && later ? T.mapLater(later) : '', status].filter(Boolean);
+  const extra = [nextText(n), n.mod ? `${T.mod[n.mod][0]}: ${T.mod[n.mod][1]}` : '', canGo && later ? T.mapLater(later) : '', status].filter(Boolean);
   const extraLines = extra.flatMap((e) => wrapLines(e, w - 28, 12, 600));
   const h = 46 + body.length * 17 + extraLines.length * 16 + (extraLines.length ? 8 : 0);
   let x = p.x + R + 14, y = p.y - h / 2;
@@ -749,7 +808,7 @@ function mapTip(n, p, R, canGo, reach) {
   if (n.type !== 'boss') { ctx.font = `800 14.5px ${FONT}`; const tw = ctx.measureText(T.node[n.type][0]).width; txt(T.biome[n.biome][0], x + 48 + tw, y + 23.5, 11.5, hexA(BIOMES[n.biome].accent, 1), 'left', 700, false); }
   body.forEach((l, i) => txt(l, x + 14, y + 48 + i * 17, 12.5, '#c9cdd3', 'left', 500, false));
   let yy = y + 48 + body.length * 17 + 6;
-  extra.forEach((e, k) => { const col = e === status ? (here || done ? '#5eead4' : '#fb7185') : k === 0 ? '#f6d55c' : '#9aa0aa'; for (const l of wrapLines(e, w - 28, 12, 600)) { txt(l, x + 14, yy, 12, col, 'left', 600, false); yy += 16; } });
+  extra.forEach((e, k) => { const col = e === status ? (here || done ? '#5eead4' : '#fb7185') : k === 0 ? '#f6d55c' : n.mod && e.startsWith(T.mod[n.mod][0]) ? (n.mod === 'rich' ? '#fde68a' : '#fda4af') : '#9aa0aa'; for (const l of wrapLines(e, w - 28, 12, 600)) { txt(l, x + 14, yy, 12, col, 'left', 600, false); yy += 16; } });
 }
 function mapStatus(vert) { // HP, level, gold, weapons, top right
   const x = CW - 24, w = vert ? 150 : 200;
@@ -778,24 +837,32 @@ let offer = null, pendingLv = 0;
 function newRun(ci) {
   const c = CHARS[ci];
   pl = { x: 0, y: 0, ci, hp: c.hp, maxHp: c.hp, face: 1, dx: 1, dy: 0, inv: 0, dashT: 0, dashCd: 0, vx: 0, vy: 0, anim: 0, moving: false,
-    lv: 1, xp: 0, need: xpNeed(1), weapons: [], pas: {}, rerolls: 3, kills: 0, gems: 0, score: 0, regenAcc: 0, hurtFlash: 0 };
+    lv: 1, xp: 0, need: xpNeed(1), weapons: [], pas: {}, rerolls: 3, kills: 0, gems: 0, score: 0, regenAcc: 0, hurtFlash: 0, combo: 0, bestCombo: 0, wk: {}, buff: null };
   addWeapon(c.start);
 }
 // derived stats
 const pasLv = (id) => pl.pas[id] || 0;
 const areaMul = () => 1 + pasLv('loupe') * 0.1 + CHARS[pl.ci].area;
-const cdMul = () => (1 - pasLv('coffee') * 0.08) * (1 - CHARS[pl.ci].cd);
+const cdMul = () => (1 - pasLv('coffee') * 0.08) * (1 - CHARS[pl.ci].cd) * (1 - comboCd()) * (pl.buff?.k === 'haste' ? 0.8 : 1);
 const amtAdd = () => pasLv('copier');
-const magnetR = () => 34 * (1 + pasLv('clip') * 0.3);
-const speed = () => 56 * CHARS[pl.ci].spd * (1 + pasLv('shoes') * 0.08) * (st && tileAt(pl.x, pl.y) === 2 && st.B.hazard === 'paint' ? 0.6 : 1);
-const dmgMul = () => (run && run.choice === 'B' ? 1.25 : 1);
-function addWeapon(id) { pl.weapons.push({ id, lv: 1, evo: false, t: 0.4, ang: 0, ph: 0 }); }
+const magnetR = () => 34 * (1 + pasLv('clip') * 0.3) * (pl.buff?.k === 'magnet' ? 3 : 1);
+const speed = () => 56 * CHARS[pl.ci].spd * (1 + pasLv('shoes') * 0.08) * (pl.buff?.k === 'haste' ? 1.3 : 1) * (st && tileAt(pl.x, pl.y) === 2 && st.B.hazard === 'paint' ? 0.6 : 1);
+// each curator's own power curve: Mina's rage, Doyun's (none: his edge is speed and crits), Granny Ok's health
+function charPower() {
+  const c = CHARS[pl.ci]; let k = 1 + (c.perLv.dmg || 0) * (pl.lv - 1);
+  if (c.rage) k *= 1 + c.rage * (1 - pl.hp / pl.maxHp);
+  if (c.hpPower) k *= 1 + Math.max(0, pl.maxHp - c.hp) / 250;
+  return k;
+}
+const dmgMul = () => (run && run.choice === 'B' ? 1.25 : 1) * charPower() * (pl.buff?.k === 'might' ? 1.5 : 1);
+function addWeapon(id) { pl.weapons.push({ id, lv: 1, evo: false, t: 0.4, ang: 0, ph: 0, tr: [0, 0], m: {} }); }
 const weaponOf = (id) => pl.weapons.find((w) => w.id === id);
 
 // ---------- area generation: rooms joined by corridors, more than one way through ----------
 const irand = (a, b) => a + Math.floor(rand() * (b - a + 1));
-function genStage(kind, biome, depth) {
-  const s = { kind, biome, B: BIOMES[biome], depth, t: 0, charge: 0, open: false, cleared: false, kills0: pl.kills, props: [], vents: [], eliteDead: true };
+function genStage(kind, biome, depth, mod = null) {
+  const s = { kind, biome, B: BIOMES[biome], depth, mod, t: 0, charge: 0, open: false, cleared: false, kills0: pl.kills, props: [], vents: [], eliteDead: true,
+    crates: [], barrels: [], shrines: [], vault: null };
   if (kind === 'boss' || kind === 'ambush' || kind === 'gen') {
     const W = kind === 'boss' ? 40 : 34, H = kind === 'boss' ? 28 : 24; s.W = W; s.H = H; s.tiles = new Uint8Array(W * H).fill(1);
     for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) s.tiles[y * W + x] = 0;
@@ -842,6 +909,17 @@ function genStage(kind, biome, depth) {
     }
     for (const r of rooms) if (r !== startR && rand() < 0.75) s.vents.push({ x: (r.x + irand(1, r.w - 2) + 0.5) * TS, y: (r.y + irand(1, r.h - 2) + 0.5) * TS, t: rand() * 3 });
     s.rooms = rooms;
+    // gimmicks: crates to break, barrels that blow up (and set each other off), maybe a shrine, maybe a sealed vault far away
+    const others = rooms.filter((r) => r !== startR), free = (p) => s.tiles[Math.floor(p.y / TS) * W + Math.floor(p.x / TS)] === 0;
+    const spot = (r, m = 1) => ({ x: (r.x + irand(m, r.w - 1 - m) + 0.5) * TS, y: (r.y + irand(m, r.h - 1 - m) + 0.5) * TS });
+    for (let i = irand(5, 9) * (mod === 'rich' ? 2 : 1); i > 0; i--) { const p = spot(pick(others)); if (free(p)) s.crates.push(p); }
+    for (let i = irand(2, 4); i > 0; i--) { const p = spot(pick(others)); if (!free(p)) continue; s.barrels.push(p); const q = { x: p.x + TS, y: p.y }; if (rand() < 0.6 && free(q)) s.barrels.push(q); }
+    const mid = others.filter((r) => r !== exitR);
+    if (rand() < 0.6 && mid.length) { const p = spot(pick(mid), 2); if (free(p)) s.shrines.push({ ...p, k: pick(['might', 'haste', 'magnet', 'mend']), charge: 0, used: false }); }
+    if (mod === 'rich' || (kind === 'fight' && rand() < 0.35)) {
+      const far = mid.slice().sort((a, b) => d[b.cy * W + b.cx] - d[a.cy * W + a.cx])[0], p = far && { x: (far.cx + 0.5) * TS, y: (far.cy + 0.5) * TS };
+      if (p && free(p)) s.vault = { ...p, open: false };
+    }
   }
   s.floor = []; for (let y = 0; y < s.H; y++) for (let x = 0; x < s.W; x++) if (s.tiles[y * s.W + x] !== 1) s.floor.push(y * s.W + x);
   // props sit on floor tiles that touch a wall: purely decorative
@@ -899,17 +977,17 @@ function near(x, y, r, cb) {
 }
 function nearest(x, y, maxR) {
   let best = null, bd = maxR * maxR;
-  for (const e of foes) { if (e.dead || e.spawnIn > 0) continue; const d = dist2(x, y, e.x, e.y); if (d < bd) { bd = d; best = e; } }
+  for (const e of foes) { if (e.dead || e.spawnIn > 0 || e.prop) continue; const d = dist2(x, y, e.x, e.y); if (d < bd) { bd = d; best = e; } }
   return best;
 }
 const onScreen = (e, m = 0) => Math.abs(e.x - cam.x) < LW / 2 + m && Math.abs(e.y - cam.y) < LH / 2 + m;
 
 // ---------- slop ----------
 function spawnFoe(type, x, y, o = {}) {
-  const d = FOES[type], k = hpScale(run.depth) * (o.elite ? 12 : 1) * (o.mini ? 0.35 : 1);
+  const d = FOES[type], k = d.prop ? 1 + run.depth * 0.08 : hpScale(run.depth) * (o.elite ? 12 : 1) * (o.mini ? 0.35 : 1) * (st?.mod === 'danger' ? 1.15 : 1);
   const e = { type, x, y, hp: d.hp * k, maxHp: d.hp * k, spd: d.spd * (o.elite ? 0.9 : 1) * (o.mini ? 1.25 : 1), dmg: d.dmg * (o.elite ? 1.5 : 1) * (0.8 + run.depth * 0.035), r: d.r * (o.elite ? 1.7 : o.mini ? 0.7 : 1),
     xp: d.xp * (o.elite ? 0 : 1), elite: !!o.elite, mini: !!o.mini, scale: o.elite ? 1.7 : o.mini ? 0.7 : 1, flash: 0, kx: 0, ky: 0, stun: 0, anim: rand() * 2, t: rand() * 2, spawnIn: 0.3,
-    lastScis: -9, dashing: 0, vx: 0, vy: 0, guard: !!o.guard };
+    lastScis: -9, dashing: 0, vx: 0, vy: 0, guard: !!o.guard, prop: !!d.prop };
   foes.push(e); return e;
 }
 function weighted(mix) { let s = 0; for (const [, w] of mix) s += w; let r = rand() * s; for (const [t, w] of mix) { if ((r -= w) <= 0) return t; } return mix[0][0]; }
@@ -923,7 +1001,7 @@ function spawnSpot(minD = 190, maxD = 430) { // a floor tile out of sight but no
 function spawning(dt) {
   if (st.kind === 'boss' || st.cleared) { if (st.kind === 'boss' && boss && boss.kind !== 'snake') bossAdds(dt); return; }
   if (st.t < 4) return; // a breath at the start of every area
-  const mul = (run.flags.praise ? 1.4 : 1) * (run.flags.unplug ? 0.8 : 1) * (st.open ? 0.6 : 1);
+  const mul = (run.flags.praise ? 1.4 : 1) * (run.flags.unplug ? 0.8 : 1) * (st.open ? 0.6 : 1) * (st.mod === 'danger' ? 1.35 : 1);
   spawnAcc += spawnRate(run.depth) * mul * dt;
   while (spawnAcc >= 1) { spawnAcc--; if (foes.length < aliveCap(run.depth)) { const p = spawnSpot(); if (p) spawnFoe(weighted(st.B.mix), p[0], p[1]); } }
   for (const v of st.vents) { // vents near you breathe out small swarms
@@ -935,23 +1013,28 @@ function spawning(dt) {
 }
 function bossAdds(dt) { spawnAcc += (0.6 + run.depth * 0.05) * dt; while (spawnAcc >= 1) { spawnAcc--; if (foes.length < 60) { const p = spawnSpot(120, 300); if (p) spawnFoe(weighted(st.B.mix), p[0], p[1]); } } }
 function recycle(e) {
-  if (e.boss || e.seg || e.guard) return;
+  if (e.boss || e.seg || e.guard || e.prop) return;
   if (Math.abs(e.x - pl.x) > 640 || Math.abs(e.y - pl.y) > 480) { const p = spawnSpot(); if (p) { e.x = p[0]; e.y = p[1]; } }
 }
 
 // ---------- damage ----------
+let curSrc = null; // the weapon dealing damage right now: kills count toward its skill tree
 function hurt(e, dmg, kx = 0, ky = 0, kb = 1) {
   if (e.dead) return;
   const tgt = e.seg ? e.parent : e; if (tgt.dead) return;
+  const crit = !!WEAPONS[curSrc] && rand() < critChance();
   // tail segments share the head's health: a wide hit across the tail shouldn't count 16 times
-  dmg = Math.round(dmg * dmgMul() * rnd(0.9, 1.1) * (e.seg ? 0.2 : 1)); tgt.hp -= dmg; e.flash = 0.1; if (e.seg) tgt.flash = 0.1;
+  dmg = Math.round(dmg * dmgMul() * rnd(0.9, 1.1) * (e.seg ? 0.2 : 1) * (crit ? 2.2 : 1) * (tgt.vuln > 0 ? 1.3 : 1)); tgt.hp -= dmg; e.flash = 0.1; if (e.seg) tgt.flash = 0.1;
   if (!tgt.boss) { const k = kb * (FOES[tgt.type]?.heavy ? 0.4 : 1) * (tgt.elite ? 0.3 : 1); e.kx += kx * 70 * k; e.ky += ky * 70 * k; }
-  if (nums.length < 120 && !e.seg) nums.push({ x: e.x + rnd(-3, 3), y: e.y - e.r - 2, v: dmg, t: 0, big: dmg >= 60 });
+  if (nums.length < 120 && !e.seg && !e.prop) nums.push({ x: e.x + rnd(-3, 3), y: e.y - e.r - 2, v: dmg, t: 0, big: dmg >= 60 || crit, crit });
   sfx('hit');
   if (tgt.hp <= 0) kill(tgt);
 }
 function kill(e) {
-  if (e.dead) return; e.dead = true; pl.kills++; pl.score += Math.round(e.maxHp);
+  if (e.dead) return; e.dead = true;
+  if (e.prop) { breakProp(e); return; }
+  pl.kills++; pl.score += Math.round(e.maxHp); pl.combo++; pl.bestCombo = Math.max(pl.bestCombo, pl.combo);
+  if (WEAPONS[curSrc]) pl.wk[curSrc] = (pl.wk[curSrc] || 0) + 1;
   burst(e.x, e.y, e.boss ? 40 : e.elite ? 18 : 7, e.boss ? '#f6d55c' : e.elite ? '#fb7185' : '#e9e4ff');
   sfx(e.boss ? 'boom' : 'kill');
   if (e.boss) { bossDown(e); return; }
@@ -960,9 +1043,23 @@ function kill(e) {
     if (e.guard) { st.eliteDead = true; if (st.kind === 'ambush') stageWon(); }
     return;
   }
-  if (FOES[e.type].splits && !e.mini) for (let i = 0; i < 2; i++) spawnFoe(e.type, e.x + rnd(-5, 5), e.y + rnd(-5, 5), { mini: true }).spawnIn = 0;
-  dropGem(e.x, e.y, e.xp);
+  const clean = curSrc === 'eraser' && weaponOf('eraser')?.m.clean; // the heavy eraser's last tier erases copies for good
+  if (FOES[e.type].splits && !e.mini && !clean) for (let i = 0; i < 2; i++) spawnFoe(e.type, e.x + rnd(-5, 5), e.y + rnd(-5, 5), { mini: true }).spawnIn = 0;
+  dropGem(e.x, e.y, e.xp + (clean ? 1 : 0));
   const r = rand(); if (r < 0.012) items.push({ k: 'kimbap', x: e.x, y: e.y, t: 0 }); else if (r < 0.016) items.push({ k: 'clip', x: e.x, y: e.y, t: 0 }); else if (r < 0.026) items.push({ k: 'gold', x: e.x, y: e.y, t: 0 });
+}
+function breakProp(e) {
+  burst(e.x, e.y, 10, e.type === 'barrel' ? '#fb923c' : '#c08a52'); sfx('kill');
+  if (e.type === 'barrel') { // the blast hurts slop and you, and sets off barrels nearby
+    const prev = curSrc; curSrc = 'boom'; shake = Math.max(shake, 5); sfx('boom'); fx.push({ k: 'blast', x: e.x, y: e.y, r: 44, t: 0, max: 0.35 });
+    const dmg = 30 + run.depth * 10;
+    near(e.x, e.y, 56, (o) => { if (o !== e && dist2(e.x, e.y, o.x, o.y) < (44 + o.r) ** 2) hurt(o, dmg, (o.x - e.x) / 44, (o.y - e.y) / 44, 1.5); });
+    if (dist2(e.x, e.y, pl.x, pl.y) < 34 * 34) hurtPlayer(6 + run.depth * 0.5, e);
+    curSrc = prev; return;
+  }
+  const r = rand();
+  if (r < 0.45) dropGem(e.x, e.y, 3 + Math.floor(run.depth / 4)); else if (r < 0.7) items.push({ k: 'gold', x: e.x, y: e.y, t: 0 });
+  else if (r < 0.82) items.push({ k: 'kimbap', x: e.x, y: e.y, t: 0 }); else if (r < 0.88) items.push({ k: 'clip', x: e.x, y: e.y, t: 0 });
 }
 function floorNear(x, y) { // the closest walkable spot, so nothing ever lands inside a wall
   if (!solid(x, y)) return [x, y]; const tx = Math.floor(x / TS), ty = Math.floor(y / TS);
@@ -977,22 +1074,28 @@ function dropGem(x, y, v) {
 function burst(x, y, n, col) { for (let i = 0; i < n && fx.length < 600; i++) { const a = rand() * 7, s = rnd(20, 80); fx.push({ k: 'p', x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, t: 0, max: rnd(0.25, 0.55), col }); } }
 function hurtPlayer(d, from) {
   if (pl.inv > 0 || pl.dashT > 0 || state !== 'play') return;
-  pl.hp -= d; pl.inv = 0.55; pl.hurtFlash = 0.25; shake = Math.max(shake, 3); sfx('hurt');
+  const c = CHARS[pl.ci]; d *= 1 - c.armor;
+  pl.hp -= d; pl.inv = 0.55; pl.hurtFlash = 0.25; shake = Math.max(shake, 3); sfx('hurt'); pl.combo = 0;
+  if (c.thorns && from && from.maxHp && !from.dead && !from.prop) { const prev = curSrc; curSrc = 'thorns'; hurt(from, pl.maxHp * c.thorns, 0, 0, 2); curSrc = prev; }
   if (from) { const a = Math.atan2(pl.y - from.y, pl.x - from.x); pl.vx += Math.cos(a) * 60; pl.vy += Math.sin(a) * 60; }
   if (pl.hp <= 0) { pl.hp = 0; endRun('over'); }
 }
 function gainXp(v) {
   pl.xp += v; pl.gems += v; pl.score += v * 5;
   if (st && st.need && !st.open) { st.charge = Math.min(st.need, st.charge + v * (run.choice === 'A' ? 1.2 : 1)); if (st.charge >= st.need && st.eliteDead) openGate(); }
-  while (pl.xp >= pl.need) { pl.xp -= pl.need; pl.lv++; pl.need = xpNeed(pl.lv); pendingLv++; }
+  while (pl.xp >= pl.need) { pl.xp -= pl.need; pl.lv++; pl.need = xpNeed(pl.lv); pendingLv++; const ph = CHARS[pl.ci].perLv.hp; if (ph) { pl.maxHp += ph; pl.hp += ph; } }
 }
 function openGate() { if (st.open) return; st.open = true; banner = { text: T.gateOpen, t: 0 }; sfx('chest'); burst(st.exit.x, st.exit.y, 30, '#2dd4bf'); }
 
 // ---------- level-up choices and chests ----------
 function upgradePool() {
-  const pool = [];
-  for (const w of pl.weapons) if (!w.evo && w.lv < MAX_LV) pool.push({ k: 'w', id: w.id, lv: w.lv + 1, wt: 3 });
-  if (pl.weapons.length < MAX_W) for (const id of W_ORDER) if (!weaponOf(id)) pool.push({ k: 'w', id, lv: 1, wt: 2 });
+  const pool = [], aff = CHARS[pl.ci].affinity, kills = (id) => pl.wk[id] || 0;
+  // weapons that have erased more slop come up more, and so do their skill tree tiers
+  for (const w of pl.weapons) if (!w.evo && w.lv < MAX_LV) pool.push({ k: 'w', id: w.id, lv: w.lv + 1, wt: 3 * Math.min(2, 1 + kills(w.id) / 150) });
+  for (const w of pl.weapons) for (let b = 0; b < 2; b++) {
+    const t = w.tr[b]; if (t < 3 && (t > 0 || w.lv >= 2) && kills(w.id) >= TREE_NEED[t] && !(t === 2 && w.tr[1 - b] >= 3)) pool.push({ k: 't', id: w.id, b, t, wt: 1.3 * Math.min(6, 1 + kills(w.id) / 40) });
+  }
+  if (pl.weapons.length < MAX_W) for (const id of W_ORDER) if (!weaponOf(id)) pool.push({ k: 'w', id, lv: 1, wt: aff.includes(id) ? 3.2 : 1.1 });
   const owned = Object.keys(pl.pas);
   for (const id of P_ORDER) { const lv = pasLv(id); if (lv && lv < PASSIVES[id]) pool.push({ k: 'p', id, lv: lv + 1, wt: 2.5 }); else if (!lv && owned.length < 6) pool.push({ k: 'p', id, lv: 1, wt: 1.5 }); }
   return pool;
@@ -1010,6 +1113,7 @@ function rollOffer() {
 function applyChoice(o) {
   if (o.k === 'w') { const w = weaponOf(o.id); if (w) w.lv = o.lv; else addWeapon(o.id); }
   else if (o.k === 'p') { pl.pas[o.id] = o.lv; if (o.id === 'vita') { pl.maxHp += 20; pl.hp = Math.min(pl.maxHp, pl.hp + 20); } }
+  else if (o.k === 't') { const w = weaponOf(o.id); if (w && w.tr[o.b] === o.t) { w.tr[o.b]++; w.m = treeMods(w); } }
   else if (o.k === 'heal') { pl.hp = Math.min(pl.maxHp, pl.hp + 30); sfx('heal'); }
   else if (o.k === 'gold') run.gold += 40;
 }
@@ -1030,6 +1134,9 @@ function updFoes(dt) {
     e.flash = Math.max(0, e.flash - dt); e.t += dt;
     if (e.seg) continue; // snake segments follow their head (updBoss)
     if (e.spawnIn > 0) { e.spawnIn -= dt; continue; }
+    if (e.vuln > 0) e.vuln -= dt; // sealed by a stamp: takes more damage
+    if (e.bleed > 0) { e.bleed -= dt; e.bleedT = (e.bleedT || 0) - dt; if (e.bleedT <= 0) { e.bleedT = 0.5; curSrc = 'scis'; hurt(e, e.bleedDmg); curSrc = null; if (e.dead) continue; } }
+    if (e.prop) continue; // crates and barrels just stand there
     if (e.boss) { updBoss(e, dt); continue; }
     const dx = pl.x - e.x, dy = pl.y - e.y, d = Math.hypot(dx, dy) || 1;
     if (e.guard && !e.woke) { if (d < 150 || st.charge >= st.need * 0.5) { e.woke = true; sfx('warn'); banner = { text: T.node.elite[1], t: 0 }; } else continue; } // elites wait at the gate until you come close or the gate is half charged
@@ -1051,7 +1158,7 @@ function updFoes(dt) {
   }
   // keep slop from piling into one point
   for (const e of foes) {
-    if (e.dead || e.boss || e.seg) continue;
+    if (e.dead || e.boss || e.seg || e.prop) continue;
     let n = 0;
     near(e.x, e.y, e.r * 2, (o) => {
       if (o === e || o.boss || o.seg) return; const dx = e.x - o.x, dy = e.y - o.y, d2 = dx * dx + dy * dy, m = e.r + o.r;
@@ -1149,7 +1256,7 @@ function updPlayer(dt) {
   pl.inv = Math.max(0, pl.inv - dt); pl.dashCd = Math.max(0, pl.dashCd - dt); pl.hurtFlash = Math.max(0, pl.hurtFlash - dt);
   if (hit.dash && pl.dashCd <= 0) {
     const dx = m.x || pl.dx, dy = m.y || pl.dy, d = Math.hypot(dx, dy) || 1;
-    pl.dashT = 0.16; pl.dashCd = 1.1; pl.dvx = dx / d * 250; pl.dvy = dy / d * 250; sfx('dash');
+    pl.dashT = 0.16; pl.dashCd = CHARS[pl.ci].dash; pl.dvx = dx / d * 250; pl.dvy = dy / d * 250; sfx('dash');
   }
   if (pl.dashT > 0) {
     pl.dashT -= dt; pl.x += pl.dvx * dt; pl.y += pl.dvy * dt;
@@ -1163,7 +1270,9 @@ function updPlayer(dt) {
   if (st.open && !st.cleared && dist2(pl.x, pl.y, st.exit.x, st.exit.y) < 18 * 18) { stageWon(); return; }
   pl.moving = Math.abs(m.x) + Math.abs(m.y) > 0.1;
   if (pl.moving) { pl.dx = m.x; pl.dy = m.y; pl.anim += dt * 7; if (Math.abs(m.x) > 0.15) pl.face = m.x < 0 ? -1 : 1; }
-  const v = pasLv('vita'); if (v && pl.hp < pl.maxHp) { pl.regenAcc += dt * v * 0.3; if (pl.regenAcc >= 1) { pl.hp = Math.min(pl.maxHp, pl.hp + 1); pl.regenAcc -= 1; } }
+  if (pl.buff && (pl.buff.t -= dt) <= 0) pl.buff = null;
+  updGimmicks(dt);
+  const v = pasLv('vita'), rg = v * 0.3 + (CHARS[pl.ci].regen || 0); if (rg && pl.hp < pl.maxHp) { pl.regenAcc += dt * rg; if (pl.regenAcc >= 1) { pl.hp = Math.min(pl.maxHp, pl.hp + 1); pl.regenAcc -= 1; } }
   // gems fly in once they are within reach
   const mr = magnetR(), mr2 = mr * mr;
   for (const gm of gems) {
@@ -1185,6 +1294,31 @@ function updPlayer(dt) {
   items = items.filter((x) => !x.got);
 }
 
+// shrines charge while you stand on them; a vault wakes its guards and pays out once they are gone
+function updGimmicks(dt) {
+  for (const sh of st.shrines) {
+    if (sh.used) continue;
+    if (dist2(sh.x, sh.y, pl.x, pl.y) < 15 * 15) { sh.charge += dt; if (sh.charge >= 1.5) useShrine(sh); } else sh.charge = Math.max(0, sh.charge - dt * 2);
+  }
+  const vt = st.vault; if (!vt) return;
+  if (!vt.open && dist2(vt.x, vt.y, pl.x, pl.y) < 26 * 26) {
+    vt.open = true; vt.guards = []; banner = { text: T.vault, t: 0 }; sfx('warn'); shake = Math.max(shake, 4);
+    const n = 8 + Math.floor(run.depth / 2);
+    for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2, [x, y] = floorNear(vt.x + Math.cos(a) * 64, vt.y + Math.sin(a) * 64); const e = spawnFoe(weighted(st.B.mix), x, y); vt.guards.push(e); }
+    const [x, y] = floorNear(vt.x, vt.y - 70); const el = spawnFoe(weighted(st.B.mix), x, y, { elite: true }); el.xp = 0; vt.guards.push(el);
+  }
+  if (vt.open && !vt.paid && vt.guards.every((e) => e.dead)) {
+    vt.paid = true; items.push({ k: 'chest', x: vt.x, y: vt.y, t: 0 }, { k: 'gold', x: vt.x - 12, y: vt.y + 6, t: 0 }, { k: 'gold', x: vt.x + 12, y: vt.y + 6, t: 0 });
+    burst(vt.x, vt.y, 24, '#f6d55c'); sfx('chest'); banner = { text: T.vaultDone, t: 0 };
+  }
+}
+function useShrine(sh) {
+  sh.used = true; sfx('chest'); burst(sh.x, sh.y, 20, SHRINE_COL[sh.k]); banner = { text: T.shrine[sh.k], t: 0 };
+  if (sh.k === 'mend') { pl.hp = Math.min(pl.maxHp, pl.hp + pl.maxHp * 0.5); sfx('heal'); }
+  else { pl.buff = { k: sh.k, t: 20 }; if (sh.k === 'magnet') for (const gm of gems) gm.mag = true; }
+}
+const SHRINE_COL = { might: '#fb7185', haste: '#5eead4', magnet: '#a78bfa', mend: '#8fd66b' };
+
 // ---------- weapons ----------
 const angTo = (e) => Math.atan2(e.y - pl.y, e.x - pl.x);
 const facing = () => Math.atan2(pl.dy, pl.dx);
@@ -1193,100 +1327,121 @@ function segHit(x1, y1, x2, y2, w, dmg, kb) { // everything along a line segment
   near(mx, my, len / 2 + 12, (e) => { const px = e.x - x1, py = e.y - y1, t = clamp(px * ux + py * uy, 0, len), qx = x1 + ux * t - e.x, qy = y1 + uy * t - e.y; if (qx * qx + qy * qy < (w + e.r) ** 2) hurt(e, dmg, ux, uy, kb); });
 }
 function updWeapons(dt) {
-  const am = areaMul(), cm = cdMul(), extra = amtAdd();
+  const am0 = areaMul(), cm0 = cdMul(), extra0 = amtAdd();
   for (const w of pl.weapons) {
-    const st = WEAPONS[w.id].st(w.lv), evoK = w.evo ? 1.4 : 1;
+    // skill tree mods: dmg/area/cd are fractions, amt/chain/pierce are counts, the rest switch on special moves
+    const m = w.m || {}, st = WEAPONS[w.id].st(w.lv), evoK = w.evo ? 1.4 : 1, am = am0 * (1 + (m.area || 0)), cm = cm0 * (1 - (m.cd || 0)), extra = extra0 + (m.amt || 0);
+    st.dmg *= 1 + (m.dmg || 0); curSrc = w.id;
     w.t -= dt;
     if (w.id === 'brush') {
-      if (w.q?.length) { w.qt -= dt; if (w.qt <= 0) { const a = w.q.shift(); w.qt = 0.11; slash(a, st, am, w.evo); } }
+      if (w.q?.length) { w.qt -= dt; if (w.qt <= 0) { const a = w.q.shift(); w.qt = 0.11; slash(a, st, am, w.evo, m); } }
       if (w.t <= 0) {
         const tg = nearest(pl.x, pl.y, st.r * am + 16); // swing at the closest slop in reach, else where you face
         w.t = (w.evo ? 0.85 : st.cd) * cm; const a = tg ? angTo(tg) : facing(), n = st.amt + (st.back ? 1 : 0) + extra;
         w.q = []; for (let k = 0; k < n; k++) w.q.push(a + (k % 2) * Math.PI + Math.floor(k / 2) * 0.5); w.qt = 0;
       }
     } else if (w.id === 'hl') {
+      const wid = 1 + (m.width || 0);
       if (w.evo) { // three beams that keep sweeping around
         w.ang += 2.1 * dt; w.ph -= dt; const n = 3 + extra, L = st.len * 1.1 * am;
-        for (let k = 0; k < n; k++) { const a = w.ang + k / n * Math.PI * 2, x2 = pl.x + Math.cos(a) * L, y2 = pl.y + Math.sin(a) * L; fx.push({ k: 'beam', x1: pl.x, y1: pl.y, x2, y2, t: 0, max: dt * 1.5, w: 4 * am, evo: 1 }); if (w.ph <= 0) segHit(pl.x, pl.y, x2, y2, 4 * am, st.dmg * 0.55 * evoK, 0.3); }
+        for (let k = 0; k < n; k++) { const a = w.ang + k / n * Math.PI * 2, x2 = pl.x + Math.cos(a) * L, y2 = pl.y + Math.sin(a) * L; fx.push({ k: 'beam', x1: pl.x, y1: pl.y, x2, y2, t: 0, max: dt * 1.5, w: 4 * am * wid, evo: 1 }); if (w.ph <= 0) segHit(pl.x, pl.y, x2, y2, 4 * am * wid, st.dmg * 0.55 * evoK, 0.3); }
         if (w.ph <= 0) w.ph = 0.16;
       } else if (w.t <= 0) {
         w.t = st.cd * cm; const tg = nearest(pl.x, pl.y, st.len * am), base = tg ? angTo(tg) : facing(), n = st.amt + extra, L = st.len * am;
-        for (let k = 0; k < n; k++) { const a = base + (k - (n - 1) / 2) * 0.22, x2 = pl.x + Math.cos(a) * L, y2 = pl.y + Math.sin(a) * L; segHit(pl.x, pl.y, x2, y2, 3.5 * am, st.dmg, 0.6); fx.push({ k: 'beam', x1: pl.x, y1: pl.y, x2, y2, t: 0, max: 0.22, w: 3.5 * am }); }
+        const dirs = m.cross ? [0, Math.PI / 2, -Math.PI / 2] : [0];
+        for (const off of dirs) for (let k = 0; k < n; k++) {
+          const a = base + off + (k - (n - 1) / 2) * 0.22, x2 = pl.x + Math.cos(a) * L, y2 = pl.y + Math.sin(a) * L;
+          segHit(pl.x, pl.y, x2, y2, 3.5 * am * wid, st.dmg, 0.6); fx.push({ k: 'beam', x1: pl.x, y1: pl.y, x2, y2, t: 0, max: 0.22, w: 3.5 * am * wid });
+          if (m.burn) shots.push({ k: 'line', x1: pl.x, y1: pl.y, x2, y2, t: 0, at: 0.45, w: 3.5 * am * wid, dmg: st.dmg * 0.5 });
+        }
         sfx('shot');
       }
     } else if (w.id === 'stamp') {
       if (w.t <= 0) {
-        w.t = st.cd * cm * (w.evo ? 0.85 : 1); const n = st.amt + extra, vis = foes.filter((e) => !e.dead && !e.seg && onScreen(e, -10));
-        for (let k = 0; k < n; k++) { const e = vis.length ? pick(vis) : null, x = e ? e.x : pl.x + rnd(-60, 60), y = e ? e.y : pl.y + rnd(-50, 50); shots.push({ k: 'stamp', x, y, t: -k * 0.12, delay: 0.42, r: st.r * am * (w.evo ? 1.7 : 1), dmg: st.dmg * evoK, evo: w.evo }); }
+        w.t = st.cd * cm * (w.evo ? 0.85 : 1); const n = st.amt + extra, vis = foes.filter((e) => !e.dead && !e.seg && !e.prop && onScreen(e, -10));
+        for (let k = 0; k < n; k++) { const e = vis.length ? pick(vis) : null, x = e ? e.x : pl.x + rnd(-60, 60), y = e ? e.y : pl.y + rnd(-50, 50); shots.push({ k: 'stamp', x, y, t: -k * 0.12, delay: 0.42, r: st.r * am * (w.evo ? 1.7 : 1), dmg: st.dmg * evoK, evo: w.evo, stun: 0.7 + (m.stun || 0), echo: m.echo, seal: m.seal }); }
       }
     } else if (w.id === 'scis') {
-      w.ang += st.spin * (w.evo ? 1.3 : 1) * dt; const n = (w.evo ? 6 : st.amt) + extra, R = st.r * am * (w.evo ? 1.25 + 0.55 * Math.sin(runT * 2.2) : 1);
+      w.ang += st.spin * (w.evo ? 1.3 : 1) * (1 + (m.spin || 0)) * dt; const n = (w.evo ? 6 : st.amt) + extra, R = st.r * am * (w.evo ? 1.25 + 0.55 * Math.sin(runT * 2.2) : 1), gap = m.rate ? 0.22 : 0.33;
       w.blades = [];
       for (let k = 0; k < n; k++) {
         const a = w.ang + k / n * Math.PI * 2, x = pl.x + Math.cos(a) * R, y = pl.y + Math.sin(a) * R; w.blades.push({ x, y, a });
-        near(x, y, 8 * am, (e) => { if (runT - e.lastScis > 0.33 && dist2(x, y, e.x, e.y) < (6 * am + e.r) ** 2) { e.lastScis = runT; hurt(e, st.dmg * evoK, Math.cos(a + 1.57), Math.sin(a + 1.57), 0.8); } });
+        near(x, y, 8 * am, (e) => { if (runT - e.lastScis > gap && dist2(x, y, e.x, e.y) < (6 * am + e.r) ** 2) { e.lastScis = runT; hurt(e, st.dmg * evoK, Math.cos(a + 1.57), Math.sin(a + 1.57), 0.8); if (m.bleed && !e.prop) { e.bleed = 2; e.bleedDmg = st.dmg * evoK * 0.12; } } });
       }
     } else if (w.id === 'plane') {
       if (w.t <= 0) {
         w.t = st.cd * cm; const tg = nearest(pl.x, pl.y, 200), base = tg ? angTo(tg) : facing();
         const n = w.evo ? 8 + extra * 2 : st.amt + extra;
-        for (let k = 0; k < n; k++) { const a = w.evo ? base + k / n * Math.PI * 2 : base + (k - (n - 1) / 2) * 0.35; shots.push({ k: 'plane', x: pl.x, y: pl.y, a, t: 0, max: 3, dmg: st.dmg * evoK, pierce: w.evo ? 3 : st.pierce, hitSet: new Set(), tgt: null, rt: 0 }); }
+        for (let k = 0; k < n; k++) { const a = w.evo ? base + k / n * Math.PI * 2 : base + (k - (n - 1) / 2) * 0.35; shots.push({ k: 'plane', x: pl.x, y: pl.y, a, t: 0, max: m.long ? 6 : 3, dmg: st.dmg * evoK, pierce: (w.evo ? 3 : st.pierce) + (m.pierce || 0) + (m.long ? 2 : 0), hitSet: new Set(), tgt: null, rt: 0, spd: 1 + (m.speed || 0), bomb: m.bomb }); }
         sfx('shot');
       }
     } else if (w.id === 'eraser') {
       if (w.t <= 0) {
-        w.t = st.cd * cm; const n = st.amt + extra;
-        for (let k = 0; k < n; k++) { const tg = nearest(pl.x, pl.y, 170), a = (tg ? angTo(tg) : facing()) + k * 0.4; shots.push({ k: 'eraser', x: pl.x, y: pl.y, vx: Math.cos(a) * 160, vy: Math.sin(a) * 160, t: 0, max: 1.6, dmg: st.dmg * evoK, chain: st.chain, hitSet: new Set(), evo: w.evo, spin: 0 }); }
+        w.t = st.cd * cm; const n = st.amt + extra, v = 160 * (1 + (m.speed || 0));
+        for (let k = 0; k < n; k++) { const tg = nearest(pl.x, pl.y, 170), a = (tg ? angTo(tg) : facing()) + k * 0.4; shots.push({ k: 'eraser', x: pl.x, y: pl.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, v, t: 0, max: 1.6, dmg: st.dmg * evoK, chain: st.chain + (m.chain || 0), hitSet: new Set(), evo: w.evo, spin: 0, knock: m.knock, dust: m.dust }); }
       }
     }
+    for (const s of shots) if (!s.src) s.src = w.id;
   }
+  curSrc = null;
 }
-function slash(a, st, am, evo) {
-  const R = st.r * am * (evo ? 1.45 : 1), arc = evo ? Math.PI * 2 : 2.1, dmg = st.dmg * (evo ? 1.4 : 1);
+function slash(a, st, am, evo, m = {}) {
+  const R = st.r * am * (evo ? 1.45 : 1), arc = evo ? Math.PI * 2 : 2.1, dmg = st.dmg * (evo ? 1.4 : 1); let hits = 0;
   near(pl.x, pl.y, R + 10, (e) => {
     const d = Math.hypot(e.x - pl.x, e.y - pl.y); if (d > R + e.r) return;
     const da = Math.atan2(Math.sin(Math.atan2(e.y - pl.y, e.x - pl.x) - a), Math.cos(Math.atan2(e.y - pl.y, e.x - pl.x) - a));
-    if (evo || Math.abs(da) < arc / 2 + 0.2) hurt(e, dmg, (e.x - pl.x) / (d || 1), (e.y - pl.y) / (d || 1), 1.2);
+    if (!evo && Math.abs(da) >= arc / 2 + 0.2) return;
+    const tgt = e.seg ? e.parent : e, finish = m.exec && !tgt.boss && !tgt.prop && tgt.hp < tgt.maxHp * m.exec; // execution: weak slop is gone in one stroke
+    hurt(e, finish ? tgt.hp * 3 + 10 : dmg, (e.x - pl.x) / (d || 1), (e.y - pl.y) / (d || 1), 1.2); if (!e.prop) hits++;
   });
+  if (m.leech && hits >= 3) { pl.hp = Math.min(pl.maxHp, pl.hp + 1); }
+  if (m.wave) { const L = R * 2.6, x2 = pl.x + Math.cos(a) * L, y2 = pl.y + Math.sin(a) * L; segHit(pl.x, pl.y, x2, y2, 7 * am, dmg * 0.7, 1); fx.push({ k: 'beam', x1: pl.x, y1: pl.y, x2, y2, t: 0, max: 0.25, w: 7 * am, ink: 1 }); }
   fx.push({ k: 'slash', a, r: R, arc, t: 0, max: 0.2, evo }); sfx('slash');
 }
+function blast(x, y, r, dmg, col) { near(x, y, r + 10, (e) => { if (dist2(x, y, e.x, e.y) < (r + e.r) ** 2) hurt(e, dmg, (e.x - x) / r, (e.y - y) / r, 0.8); }); fx.push({ k: 'blast', x, y, r, t: 0, max: 0.3, col }); }
 function updShots(dt) {
   for (const s of shots) {
-    s.t += dt;
+    s.t += dt; curSrc = s.src || null;
     if (s.k === 'stamp') {
       if (s.t >= s.delay && !s.done) {
         s.done = true; shake = Math.max(shake, s.evo ? 4 : 2); sfx('stamp');
-        near(s.x, s.y, s.r + 10, (e) => { if (dist2(s.x, s.y, e.x, e.y) < (s.r + e.r) ** 2) { hurt(e, s.dmg, 0, 0, 0); if (!e.boss && !e.seg) e.stun = 0.7; } });
+        near(s.x, s.y, s.r + 10, (e) => { if (dist2(s.x, s.y, e.x, e.y) < (s.r + e.r) ** 2) { hurt(e, s.dmg, 0, 0, 0); if (!e.boss && !e.seg) e.stun = s.stun || 0.7; if (s.seal) e.vuln = 3; } });
         fx.push({ k: 'mark', x: s.x, y: s.y, r: s.r, t: 0, max: s.evo ? 2.5 : 0.7, evo: s.evo });
         burst(s.x, s.y, 8, '#e0524a');
         if (s.evo) { s.burn = 2.5; s.bt = 0; }
+        if (s.echo && !s.small) for (let k = 0; k < 2; k++) shots.push({ k: 'stamp', x: s.x + rnd(-40, 40), y: s.y + rnd(-30, 30), t: 0, delay: 0.3 + k * 0.1, r: s.r * 0.6, dmg: s.dmg * 0.5, stun: s.stun, seal: s.seal, small: true, src: s.src });
       }
       if (s.burn > 0) { s.burn -= dt; s.bt -= dt; if (s.bt <= 0) { s.bt = 0.3; near(s.x, s.y, s.r + 10, (e) => { if (dist2(s.x, s.y, e.x, e.y) < (s.r + e.r) ** 2) hurt(e, s.dmg * 0.18, 0, 0, 0); }); } }
       if (s.done && !(s.burn > 0)) s.dead = true;
+    } else if (s.k === 'line') { // the highlighter's after-image burns once more
+      if (s.t >= s.at) { s.dead = true; segHit(s.x1, s.y1, s.x2, s.y2, s.w, s.dmg, 0.2); fx.push({ k: 'beam', x1: s.x1, y1: s.y1, x2: s.x2, y2: s.y2, t: 0, max: 0.18, w: s.w, burn: 1 }); }
     } else if (s.k === 'plane') {
-      s.rt -= dt; if (s.rt <= 0 || !s.tgt || s.tgt.dead) { s.rt = 0.2; s.tgt = null; let bd = 160 * 160; for (const e of foes) { if (e.dead || s.hitSet.has(e)) continue; const d = dist2(s.x, s.y, e.x, e.y); if (d < bd) { bd = d; s.tgt = e; } } }
-      if (s.tgt) { const want = Math.atan2(s.tgt.y - s.y, s.tgt.x - s.x), df = Math.atan2(Math.sin(want - s.a), Math.cos(want - s.a)); s.a += clamp(df, -4.5 * dt, 4.5 * dt); }
-      s.x += Math.cos(s.a) * 135 * dt; s.y += Math.sin(s.a) * 135 * dt;
+      s.rt -= dt; if (s.rt <= 0 || !s.tgt || s.tgt.dead) { s.rt = 0.2; s.tgt = null; let bd = 160 * 160; for (const e of foes) { if (e.dead || e.prop || s.hitSet.has(e)) continue; const d = dist2(s.x, s.y, e.x, e.y); if (d < bd) { bd = d; s.tgt = e; } } }
+      if (s.tgt) { const want = Math.atan2(s.tgt.y - s.y, s.tgt.x - s.x), df = Math.atan2(Math.sin(want - s.a), Math.cos(want - s.a)); s.a += clamp(df, -4.5 * s.spd * dt, 4.5 * s.spd * dt); }
+      s.x += Math.cos(s.a) * 135 * s.spd * dt; s.y += Math.sin(s.a) * 135 * s.spd * dt;
       near(s.x, s.y, 10, (e) => { if (s.dead || s.hitSet.has(e) || dist2(s.x, s.y, e.x, e.y) > (e.r + 4) ** 2) return; s.hitSet.add(e); hurt(e, s.dmg, Math.cos(s.a), Math.sin(s.a), 0.6); if (--s.pierce < 0) s.dead = true; });
       if (s.t > s.max) s.dead = true;
+      if (s.dead && s.bomb) blast(s.x, s.y, 26, s.dmg * 0.8, '#f4f0e8');
     } else if (s.k === 'eraser') {
       s.x += s.vx * dt; s.y += s.vy * dt; s.spin += dt * 14;
       near(s.x, s.y, 10, (e) => {
         if (s.dead || s.hitSet.has(e) || dist2(s.x, s.y, e.x, e.y) > (e.r + 4) ** 2) return;
-        s.hitSet.add(e); hurt(e, s.dmg, s.vx / 160, s.vy / 160, 0.7);
-        if (s.evo) { s.dead = true; shots.push({ k: 'hole', x: s.x, y: s.y, t: 0, max: 1.7, dmg: s.dmg, tick: 0 }); return false; }
+        s.hitSet.add(e); hurt(e, s.dmg, s.vx / s.v, s.vy / s.v, s.knock ? 1.8 : 0.7); if (s.knock && !e.boss && !e.seg) e.stun = Math.max(e.stun, 0.3);
+        if (s.dust) blast(s.x, s.y, 16, s.dmg * 0.4, '#ff7ab8');
+        if (s.evo) { s.dead = true; shots.push({ k: 'hole', x: s.x, y: s.y, t: 0, max: 1.7, dmg: s.dmg, tick: 0, src: s.src }); return false; }
         if (--s.chain < 0) { s.dead = true; return false; }
-        let nx = null, bd = 80 * 80; for (const o of foes) { if (o.dead || s.hitSet.has(o)) continue; const d = dist2(s.x, s.y, o.x, o.y); if (d < bd) { bd = d; nx = o; } }
-        if (!nx) { s.dead = true; return false; } const a = Math.atan2(nx.y - s.y, nx.x - s.x); s.vx = Math.cos(a) * 170; s.vy = Math.sin(a) * 170; s.t = 0; return false;
+        let nx = null, bd = 80 * 80; for (const o of foes) { if (o.dead || o.prop || s.hitSet.has(o)) continue; const d = dist2(s.x, s.y, o.x, o.y); if (d < bd) { bd = d; nx = o; } }
+        if (!nx) { s.dead = true; return false; } const a = Math.atan2(nx.y - s.y, nx.x - s.x), v = s.v * 1.06; s.vx = Math.cos(a) * v; s.vy = Math.sin(a) * v; s.t = 0; return false;
       });
       if (s.t > s.max) s.dead = true;
     } else if (s.k === 'hole') {
       const R = 48 * areaMul(); s.tick -= dt;
-      near(s.x, s.y, R, (e) => { if (e.boss || e.seg) return; const dx = s.x - e.x, dy = s.y - e.y, d = Math.hypot(dx, dy) || 1; if (d < R) { e.x += dx / d * 55 * dt; e.y += dy / d * 55 * dt; } });
+      near(s.x, s.y, R, (e) => { if (e.boss || e.seg || e.prop) return; const dx = s.x - e.x, dy = s.y - e.y, d = Math.hypot(dx, dy) || 1; if (d < R) { e.x += dx / d * 55 * dt; e.y += dy / d * 55 * dt; } });
       if (s.tick <= 0) { s.tick = 0.25; near(s.x, s.y, 20, (e) => { if (dist2(s.x, s.y, e.x, e.y) < (16 + e.r) ** 2) hurt(e, s.dmg * 0.35, 0, 0, 0); }); }
       if (s.t > s.max) { s.dead = true; near(s.x, s.y, 30, (e) => { if (dist2(s.x, s.y, e.x, e.y) < (26 + e.r) ** 2) hurt(e, s.dmg * 1.2, 0, 0, 0); }); burst(s.x, s.y, 14, '#b07ce8'); sfx('stamp'); }
     }
   }
+  curSrc = null;
   shots = shots.filter((s) => !s.dead);
 }
 
@@ -1361,6 +1516,8 @@ function drawWorld(t) {
   g.save(); g.translate(-ox, -oy);
   // vents and the exit gate
   for (const v of st.vents) { const k = 0.5 + Math.sin(t * 3 + v.x) * 0.5; g.fillStyle = '#0b0c10'; g.beginPath(); g.ellipse(v.x, v.y, 9, 5, 0, 0, 7); g.fill(); g.strokeStyle = hexA(st.B.accent, 0.35 + k * 0.4); g.lineWidth = 1.5; g.stroke(); g.fillStyle = hexA(st.B.accent, 0.25 * k); g.beginPath(); g.ellipse(v.x, v.y, 6, 3, 0, 0, 7); g.fill(); }
+  for (const sh of st.shrines) drawShrine(sh, t);
+  if (st.vault) drawVault(st.vault, t);
   if (st.exit && (st.need || st.open)) drawGate(st.exit.x, st.exit.y, t);
   for (const f of fx) if (f.k === 'mark') {
     const k = f.t / f.max; g.globalAlpha = 1 - k * k; g.strokeStyle = f.evo ? '#f6d55c' : '#e0524a'; g.lineWidth = 2;
@@ -1392,6 +1549,39 @@ function drawWorld(t) {
   g.restore();
   drawLight(t, ox, oy);
 }
+function drawShrine(sh, t) {
+  const col = SHRINE_COL[sh.k], k = sh.used ? 0.25 : 0.6 + Math.sin(t * 3 + sh.x) * 0.25;
+  g.fillStyle = '#0b0c10'; g.beginPath(); g.ellipse(sh.x, sh.y + 2, 13, 6, 0, 0, 7); g.fill();
+  g.strokeStyle = hexA(col, k); g.lineWidth = 1.5; g.beginPath(); g.ellipse(sh.x, sh.y + 2, 13, 6, 0, 0, 7); g.stroke();
+  if (!sh.used && sh.charge > 0) { g.strokeStyle = col; g.lineWidth = 2; g.beginPath(); g.ellipse(sh.x, sh.y + 2, 13, 6, 0, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * sh.charge / 1.5); g.stroke(); }
+  // a small stone with the shrine's sign floating over it
+  g.fillStyle = sh.used ? '#2a2e36' : '#3a404b'; g.fillRect(sh.x - 4, sh.y - 9, 8, 10); g.fillStyle = sh.used ? '#3a404b' : '#4a5260'; g.fillRect(sh.x - 4, sh.y - 9, 8, 2);
+  if (sh.used) return; const y = sh.y - 17 + Math.sin(t * 2.4 + sh.x) * 1.5; g.fillStyle = col;
+  if (sh.k === 'might') { g.fillRect(sh.x - 1, y - 4, 2, 8); g.fillRect(sh.x - 3, y + 1, 6, 1); }
+  else if (sh.k === 'haste') { g.beginPath(); g.moveTo(sh.x + 2, y - 4); g.lineTo(sh.x - 3, y + 1); g.lineTo(sh.x, y + 1); g.lineTo(sh.x - 2, y + 5); g.lineTo(sh.x + 3, y - 1); g.lineTo(sh.x, y - 1); g.fill(); }
+  else if (sh.k === 'magnet') { g.fillRect(sh.x - 4, y - 3, 2, 6); g.fillRect(sh.x + 2, y - 3, 2, 6); g.fillRect(sh.x - 4, y + 2, 8, 2); }
+  else { g.fillRect(sh.x - 1, y - 4, 2, 8); g.fillRect(sh.x - 4, y - 1, 8, 2); }
+}
+function drawVault(v, t) {
+  shadow(v.x, v.y + 6, 10);
+  const big = !v.open, y = v.y - 6;
+  if (big) { g.fillStyle = `rgba(246,213,92,${0.12 + Math.sin(t * 4) * 0.06})`; g.beginPath(); g.arc(v.x, y, 18, 0, 7); g.fill(); }
+  spr(PICK.chest, v.x, y, false, false, v.open ? 1 : 1.6);
+  if (big) { g.strokeStyle = '#a29db0'; g.lineWidth = 1; g.beginPath(); g.moveTo(v.x - 11, y - 6); g.lineTo(v.x + 11, y + 6); g.moveTo(v.x + 11, y - 6); g.lineTo(v.x - 11, y + 6); g.stroke(); g.fillStyle = '#f6d55c'; g.fillRect(v.x - 2, y - 2, 4, 4); }
+}
+// crates and barrels: drawn with shapes
+function drawProp2(e, t) {
+  shadow(e.x, e.y + 5, 7); const fl = e.flash > 0, x = Math.round(e.x), y = Math.round(e.y) - 4;
+  if (e.type === 'crate') {
+    g.fillStyle = fl ? '#fff' : '#8a5636'; g.fillRect(x - 7, y - 6, 14, 12); g.fillStyle = fl ? '#fff' : '#b07548'; g.fillRect(x - 7, y - 6, 14, 2);
+    g.fillStyle = '#4b2c22'; g.fillRect(x - 7, y - 1, 14, 1); g.fillRect(x - 1, y - 6, 1, 12); g.strokeStyle = '#120e1a'; g.lineWidth = 1; g.strokeRect(x - 7.5, y - 6.5, 15, 13);
+  } else {
+    g.fillStyle = fl ? '#fff' : '#c2410c'; g.fillRect(x - 6, y - 7, 12, 14); g.fillStyle = fl ? '#fff' : '#ea580c'; g.fillRect(x - 6, y - 7, 12, 2);
+    g.fillStyle = '#7c2d12'; g.fillRect(x - 6, y - 2, 12, 1); g.fillRect(x - 6, y + 3, 12, 1);
+    g.fillStyle = '#f6d55c'; g.beginPath(); g.moveTo(x, y - 4); g.lineTo(x + 3, y + 1); g.lineTo(x - 3, y + 1); g.fill(); g.fillStyle = '#120e1a'; g.fillRect(x, y - 2, 1, 2);
+    g.strokeStyle = '#120e1a'; g.lineWidth = 1; g.strokeRect(x - 6.5, y - 7.5, 13, 15);
+  }
+}
 function drawGate(x, y, t) {
   const k = st.need ? st.charge / st.need : 1, open = st.open;
   g.fillStyle = '#0b0c10'; g.beginPath(); g.ellipse(x, y + 4, 15, 7, 0, 0, 7); g.fill();
@@ -1412,8 +1602,11 @@ function drawEffects(t) {
       const k = f.t / f.max; g.globalAlpha = 1 - k; g.strokeStyle = '#fb7185'; g.lineWidth = 4 * (1 - k) + 1; g.beginPath(); g.arc(f.x, f.y - 3, f.r * (0.8 + k * 0.2), f.a - 1.15, f.a + 1.15); g.stroke(); g.globalAlpha = 1;
     } else if (f.k === 'beam') {
       const k = f.t / f.max; g.globalAlpha = f.evo ? 0.85 : 1 - k; g.lineCap = 'round';
-      g.strokeStyle = f.evo ? 'rgba(127,227,214,.55)' : 'rgba(246,213,92,.55)'; g.lineWidth = f.w * 2.2; g.beginPath(); g.moveTo(f.x1, f.y1 - 3); g.lineTo(f.x2, f.y2 - 3); g.stroke();
-      g.strokeStyle = f.evo ? '#e9fffb' : '#fff6c2'; g.lineWidth = Math.max(1, f.w * 0.7); g.beginPath(); g.moveTo(f.x1, f.y1 - 3); g.lineTo(f.x2, f.y2 - 3); g.stroke(); g.globalAlpha = 1; g.lineCap = 'butt';
+      g.strokeStyle = f.ink ? 'rgba(90,120,224,.6)' : f.burn ? 'rgba(251,146,60,.6)' : f.evo ? 'rgba(127,227,214,.55)' : 'rgba(246,213,92,.55)'; g.lineWidth = f.w * 2.2; g.beginPath(); g.moveTo(f.x1, f.y1 - 3); g.lineTo(f.x2, f.y2 - 3); g.stroke();
+      g.strokeStyle = f.ink ? '#dbe4ff' : f.burn ? '#ffedd5' : f.evo ? '#e9fffb' : '#fff6c2'; g.lineWidth = Math.max(1, f.w * 0.7); g.beginPath(); g.moveTo(f.x1, f.y1 - 3); g.lineTo(f.x2, f.y2 - 3); g.stroke(); g.globalAlpha = 1; g.lineCap = 'butt';
+    } else if (f.k === 'blast') {
+      const k = f.t / f.max; g.globalAlpha = 1 - k; g.fillStyle = hexA(f.col || '#fb923c', 0.35); g.beginPath(); g.arc(f.x, f.y, f.r * (0.4 + k * 0.6), 0, 7); g.fill();
+      g.strokeStyle = f.col || '#f6d55c'; g.lineWidth = 2; g.beginPath(); g.arc(f.x, f.y, f.r * (0.5 + k * 0.6), 0, 7); g.stroke(); g.globalAlpha = 1;
     } else if (f.k === 'ghostM' && boss) { g.globalAlpha = 0.3 * (1 - f.t / f.max); spr(boss.art[0], f.x, f.y - 8, f.f < 0, true); g.globalAlpha = 1; }
   }
   const sc = weaponOf('scis');
@@ -1438,6 +1631,9 @@ function drawLight(t, ox, oy) {
   hole(pl.x, pl.y - 4, 125 * (1 + pasLv('loupe') * 0.04), 1);
   if (st.exit && (st.need || st.open)) hole(st.exit.x, st.exit.y - 10, st.open ? 110 + Math.sin(t * 3) * 8 : 55, st.open ? 1 : 0.6);
   for (const v of st.vents) hole(v.x, v.y, 26, 0.5);
+  for (const sh of st.shrines) if (!sh.used) hole(sh.x, sh.y - 6, 34, 0.7);
+  if (st.vault && !st.vault.paid) hole(st.vault.x, st.vault.y - 6, 40, 0.7);
+  for (const f of fx) if (f.k === 'blast') hole(f.x, f.y, f.r * 1.4, 0.8 * (1 - f.t / f.max));
   let n = 0; for (const gm of gems) { if (n++ > 50) break; hole(gm.x, gm.y, 16, 0.5); }
   for (const b of ebul) hole(b.x, b.y, 14, 0.6);
   for (const it of items) hole(it.x, it.y, 26, 0.6);
@@ -1449,6 +1645,8 @@ function drawLight(t, ox, oy) {
   const glow = (x, y, r, col) => { const sx = x - ox, sy = y - oy; if (sx < -r || sy < -r || sx > LW + r || sy > LH + r) return; const gr = g.createRadialGradient(sx, sy, 0, sx, sy, r); gr.addColorStop(0, col); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(sx - r, sy - r, r * 2, r * 2); };
   if (st.exit && (st.need || st.open)) glow(st.exit.x, st.exit.y - 12, st.open ? 60 : 26, st.open ? 'rgba(94,234,212,.35)' : 'rgba(45,212,191,.15)');
   for (const v of st.vents) glow(v.x, v.y, 18, hexA(st.B.accent, 0.18));
+  for (const sh of st.shrines) if (!sh.used) glow(sh.x, sh.y - 14, 22, hexA(SHRINE_COL[sh.k], 0.3));
+  if (st.vault && !st.vault.open) glow(st.vault.x, st.vault.y - 6, 26, 'rgba(246,213,92,.25)');
   for (const b of ebul) glow(b.x, b.y, 9, hexA(b.col.length === 7 ? b.col : '#ff7ab8', 0.45));
   n = 0; for (const gm of gems) { if (n++ > 60) break; glow(gm.x, gm.y, 7, ['rgba(90,167,224,.35)', 'rgba(143,214,107,.35)', 'rgba(224,82,74,.35)', 'rgba(176,124,232,.4)'][gm.tier]); }
   glow(pl.x + pl.face * 6, pl.y - 6, 14, 'rgba(246,213,92,.25)');
@@ -1463,6 +1661,7 @@ function drawPlayer(t) {
   g.fillStyle = 'rgba(246,213,92,.95)'; g.fillRect(Math.round(pl.x + pl.face * 6), Math.round(pl.y - 6 + bob), 2, 2); // lantern
 }
 function drawFoe(e, t) {
+  if (e.prop) return drawProp2(e, t);
   const a = ART[e.type][Math.floor(e.anim) % 2], sc = e.scale;
   shadow(e.x, e.y + 1, e.r * 0.9);
   if (e.spawnIn > 0) g.globalAlpha = 1 - e.spawnIn / 0.3;
@@ -1550,6 +1749,10 @@ function drawHud() {
   txt(`${Math.ceil(pl.hp)}`, 110, 29.5, 9, '#fff', 'center', 800);
   pl.weapons.forEach((w, i) => slot(10 + i * 26, 54, w.id, w.lv, MAX_LV, w.evo));
   P_ORDER.filter((id) => pl.pas[id]).forEach((id, i) => slot(10 + i * 26, 82, id, pl.pas[id], PASSIVES[id], false, true));
+  // the curator's own trait, live, and a shrine blessing if one is running
+  const ty = Object.keys(pl.pas).length ? 122 : 94;
+  txt(traitText(), 12, ty, 11.5, ['#fb7185', '#5eead4', '#fde68a'][pl.ci], 'left', 800);
+  if (pl.buff) txt(`${T.buffName[pl.buff.k]} ${Math.ceil(pl.buff.t)}`, 12, ty + 17, 11, SHRINE_COL[pl.buff.k], 'left', 800);
   // centre: the objective
   const ow = Math.min(300, CW - 220), ox = (CW - ow) / 2;
   if (st.kind === 'fight' || st.kind === 'elite') {
@@ -1581,8 +1784,14 @@ function drawHud() {
   if (usingTouch) {
     if (joy.id !== null) { ctx.strokeStyle = 'rgba(255,255,255,.3)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(joy.ox, joy.oy, 40, 0, 7); ctx.stroke(); const dx = joy.x - joy.ox, dy = joy.y - joy.oy, d = Math.min(40, Math.hypot(dx, dy)), a = Math.atan2(dy, dx); ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.beginPath(); ctx.arc(joy.ox + Math.cos(a) * d, joy.oy + Math.sin(a) * d, 16, 0, 7); ctx.fill(); }
     const b = dashBtn(); ctx.fillStyle = pl.dashCd > 0 ? 'rgba(255,255,255,.08)' : 'rgba(45,212,191,.22)'; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, 7); ctx.fill();
-    ctx.strokeStyle = 'rgba(94,234,212,.85)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (1 - pl.dashCd / 1.1)); ctx.stroke(); txt(T.dash, b.x, b.y, 13, '#e9fffb', 'center', 800);
+    ctx.strokeStyle = 'rgba(94,234,212,.85)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (1 - pl.dashCd / CHARS[pl.ci].dash)); ctx.stroke(); txt(T.dash, b.x, b.y, 13, '#e9fffb', 'center', 800);
   }
+}
+function traitText() {
+  const pct = (k) => Math.round(k * 100);
+  if (pl.ci === 0) return T.trait.rage(pct(charPower() - 1));
+  if (pl.ci === 1) return T.trait.combo(pl.combo, pct(comboCd()), pct(critChance()));
+  return T.trait.tank(pct(CHARS[2].armor), pct(Math.max(0, pl.maxHp - CHARS[2].hp) / 250));
 }
 function slot(x, y, id, lv, max, evo, pas) {
   rr(x, y, 23, 23, 6); ctx.fillStyle = evo ? 'rgba(90,64,12,.92)' : 'rgba(10,11,13,.72)'; ctx.fill(); ctx.strokeStyle = evo ? '#f6d55c' : 'rgba(255,255,255,.1)'; ctx.lineWidth = 1; ctx.stroke(); icon(id, x + 3.5, y + 3, 16);
@@ -1591,7 +1800,7 @@ function slot(x, y, id, lv, max, evo, pas) {
 function drawNums() {
   for (const n of nums) {
     const sx = (n.x - cam.x + LW / 2) * S / DPR, sy = (n.y - cam.y + LH / 2 - n.t * 18) * S / DPR, a = n.t > 0.4 ? Math.max(0, 1 - (n.t - 0.4) / 0.3) : 1;
-    ctx.globalAlpha = a; txt(String(n.v), sx, sy, n.big ? 15 : 11, n.heal ? '#8fd66b' : n.gold ? '#f6d55c' : n.big ? '#ffd36b' : '#fff', 'center', 800); ctx.globalAlpha = 1;
+    ctx.globalAlpha = a; txt(String(n.v), sx, sy, n.big ? 15 : 11, n.heal ? '#8fd66b' : n.gold ? '#f6d55c' : n.crit ? '#fb923c' : n.big ? '#ffd36b' : '#fff', 'center', 800); ctx.globalAlpha = 1;
   }
 }
 // ---------- dialogue with portraits ----------
@@ -1631,6 +1840,7 @@ function drawDialog() {
 let offerSel = 0;
 function optionInfo(o) {
   if (o.k === 'w') { const [n, d] = T.w[o.id], p = WEAPONS[o.id].evoWith; return { icon: o.id, name: n, tag: o.lv === 1 ? T.newItem : T.lvl(o.lv), desc: d, hint: T.evoNeed(n, T.p[p][0]), color: '#5eead4' }; }
+  if (o.k === 't') { const [bn, tiers] = T.tree[o.id][o.b]; return { icon: o.id, name: `${T.w[o.id][0]} · ${bn}`, tag: T.treeTag(o.t + 1), desc: tiers[o.t], hint: T.treeKills(T.w[o.id][0], pl.wk[o.id] || 0) + (o.t < 2 ? ` · ${T.treeNext}: ${tiers[o.t + 1]}` : ''), color: '#a78bfa' }; }
   if (o.k === 'p') { const [n, d] = T.p[o.id]; return { icon: o.id, name: n, tag: o.lv === 1 ? T.newItem : T.lvl(o.lv), desc: d, color: '#8fd66b' }; }
   if (o.k === 'evo') { const [n, d] = T.evo[o.id]; return { icon: o.id, name: n, tag: T.evolve, desc: d, color: '#f6d55c' }; }
   if (o.k === 'heal') return { icon: null, name: T.kimbap[0], tag: '', desc: T.kimbap[1], color: '#8fd66b', pic: 'kimbap' };
@@ -1689,28 +1899,30 @@ function enterNode(n) {
   else doNode(n);
 }
 function doNode(n) {
-  if (n.type === 'fight' || n.type === 'elite') startStage(n.type, n.biome);
+  if (n.type === 'fight' || n.type === 'elite') startStage(n.type, n.biome, 'node', n.mod);
   else if (n.type === 'camp') { campMode = 'pick'; offerSel = 0; setState('camp'); }
   else if (n.type === 'shop') { shopBought = []; offerSel = 0; setState('shop'); }
   else if (n.type === 'event') { const pool = Object.keys(T.events).filter((k) => !run.events.includes(k)); const k = pool.length ? pick(pool) : pick(Object.keys(T.events)); run.events.push(k); showEvent(k); }
   else if (n.type === 'boss') say(T.story[['boss0', 'boss1', 'mir0', 'boss3'][run.act]], () => startStage('boss', n.biome));
 }
 let stageFrom = 'node';
-function startStage(kind, biome, from = 'node') {
-  stageFrom = from; st = genStage(kind, biome, run.depth); buildStageArt(st);
+function startStage(kind, biome, from = 'node', mod = null) {
+  stageFrom = from; st = genStage(kind, biome, run.depth, mod); buildStageArt(st);
   foes = []; gems = []; items = []; shots = []; ebul = []; fx = []; nums = []; boss = null; bossBanner = null; banner = null; winT = 0; spawnAcc = 0; flow = null;
   pl.x = st.start.x; pl.y = st.start.y; pl.vx = pl.vy = 0; pl.inv = 1; cam.x = pl.x; cam.y = pl.y;
+  for (const c of st.crates) spawnFoe('crate', c.x, c.y).spawnIn = 0;
+  for (const b of st.barrels) spawnFoe('barrel', b.x, b.y).spawnIn = 0;
   if (kind === 'elite') { st.eliteDead = false; spawnFoe(weighted(st.B.mix), st.exit.x + 30, st.exit.y + 10, { elite: true, guard: true }).spawnIn = 0; }
   if (kind === 'ambush') { st.eliteDead = false; const e = spawnFoe(weighted(st.B.mix), st.W / 2 * TS, 6 * TS, { elite: true, guard: true }); e.spawnIn = 0; e.woke = true; }
   if (kind === 'boss') spawnBoss(ACTS[run.act].boss);
-  banner = { text: kind === 'boss' ? T.bossGate : kind === 'gen' || kind === 'ambush' ? T.swarm : T.node[kind][1], t: 0 };
+  banner = { text: kind === 'boss' ? T.bossGate : kind === 'gen' || kind === 'ambush' ? T.swarm : mod ? `${T.mod[mod][0]} · ${T.mod[mod][1]}` : T.node[kind][1], t: 0 };
   setState('play'); music(st.B.music);
 }
 let clearInfo = null;
 function stageWon() {
   if (st.cleared) return; st.cleared = true;
   const kills = pl.kills - st.kills0, base = st.kind === 'boss' ? 100 : st.kind === 'elite' ? 70 : st.kind === 'gen' ? 70 : st.kind === 'ambush' ? 30 : 25;
-  const gold = Math.round(base + run.depth * 3 + kills / 8) * (st.biome === 'news' ? 1.3 : 1) | 0;
+  const gold = Math.round(base + run.depth * 3 + kills / 8) * (st.biome === 'news' ? 1.3 : 1) * (st.mod === 'danger' ? 2 : 1) | 0;
   run.gold += gold; run.flags.praise = false; if (stageFrom === 'node') run.areas++;
   clearInfo = { t: 0, time: st.t, kills, gold, boss: st.kind === 'boss' }; sfx('lvl'); setState('clear');
 }
@@ -1956,10 +2168,10 @@ function drawIntro() {
 }
 function drawSelect() {
   ctx.fillStyle = 'rgba(6,7,9,.6)'; ctx.fillRect(0, 0, CW, CH);
-  const wide = CW >= 640, cw = wide ? Math.min(220, (CW - 80) / 3) : Math.min(CW - 32, 380), ch = wide ? 290 : Math.min(150, (CH - 150) / 3);
+  const wide = CW >= 640, cw = wide ? Math.min(220, (CW - 80) / 3) : Math.min(CW - 32, 380), ch = wide ? 340 : Math.min(160, (CH - 150) / 3);
   const total = wide ? cw * 3 + 28 : ch * 3 + 20, x0 = wide ? (CW - total) / 2 : (CW - cw) / 2, y0 = wide ? CH / 2 - ch / 2 + 16 : Math.max(80, CH / 2 - total / 2 + 16);
   txt(T.pick, CW / 2, y0 - 34, 22, '#f1f2f4', 'center', 800, false);
-  T.chars.forEach(([name, role, desc], i) => {
+  T.chars.forEach(([name, role, desc, short], i) => {
     const x = wide ? x0 + i * (cw + 14) : x0, y = wide ? y0 : y0 + i * (ch + 10), on = i === selI;
     button(x, y, cw, ch, () => { if (selI === i) startRun(); else selI = i; });
     panel(x, y, cw, ch, on, on ? 'rgba(26,30,36,.98)' : undefined); if (on) { ctx.fillStyle = '#2dd4bf'; rr(x, y, 4, ch, 2); ctx.fill(); }
@@ -1967,8 +2179,8 @@ function drawSelect() {
     ctx.imageSmoothingEnabled = false; const gl = ctx.createRadialGradient(ax + sz / 2, ay + sz * 0.6, 0, ax + sz / 2, ay + sz * 0.6, sz * 0.6); gl.addColorStop(0, on ? 'rgba(45,212,191,.18)' : 'rgba(255,255,255,.05)'); gl.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = gl; ctx.fillRect(ax - 10, ay - 10, sz + 20, sz + 20); ctx.drawImage(art.c, ax, ay, sz, sz);
     const tx = wide ? x + cw / 2 : ax + sz + 16, al = wide ? 'center' : 'left', ty = wide ? y + sz + 46 : y + ch / 2 - 22, tw = wide ? cw - 24 : x + cw - tx - 12;
     txt(name, tx, ty, 18, '#f1f2f4', al, 800, false); txt(role, tx, ty + 22, 12, '#5eead4', al, 600, false);
-    wrapLines(desc, tw, 12).slice(0, 3).forEach((ln, k) => txt(ln, tx, ty + 44 + k * 16, 12, '#c9cdd3', al, 500, false));
-    icon(CHARS[i].start, wide ? x + cw / 2 - 10 : x + cw - 34, wide ? y + ch - 34 : y + 12, 20);
+    wrapLines(wide ? desc : short, tw, 11.5).slice(0, wide ? 7 : 4).forEach((ln, k) => txt(ln, tx, ty + 42 + k * 15, 11.5, '#c9cdd3', al, 500, false));
+    icon(CHARS[i].start, x + cw - 32, y + 12, 20);
   });
   txt(usingTouch ? '' : '← →  Enter', CW / 2, CH - 28, 11, '#5c626c', 'center', 600, false);
 }
@@ -1976,8 +2188,8 @@ function drawPause() {
   ctx.fillStyle = 'rgba(6,7,9,.75)'; ctx.fillRect(0, 0, CW, CH); txt(T.paused, CW / 2, CH / 2 - 90, 28, '#f1f2f4', 'center', 900, false);
   const items = [[T.resume, () => setState('play')], [T.sound(!muted), () => { muted = !muted; }], [T.quit, () => { music(-1); setState('title'); }]];
   items.forEach(([l, fn], i) => { const b = button(CW / 2 - 110, CH / 2 - 50 + i * 56, 220, 46, fn); panel(b.x, b.y, b.w, b.h, i === 0); txt(l, CW / 2, b.y + 23, 15, '#f1f2f4', 'center', 700, false); });
-  const evos = pl.weapons.filter((w) => !w.evo).map((w) => `${T.w[w.id][0]} → ${T.evo[w.id][0]} (${T.p[WEAPONS[w.id].evoWith][0]})`);
-  evos.slice(0, 4).forEach((s, i) => txt(s, CW / 2, CH / 2 + 128 + i * 17, 11, '#7c828c', 'center', 500, false));
+  // what each weapon has done so far and how far its skill tree has grown
+  pl.weapons.forEach((w, i) => txt(`${(w.evo ? T.evo : T.w)[w.id][0]} Lv${w.lv} · ${T.treeKills('', pl.wk[w.id] || 0).trim()} · ${T.tree[w.id][0][0]} ${w.tr[0]}/3 · ${T.tree[w.id][1][0]} ${w.tr[1]}/3`, CW / 2, CH / 2 + 124 + i * 17, 11, '#9aa0aa', 'center', 500, false));
 }
 function drawResult() {
   const a = Math.min(1, resultT / 0.8), win = endKind === 'a' || endKind === 'b'; ctx.fillStyle = `rgba(6,7,9,${0.86 * a})`; ctx.fillRect(0, 0, CW, CH); ctx.globalAlpha = a;

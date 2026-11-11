@@ -6,6 +6,9 @@ function updFoes(dt) {
     e.flash = Math.max(0, e.flash - dt); e.t += dt;
     if (e.seg) continue; // snake segments follow their head (updBoss)
     if (e.spawnIn > 0) { e.spawnIn -= dt; continue; }
+    if (e.vuln > 0) e.vuln -= dt; // sealed by a stamp: takes more damage
+    if (e.bleed > 0) { e.bleed -= dt; e.bleedT = (e.bleedT || 0) - dt; if (e.bleedT <= 0) { e.bleedT = 0.5; curSrc = 'scis'; hurt(e, e.bleedDmg); curSrc = null; if (e.dead) continue; } }
+    if (e.prop) continue; // crates and barrels just stand there
     if (e.boss) { updBoss(e, dt); continue; }
     const dx = pl.x - e.x, dy = pl.y - e.y, d = Math.hypot(dx, dy) || 1;
     if (e.guard && !e.woke) { if (d < 150 || st.charge >= st.need * 0.5) { e.woke = true; sfx('warn'); banner = { text: T.node.elite[1], t: 0 }; } else continue; } // elites wait at the gate until you come close or the gate is half charged
@@ -27,7 +30,7 @@ function updFoes(dt) {
   }
   // keep slop from piling into one point
   for (const e of foes) {
-    if (e.dead || e.boss || e.seg) continue;
+    if (e.dead || e.boss || e.seg || e.prop) continue;
     let n = 0;
     near(e.x, e.y, e.r * 2, (o) => {
       if (o === e || o.boss || o.seg) return; const dx = e.x - o.x, dy = e.y - o.y, d2 = dx * dx + dy * dy, m = e.r + o.r;

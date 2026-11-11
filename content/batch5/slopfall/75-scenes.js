@@ -14,28 +14,30 @@ function enterNode(n) {
   else doNode(n);
 }
 function doNode(n) {
-  if (n.type === 'fight' || n.type === 'elite') startStage(n.type, n.biome);
+  if (n.type === 'fight' || n.type === 'elite') startStage(n.type, n.biome, 'node', n.mod);
   else if (n.type === 'camp') { campMode = 'pick'; offerSel = 0; setState('camp'); }
   else if (n.type === 'shop') { shopBought = []; offerSel = 0; setState('shop'); }
   else if (n.type === 'event') { const pool = Object.keys(T.events).filter((k) => !run.events.includes(k)); const k = pool.length ? pick(pool) : pick(Object.keys(T.events)); run.events.push(k); showEvent(k); }
   else if (n.type === 'boss') say(T.story[['boss0', 'boss1', 'mir0', 'boss3'][run.act]], () => startStage('boss', n.biome));
 }
 let stageFrom = 'node';
-function startStage(kind, biome, from = 'node') {
-  stageFrom = from; st = genStage(kind, biome, run.depth); buildStageArt(st);
+function startStage(kind, biome, from = 'node', mod = null) {
+  stageFrom = from; st = genStage(kind, biome, run.depth, mod); buildStageArt(st);
   foes = []; gems = []; items = []; shots = []; ebul = []; fx = []; nums = []; boss = null; bossBanner = null; banner = null; winT = 0; spawnAcc = 0; flow = null;
   pl.x = st.start.x; pl.y = st.start.y; pl.vx = pl.vy = 0; pl.inv = 1; cam.x = pl.x; cam.y = pl.y;
+  for (const c of st.crates) spawnFoe('crate', c.x, c.y).spawnIn = 0;
+  for (const b of st.barrels) spawnFoe('barrel', b.x, b.y).spawnIn = 0;
   if (kind === 'elite') { st.eliteDead = false; spawnFoe(weighted(st.B.mix), st.exit.x + 30, st.exit.y + 10, { elite: true, guard: true }).spawnIn = 0; }
   if (kind === 'ambush') { st.eliteDead = false; const e = spawnFoe(weighted(st.B.mix), st.W / 2 * TS, 6 * TS, { elite: true, guard: true }); e.spawnIn = 0; e.woke = true; }
   if (kind === 'boss') spawnBoss(ACTS[run.act].boss);
-  banner = { text: kind === 'boss' ? T.bossGate : kind === 'gen' || kind === 'ambush' ? T.swarm : T.node[kind][1], t: 0 };
+  banner = { text: kind === 'boss' ? T.bossGate : kind === 'gen' || kind === 'ambush' ? T.swarm : mod ? `${T.mod[mod][0]} · ${T.mod[mod][1]}` : T.node[kind][1], t: 0 };
   setState('play'); music(st.B.music);
 }
 let clearInfo = null;
 function stageWon() {
   if (st.cleared) return; st.cleared = true;
   const kills = pl.kills - st.kills0, base = st.kind === 'boss' ? 100 : st.kind === 'elite' ? 70 : st.kind === 'gen' ? 70 : st.kind === 'ambush' ? 30 : 25;
-  const gold = Math.round(base + run.depth * 3 + kills / 8) * (st.biome === 'news' ? 1.3 : 1) | 0;
+  const gold = Math.round(base + run.depth * 3 + kills / 8) * (st.biome === 'news' ? 1.3 : 1) * (st.mod === 'danger' ? 2 : 1) | 0;
   run.gold += gold; run.flags.praise = false; if (stageFrom === 'node') run.areas++;
   clearInfo = { t: 0, time: st.t, kills, gold, boss: st.kind === 'boss' }; sfx('lvl'); setState('clear');
 }

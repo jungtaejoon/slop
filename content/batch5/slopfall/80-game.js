@@ -120,10 +120,10 @@ function drawIntro() {
 }
 function drawSelect() {
   ctx.fillStyle = 'rgba(6,7,9,.6)'; ctx.fillRect(0, 0, CW, CH);
-  const wide = CW >= 640, cw = wide ? Math.min(220, (CW - 80) / 3) : Math.min(CW - 32, 380), ch = wide ? 290 : Math.min(150, (CH - 150) / 3);
+  const wide = CW >= 640, cw = wide ? Math.min(220, (CW - 80) / 3) : Math.min(CW - 32, 380), ch = wide ? 340 : Math.min(160, (CH - 150) / 3);
   const total = wide ? cw * 3 + 28 : ch * 3 + 20, x0 = wide ? (CW - total) / 2 : (CW - cw) / 2, y0 = wide ? CH / 2 - ch / 2 + 16 : Math.max(80, CH / 2 - total / 2 + 16);
   txt(T.pick, CW / 2, y0 - 34, 22, '#f1f2f4', 'center', 800, false);
-  T.chars.forEach(([name, role, desc], i) => {
+  T.chars.forEach(([name, role, desc, short], i) => {
     const x = wide ? x0 + i * (cw + 14) : x0, y = wide ? y0 : y0 + i * (ch + 10), on = i === selI;
     button(x, y, cw, ch, () => { if (selI === i) startRun(); else selI = i; });
     panel(x, y, cw, ch, on, on ? 'rgba(26,30,36,.98)' : undefined); if (on) { ctx.fillStyle = '#2dd4bf'; rr(x, y, 4, ch, 2); ctx.fill(); }
@@ -131,8 +131,8 @@ function drawSelect() {
     ctx.imageSmoothingEnabled = false; const gl = ctx.createRadialGradient(ax + sz / 2, ay + sz * 0.6, 0, ax + sz / 2, ay + sz * 0.6, sz * 0.6); gl.addColorStop(0, on ? 'rgba(45,212,191,.18)' : 'rgba(255,255,255,.05)'); gl.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = gl; ctx.fillRect(ax - 10, ay - 10, sz + 20, sz + 20); ctx.drawImage(art.c, ax, ay, sz, sz);
     const tx = wide ? x + cw / 2 : ax + sz + 16, al = wide ? 'center' : 'left', ty = wide ? y + sz + 46 : y + ch / 2 - 22, tw = wide ? cw - 24 : x + cw - tx - 12;
     txt(name, tx, ty, 18, '#f1f2f4', al, 800, false); txt(role, tx, ty + 22, 12, '#5eead4', al, 600, false);
-    wrapLines(desc, tw, 12).slice(0, 3).forEach((ln, k) => txt(ln, tx, ty + 44 + k * 16, 12, '#c9cdd3', al, 500, false));
-    icon(CHARS[i].start, wide ? x + cw / 2 - 10 : x + cw - 34, wide ? y + ch - 34 : y + 12, 20);
+    wrapLines(wide ? desc : short, tw, 11.5).slice(0, wide ? 7 : 4).forEach((ln, k) => txt(ln, tx, ty + 42 + k * 15, 11.5, '#c9cdd3', al, 500, false));
+    icon(CHARS[i].start, x + cw - 32, y + 12, 20);
   });
   txt(usingTouch ? '' : '← →  Enter', CW / 2, CH - 28, 11, '#5c626c', 'center', 600, false);
 }
@@ -140,8 +140,8 @@ function drawPause() {
   ctx.fillStyle = 'rgba(6,7,9,.75)'; ctx.fillRect(0, 0, CW, CH); txt(T.paused, CW / 2, CH / 2 - 90, 28, '#f1f2f4', 'center', 900, false);
   const items = [[T.resume, () => setState('play')], [T.sound(!muted), () => { muted = !muted; }], [T.quit, () => { music(-1); setState('title'); }]];
   items.forEach(([l, fn], i) => { const b = button(CW / 2 - 110, CH / 2 - 50 + i * 56, 220, 46, fn); panel(b.x, b.y, b.w, b.h, i === 0); txt(l, CW / 2, b.y + 23, 15, '#f1f2f4', 'center', 700, false); });
-  const evos = pl.weapons.filter((w) => !w.evo).map((w) => `${T.w[w.id][0]} → ${T.evo[w.id][0]} (${T.p[WEAPONS[w.id].evoWith][0]})`);
-  evos.slice(0, 4).forEach((s, i) => txt(s, CW / 2, CH / 2 + 128 + i * 17, 11, '#7c828c', 'center', 500, false));
+  // what each weapon has done so far and how far its skill tree has grown
+  pl.weapons.forEach((w, i) => txt(`${(w.evo ? T.evo : T.w)[w.id][0]} Lv${w.lv} · ${T.treeKills('', pl.wk[w.id] || 0).trim()} · ${T.tree[w.id][0][0]} ${w.tr[0]}/3 · ${T.tree[w.id][1][0]} ${w.tr[1]}/3`, CW / 2, CH / 2 + 124 + i * 17, 11, '#9aa0aa', 'center', 500, false));
 }
 function drawResult() {
   const a = Math.min(1, resultT / 0.8), win = endKind === 'a' || endKind === 'b'; ctx.fillStyle = `rgba(6,7,9,${0.86 * a})`; ctx.fillRect(0, 0, CW, CH); ctx.globalAlpha = a;

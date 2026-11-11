@@ -12,11 +12,30 @@ const W_ORDER = ['brush', 'hl', 'stamp', 'scis', 'plane', 'eraser'];
 const PASSIVES = { coffee: 5, loupe: 5, shoes: 5, clip: 5, vita: 5, copier: 2 }; // max level
 const P_ORDER = ['coffee', 'loupe', 'shoes', 'clip', 'vita', 'copier'];
 const MAX_W = 6, MAX_LV = 6;
+// three ways to play. Mina: fragile and fast, hits harder the more she bleeds, and every level sharpens her.
+// Doyun: a chain of kills without being hit speeds every weapon up; crits grow with level; one hit breaks the chain.
+// Granny Ok: slow and hard to kill; armour, regeneration, thorns, and the more health she has the harder she hits.
+// `affinity`: the weapons that come up more often for this curator.
 const CHARS = [
-  { start: 'brush', area: 0.15, cd: 0, hp: 100, spd: 1 },
-  { start: 'hl', area: 0, cd: 0.1, hp: 100, spd: 1 },
-  { start: 'stamp', area: 0, cd: 0, hp: 130, spd: 0.92 },
+  { start: 'brush', hp: 70, spd: 1.12, area: 0.1, cd: 0, dash: 0.7, armor: 0, rage: 1.3, perLv: { dmg: 0.035 }, affinity: ['brush', 'scis', 'eraser'] },
+  { start: 'hl', hp: 90, spd: 1, area: 0, cd: 0.1, dash: 1.1, armor: 0, combo: 1, crit: 0.12, perLv: { crit: 0.012 }, affinity: ['hl', 'plane', 'eraser'] },
+  { start: 'stamp', hp: 160, spd: 0.84, area: 0.1, cd: 0, dash: 1.5, armor: 0.3, regen: 0.8, thorns: 0.25, hpPower: 1, perLv: { hp: 8 }, affinity: ['stamp', 'scis', 'brush'] },
 ];
+const critChance = () => { const c = CHARS[pl.ci]; return c.crit ? Math.min(0.6, c.crit + c.perLv.crit * (pl.lv - 1)) : 0; };
+const comboCd = () => (CHARS[pl.ci].combo ? Math.min(0.35, pl.combo * 0.004) : 0);
+// skill trees: two branches per weapon, three tiers each. A tier unlocks once that weapon has erased enough slop,
+// and the more it has erased, the more often its next tiers come up when you level up.
+const TREES = {
+  brush: [[{ area: 0.2 }, { amt: 1 }, { wave: 1 }], [{ dmg: 0.25 }, { leech: 1 }, { exec: 0.15 }]],
+  hl: [[{ amt: 1 }, { width: 0.6 }, { cross: 1 }], [{ dmg: 0.25 }, { cd: 0.15 }, { burn: 1 }]],
+  stamp: [[{ area: 0.2 }, { stun: 0.7 }, { echo: 1 }], [{ amt: 1 }, { cd: 0.15 }, { seal: 1 }]],
+  scis: [[{ amt: 1 }, { spin: 0.4 }, { area: 0.35 }], [{ dmg: 0.3 }, { rate: 1 }, { bleed: 1 }]],
+  plane: [[{ amt: 1 }, { pierce: 1 }, { bomb: 1 }], [{ speed: 0.3 }, { dmg: 0.3 }, { long: 1 }]],
+  eraser: [[{ chain: 2 }, { speed: 0.3 }, { dust: 1 }], [{ dmg: 0.3 }, { knock: 1 }, { clean: 1 }]],
+};
+const TREE_NEED = [0, 50, 180]; // kills with that weapon to open tier 1 / 2 / 3 (tier 1 also needs weapon level 2)
+// only one branch per weapon can reach tier 3: each weapon ends up leaning one way
+function treeMods(w) { const m = {}; TREES[w.id].forEach((br, b) => { for (let t = 0; t < w.tr[b]; t++) for (const k in br[t]) m[k] = (m[k] || 0) + br[t][k]; }); return m; }
 // enemies: hp, speed (px/s), contact damage, radius, xp, behaviour
 const FOES = {
   hand: { hp: 10, spd: 30, dmg: 5, r: 6, xp: 1 },
@@ -26,6 +45,9 @@ const FOES = {
   eye: { hp: 14, spd: 24, dmg: 5, r: 6, xp: 2, shooter: 1 },
   jelly: { hp: 22, spd: 26, dmg: 6, r: 6, xp: 2, splits: 1 },
   echo: { hp: 20, spd: 34, dmg: 6, r: 6, xp: 2, splits: 1 },
+  // area gimmicks: they stand still and break when hit
+  crate: { hp: 16, spd: 0, dmg: 0, r: 6, xp: 0, prop: 1 },
+  barrel: { hp: 8, spd: 0, dmg: 0, r: 6, xp: 0, prop: 1, boom: 1 },
 };
 // regions: look (floor, wall top, wall face, accent, darkness), slop mix, hazard tiles, music
 const BIOMES = {
