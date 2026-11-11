@@ -6,6 +6,8 @@
 const KEY = 'slop-lang';
 export const LANGS = { en: 'English', ko: '한국어' };
 export function detectLang() {
+  // ?lang=en / ?lang=ko in a shared link picks the interface language (and remembers it)
+  try { const q = new URLSearchParams(location.search).get('lang'); if (q && LANGS[q]) { localStorage.setItem(KEY, q); return q; } } catch { /* */ }
   try { const saved = localStorage.getItem(KEY); if (saved && LANGS[saved]) return saved; } catch { /* */ }
   return /^ko\b/i.test(navigator.language || '') ? 'ko' : 'en';
 }
