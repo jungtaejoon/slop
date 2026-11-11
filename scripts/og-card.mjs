@@ -67,21 +67,23 @@ export function wrap(text, size, maxW, maxLines) {
   return out;
 }
 
-const DEFS = `<defs>
-  <linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#14B8A6"/><stop offset=".6" stop-color="#3B82C4"/><stop offset="1" stop-color="#6D5BD0"/></linearGradient>
-  <linearGradient id="bar" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#14B8A6"/><stop offset=".6" stop-color="#3B82C4"/><stop offset="1" stop-color="#6D5BD0"/></linearGradient>
-  <radialGradient id="glow" cx=".88" cy=".05" r=".75"><stop offset="0" stop-color="#3B82C4" stop-opacity=".32"/><stop offset=".55" stop-color="#6D5BD0" stop-opacity=".08"/><stop offset="1" stop-color="#6D5BD0" stop-opacity="0"/></radialGradient>
+// v3 look: near-black, a teal glow top right, a faint amber glow bottom left, a dot grid
+export const OG_DEFS = `<defs>
+  <radialGradient id="glowT" cx=".86" cy=".12" r=".7"><stop offset="0" stop-color="#2DD4BF" stop-opacity=".2"/><stop offset="1" stop-color="#2DD4BF" stop-opacity="0"/></radialGradient>
+  <radialGradient id="glowA" cx=".08" cy="1.05" r=".6"><stop offset="0" stop-color="#FB923C" stop-opacity=".12"/><stop offset="1" stop-color="#FB923C" stop-opacity="0"/></radialGradient>
+  <pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#FFFFFF" fill-opacity=".06"/></pattern>
 </defs>`;
+export const ogBackdrop = () => `<rect width="${W}" height="${H}" fill="#0A0B0D"/><rect width="${W}" height="${H}" fill="url(#dots)"/><rect width="${W}" height="${H}" fill="url(#glowT)"/><rect width="${W}" height="${H}" fill="url(#glowA)"/>`;
+export const ogLogo = (x, y) => `<g transform="translate(${x},${y})"><rect width="58" height="58" rx="16" fill="#F1F2F4"/><path d="M29 12 44 29 29 47 14 29Z" fill="#0D9488"/><path d="M29 12 36.5 29 29 47 21.5 29Z" fill="#000" fill-opacity=".12"/></g>`;
 
 function frame(inner, pill) {
   const pillW = pill ? Math.ceil(textW(pill, 24, false)) + 40 : 0;
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${DEFS}
-<rect width="${W}" height="${H}" fill="#0E1110"/><rect width="${W}" height="${H}" fill="url(#glow)"/>
-<g transform="translate(${PAD},52)"><rect width="56" height="56" rx="14" fill="url(#g)"/><path d="M28 10.5 42 24.5 28 45.5 14 24.5Z" fill="#fff"/><path d="M28 10.5 35 24.5 28 45.5 21 24.5Z" fill="#000" fill-opacity=".14"/></g>
-<text x="${PAD + 74}" y="92" font-family="Pretendard" font-weight="700" font-size="34" fill="#F4F6F3">Slop<tspan fill="#14B8A6">.</tspan></text>
-${pill ? `<g transform="translate(${W - PAD - pillW},56)"><rect width="${pillW}" height="48" rx="24" fill="#1B201E" stroke="#2C3330"/><text x="${pillW / 2}" y="32" text-anchor="middle" font-family="Pretendard" font-weight="600" font-size="24" fill="#C9D1C7">${esc(pill)}</text></g>` : ''}
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${OG_DEFS}
+${ogBackdrop()}${ogLogo(PAD, 52)}
+<text x="${PAD + 76}" y="92" font-family="Pretendard" font-weight="700" font-size="34" fill="#F1F2F4">Slop<tspan fill="#2DD4BF">.</tspan></text>
+${pill ? `<g transform="translate(${W - PAD - pillW},56)"><rect width="${pillW}" height="48" rx="24" fill="#15181D" stroke="#2A2E36"/><text x="${pillW / 2}" y="32" text-anchor="middle" font-family="Pretendard" font-weight="600" font-size="24" fill="#C9CDD3">${esc(pill)}</text></g>` : ''}
 ${inner}
-<rect y="${H - 12}" width="${W}" height="12" fill="url(#bar)"/>
+<line x1="${PAD}" y1="${H - 110}" x2="${W - PAD}" y2="${H - 110}" stroke="#22252B" stroke-width="2"/>
 </svg>`;
 }
 
@@ -94,19 +96,19 @@ export function postCardSvg(p, communityLabel) {
   if (lines.length === 3 && lines[2].endsWith('…')) { size = 54; lines = wrap(p.title, size, MAXW, 4); }
   const lh = Math.round(size * 1.22), top = 210;
   const kind = [KIND[L][p.kind] || KIND[L].text, p.tool ? (L === 'ko' ? `${p.tool}로 만듦` : `made with ${p.tool}`) : ''].filter(Boolean).join(' · ');
-  const title = lines.map((l, i) => `<text x="${PAD}" y="${top + 26 + (i + 1) * lh - Math.round(lh * 0.22)}" font-family="Pretendard" font-weight="700" font-size="${size}" fill="#F4F6F3">${esc(l)}</text>`).join('');
+  const title = lines.map((l, i) => `<text x="${PAD}" y="${top + 26 + (i + 1) * lh - Math.round(lh * 0.22)}" font-family="Pretendard" font-weight="700" font-size="${size}" fill="#F1F2F4">${esc(l)}</text>`).join('');
   const gem = L === 'ko' ? `보석 ${p.up_count}` : `${p.up_count} gem`, slop = L === 'ko' ? `슬롭 ${p.down_count}` : `${p.down_count} slop`;
   const com = L === 'ko' ? `의견 ${p.comment_count}` : `${p.comment_count} comment${p.comment_count === 1 ? '' : 's'}`;
   const gx = PAD, sx = gx + 40 + textW(gem, 30) + 44, cx = sx + 40 + textW(slop, 30) + 44;
   const cta = L === 'ko' ? '보석일까, 슬롭일까? 판정해 주세요' : 'Gem or slop? You judge.';
-  return frame(`<text x="${PAD}" y="${top}" font-family="Pretendard" font-weight="600" font-size="26" letter-spacing="1" fill="#14B8A6">${esc(kind)}</text>
+  return frame(`<text x="${PAD}" y="${top}" font-family="Pretendard" font-weight="600" font-size="26" letter-spacing="1" fill="#2DD4BF">${esc(kind)}</text>
 ${title}
 <g font-family="Pretendard" font-weight="700" font-size="30">
-  <path d="M${gx} 566 l14 -24 l14 24 Z" fill="#14B8A6"/><text x="${gx + 40}" y="566" fill="#F4F6F3">${esc(gem)}</text>
-  <path d="M${sx} 542 l14 24 l14 -24 Z" fill="#F08A4B"/><text x="${sx + 40}" y="566" fill="#F4F6F3">${esc(slop)}</text>
-  <path d="M${cx} 543 h28 v18 h-17 l-7 7 v-7 h-4 Z" fill="none" stroke="#A9B0A7" stroke-width="3" stroke-linejoin="round"/><text x="${cx + 40}" y="566" fill="#A9B0A7" font-weight="600">${esc(com)}</text>
+  <path d="M${gx} 566 l14 -24 l14 24 Z" fill="#2DD4BF"/><text x="${gx + 40}" y="566" fill="#F1F2F4">${esc(gem)}</text>
+  <path d="M${sx} 542 l14 24 l14 -24 Z" fill="#FB923C"/><text x="${sx + 40}" y="566" fill="#F1F2F4">${esc(slop)}</text>
+  <path d="M${cx} 543 h28 v18 h-17 l-7 7 v-7 h-4 Z" fill="none" stroke="#9AA0AA" stroke-width="3" stroke-linejoin="round"/><text x="${cx + 40}" y="566" fill="#9AA0AA" font-weight="600">${esc(com)}</text>
 </g>
-<text x="${W - PAD}" y="566" text-anchor="end" font-family="Pretendard" font-weight="600" font-size="28" fill="#C9D1C7">${esc(cta)}</text>`, communityLabel);
+<text x="${W - PAD}" y="566" text-anchor="end" font-family="Pretendard" font-weight="600" font-size="28" fill="#C9CDD3">${esc(cta)}</text>`, communityLabel);
 }
 
 // a community card: name, description, follower/post counts
@@ -114,13 +116,13 @@ export function communityCardSvg(c, name, description) {
   const L = isKorean(name) || isKorean(description) ? 'ko' : 'en';
   const nameLines = wrap(name, 72, MAXW, 2), desc = wrap(description || '', 34, MAXW, 3);
   const nameY = 250;
-  const nameSvg = nameLines.map((l, i) => `<text x="${PAD}" y="${nameY + i * 86}" font-family="Pretendard" font-weight="700" font-size="72" fill="#F4F6F3">${esc(l)}</text>`).join('');
+  const nameSvg = nameLines.map((l, i) => `<text x="${PAD}" y="${nameY + i * 86}" font-family="Pretendard" font-weight="700" font-size="72" fill="#F1F2F4">${esc(l)}</text>`).join('');
   const dTop = nameY + (nameLines.length - 1) * 86 + 64;
-  const descSvg = desc.map((l, i) => `<text x="${PAD}" y="${dTop + i * 46}" font-family="Pretendard" font-weight="400" font-size="34" fill="#C9D1C7">${esc(l)}</text>`).join('');
+  const descSvg = desc.map((l, i) => `<text x="${PAD}" y="${dTop + i * 46}" font-family="Pretendard" font-weight="400" font-size="34" fill="#C9CDD3">${esc(l)}</text>`).join('');
   const counts = L === 'ko' ? `팔로워 ${c.member_count} · 글 ${c.post_count}` : `${c.member_count} followers · ${c.post_count} posts`;
   const cta = L === 'ko' ? 'Slop에서 팔로우하세요' : 'Follow it on Slop';
-  return frame(`<text x="${PAD}" y="172" font-family="Pretendard" font-weight="600" font-size="26" letter-spacing="1" fill="#14B8A6">${L === 'ko' ? '커뮤니티' : 'COMMUNITY'} · c/${esc(c.slug)}</text>
+  return frame(`<text x="${PAD}" y="172" font-family="Pretendard" font-weight="600" font-size="26" letter-spacing="1" fill="#2DD4BF">${L === 'ko' ? '커뮤니티' : 'COMMUNITY'} · c/${esc(c.slug)}</text>
 ${nameSvg}${descSvg}
-<text x="${PAD}" y="566" font-family="Pretendard" font-weight="700" font-size="30" fill="#F4F6F3">${esc(counts)}</text>
-<text x="${W - PAD}" y="566" text-anchor="end" font-family="Pretendard" font-weight="600" font-size="28" fill="#C9D1C7">${esc(cta)}</text>`, null);
+<text x="${PAD}" y="566" font-family="Pretendard" font-weight="700" font-size="30" fill="#F1F2F4">${esc(counts)}</text>
+<text x="${W - PAD}" y="566" text-anchor="end" font-family="Pretendard" font-weight="600" font-size="28" fill="#C9CDD3">${esc(cta)}</text>`, null);
 }

@@ -1,25 +1,38 @@
 // One-off: draws the site-wide link-preview images public/og.png (English) and
-// public/og-ko.png (Korean). Run: node scripts/build-og.mjs
+// public/og-ko.png (Korean) in the v3 look. Run: node scripts/build-og.mjs
 import { writeFileSync } from 'node:fs';
-import { createCardRenderer } from './og-card.mjs';
+import { createCardRenderer, OG_DEFS, ogBackdrop, ogLogo } from './og-card.mjs';
 
 const T = {
-  en: { sub: 'Find the gems in AI-made stuff', line: 'Post AI-made apps, art, writing and code. Try them. Judge them. Say why.', gem: 'Gem', slop: 'Slop' },
-  ko: { sub: 'AI가 만든 것들 속에서 보석을 캐는 곳', line: 'AI로 만든 앱, 그림, 글, 코드를 올리고 써 보고 판정해요.', gem: '보석', slop: '슬롭' },
+  en: { eyebrow: 'A VERDICT BOARD FOR AI-MADE STUFF', h1: 'Find the gems in', h2: 'AI-made stuff.', size: 84,
+    sub: 'Try AI-made apps, games, art and writing.', sub2: 'Vote gem or slop, and say why.', gem: 'Gem', slop: 'Slop' },
+  ko: { eyebrow: 'AI가 만든 것들의 판정소', h1: 'AI가 만든 것,', h2: '그냥 넘기지 마세요.', size: 76,
+    sub: 'AI로 만든 앱·게임·그림·글을 직접 써 보고', sub2: '보석인지 슬롭인지 판정해요.', gem: '보석', slop: '슬롭' },
 };
-const svg = (t) => `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
-<rect width="1200" height="630" fill="#121412"/>
-<circle cx="1010" cy="165" r="210" fill="#14302C"/>
-<path d="M1010 40 1110 140 1010 290 910 140Z" fill="#3CC1B1"/><path d="M1010 40 1060 140 1010 290 960 140Z" fill="#7AD6CB"/>
-<text x="80" y="212" font-family="Pretendard" font-weight="800" font-size="104" fill="#F1F2EC">SLOP<tspan fill="#2DD4BF">.</tspan></text>
-<text x="80" y="300" font-family="Pretendard" font-weight="700" font-size="50" fill="#F1F2EC">${t.sub}</text>
-<text x="80" y="368" font-family="Pretendard" font-weight="400" font-size="28" fill="#9AA297">${t.line}</text>
-<g font-family="Pretendard" font-weight="700" font-size="36">
-  <rect x="80" y="450" width="250" height="84" rx="42" fill="#14302C" stroke="#2DD4BF" stroke-width="3"/>
-  <path d="M142 506 l14 -24 l14 24 Z" fill="#2DD4BF"/><text x="184" y="505" fill="#2DD4BF">${t.gem}</text>
-  <rect x="356" y="450" width="250" height="84" rx="42" fill="#3A2618" stroke="#F0A160" stroke-width="3"/>
-  <path d="M418 482 l14 24 l14 -24 Z" fill="#F0A160"/><text x="460" y="505" fill="#F0A160">${t.slop}</text>
-</g></svg>`;
+// a post card tilted over a second one, with a verdict bar: the same picture as the site intro
+const art = `<g transform="translate(838 120) rotate(7)"><rect width="280" height="210" rx="22" fill="#15181D" stroke="#2A2E36" stroke-width="2"/>
+  <rect x="20" y="20" width="240" height="96" rx="12" fill="#3A2A1C"/><rect x="20" y="136" width="200" height="12" rx="6" fill="#1F2329"/><rect x="20" y="160" width="130" height="12" rx="6" fill="#1F2329"/></g>
+<g transform="translate(760 210) rotate(-4)"><rect width="330" height="280" rx="24" fill="#121418" stroke="#30343C" stroke-width="2"/>
+  <rect x="22" y="22" width="22" height="22" rx="7" fill="#2DD4BF"/><rect x="56" y="27" width="120" height="12" rx="6" fill="#1F2329"/>
+  <rect x="22" y="62" width="286" height="96" rx="14" fill="#191C21"/>
+  <rect x="36" y="76" width="58" height="68" rx="9" fill="#121418"/><rect x="104" y="76" width="58" height="68" rx="9" fill="#239E8F"/><rect x="172" y="76" width="58" height="68" rx="9" fill="#B86A33"/><rect x="240" y="76" width="54" height="68" rx="9" fill="#121418"/>
+  <rect x="22" y="176" width="240" height="11" rx="5.5" fill="#1F2329"/><rect x="22" y="198" width="150" height="11" rx="5.5" fill="#1F2329"/>
+  <path d="M24 250 l9 -15 l9 15 Z" fill="#2DD4BF"/><text x="48" y="250" font-family="Pretendard" font-weight="700" font-size="20" fill="#5EEAD4">128</text>
+  <rect x="96" y="236" width="170" height="10" rx="5" fill="#2B1B10"/><rect x="96" y="236" width="150" height="10" rx="5" fill="#2DD4BF"/>
+  <path d="M276 236 l8 13 l8 -13 Z" fill="#FB923C"/><text x="296" y="250" font-family="Pretendard" font-weight="700" font-size="20" fill="#FB923C">14</text></g>
+<g transform="translate(1118 528) rotate(8)"><rect x="-38" y="-38" width="76" height="76" rx="22" fill="#F1F2F4"/><path d="M0 -20 14 0 0 22 -14 0Z" fill="#0D9488"/></g>`;
+const svg = (t) => `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">${OG_DEFS}
+${ogBackdrop()}${ogLogo(64, 52)}
+<text x="140" y="92" font-family="Pretendard" font-weight="700" font-size="34" fill="#F1F2F4">Slop<tspan fill="#2DD4BF">.</tspan></text>
+<g transform="translate(64 196)"><path d="M0 -8 8 0 0 8 -8 0Z" fill="#2DD4BF"/></g>
+<text x="84" y="205" font-family="Pretendard" font-weight="700" font-size="22" letter-spacing="2" fill="#2DD4BF">${t.eyebrow}</text>
+<text x="62" y="${236 + t.size}" font-family="Pretendard" font-weight="700" font-size="${t.size}" letter-spacing="-3" fill="#F1F2F4">${t.h1}</text>
+<text x="62" y="${236 + t.size * 2.08}" font-family="Pretendard" font-weight="700" font-size="${t.size}" letter-spacing="-3" fill="#2DD4BF">${t.h2}</text>
+<text x="64" y="${236 + t.size * 2.08 + 66}" font-family="Pretendard" font-weight="400" font-size="28" fill="#9AA0AA">${t.sub}</text>
+<text x="64" y="${236 + t.size * 2.08 + 106}" font-family="Pretendard" font-weight="400" font-size="28" fill="#9AA0AA">${t.sub2}</text>
+<text x="64" y="578" font-family="Pretendard" font-weight="700" font-size="26" fill="#C9CDD3">slop.ai.kr</text>
+${art}
+</svg>`;
 const render = await createCardRenderer();
 writeFileSync('public/og.png', render(svg(T.en)));
 writeFileSync('public/og-ko.png', render(svg(T.ko)));
