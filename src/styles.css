@@ -756,4 +756,6 @@ select.inline{border-radius:10px;border-color:var(--line);background-color:var(-
 .gnote{display:flex;gap:8px;align-items:flex-start;padding:9px 11px;border-radius:10px;background:var(--sunk);color:var(--muted);font-size:12.5px;line-height:1.5}
 .gnote svg{flex:none;margin-top:2px;color:var(--gem)}
 .gnote p{margin:0}
+.gnote p+p{margin-top:4px}
+.gnote .gt{color:var(--ink);font-weight:600}
 .gnote code{display:block;margin:4px 0;padding:4px 8px;border-radius:6px;background:var(--bg);border:1px solid var(--line);color:var(--ink);font-family:inherit;font-size:12px;font-weight:600;overflow-wrap:anywhere}

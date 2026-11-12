@@ -92,8 +92,12 @@ function googleNote() {
   if (!host) return '';
   const lock = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path fill="currentColor" d="M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5zm-3 8V7a3 3 0 1 1 6 0v3H9z"/></svg>';
   return lang === 'ko'
-    ? `<div class="gnote">${lock}<div><p>Google 화면에 이렇게 나와도 괜찮아요.</p><code>${esc(host)}(으)로 이동</code><p>Slop의 로그인을 처리하는 서버 주소예요. 그대로 계속하면 Slop으로 돌아와요.</p></div></div>`
-    : `<div class="gnote">${lock}<div><p>It's fine if Google shows this:</p><code>continue to ${esc(host)}</code><p>That's Slop's sign-in server. Just continue and you'll come right back to Slop.</p></div></div>`;
+    ? `<div class="gnote">${lock}<div><p class="gt">Google 화면에 이 주소가 보여도 정상이에요</p><code>${esc(host)}(으)로 이동</code>
+      <p>Slop은 계정 관리를 인증 전문 서비스인 Supabase에 맡기고 있어요. Google은 사이트 이름 대신 로그인을 실제로 받는 서버 주소를 보여 줘서 이렇게 나와요.</p>
+      <p>Google 비밀번호는 Slop에 전달되지 않아요. 받는 정보는 이름, 이메일, 프로필 사진뿐이에요.</p></div></div>`
+    : `<div class="gnote">${lock}<div><p class="gt">It's normal if Google shows this address</p><code>continue to ${esc(host)}</code>
+      <p>Slop uses Supabase, a dedicated sign-in service, to manage accounts. Google shows the address of the server that receives the sign-in, not the site name.</p>
+      <p>Your Google password never reaches Slop. We only get your name, email and profile photo.</p></div></div>`;
 }
 const remember = () => { try { localStorage.setItem('slop-had-login', '1'); } catch { /* */ } };
 // rough strength 0-4: length and variety, minus common patterns and the email itself
