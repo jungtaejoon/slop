@@ -28,7 +28,7 @@ export function createSupabaseApi(url, key) {
     api.guest = session?.user?.is_anonymous ? { id: session.user.id } : null;
     if (!session?.user || session.user.is_anonymous) { api.me = null; return null; }
     const row = check(await sb.from('profiles').select('*').eq('id', session.user.id).maybeSingle());
-    api.me = row ? { ...shape.profile(row), email: session.user.email } : null;
+    api.me = row ? { ...shape.profile(row), email: session.user.email, providers: session.user.app_metadata?.providers || [] } : null;
     return api.me;
   }
 
@@ -54,8 +54,9 @@ export function createSupabaseApi(url, key) {
   // public Auth settings: is email confirmation off (autoConfirm)? are guest (anonymous) sign-ins on?
   let authSettingsP = null;
   api.authSettings = () => (authSettingsP ??= fetch(`${url}/auth/v1/settings`, { headers: { apikey: key } })
-    .then((r) => r.json()).then((s) => ({ autoConfirm: !!s.mailer_autoconfirm, guests: !!s.external?.anonymous_users }))
-    .catch(() => ({ autoConfirm: false, guests: false })));
+    .then((r) => r.json()).then((s) => ({ autoConfirm: !!s.mailer_autoconfirm, guests: !!s.external?.anonymous_users,
+      social: ['kakao', 'google', 'github', 'apple'].filter((k) => s.external?.[k]) }))
+    .catch(() => ({ autoConfirm: false, guests: false, social: [] })));
   // a visitor's first vote creates a guest session (Supabase Auth: anonymous sign-ins)
   api.signInGuest = async () => {
     if (api.me || api.guest) return true;

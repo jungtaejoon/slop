@@ -170,6 +170,11 @@ const D = {
   '숨긴 항목이 없어요.': 'Nothing hidden.', '제한된 사람이 없어요.': 'Nobody is restricted.', '운영 기록': 'Moderation log', '사용자': 'User', '아직 기록이 없어요.': 'No entries yet.',
   '커뮤니티 운영자는 각 커뮤니티의': 'Community moderators are added in each community’s', '에서 아이디로 추가해요. 사이트 전체 운영자는 관리자가 따로 지정해요.': 'by username. Site-wide moderators are assigned by an admin.',
   // login & settings
+  '연결된 로그인:': 'Connected logins:', '이메일·비밀번호': 'Email & password', '비밀번호 정하기': 'Set password',
+  '비밀번호는 없어도 돼요. 정해 두면 위 이메일과 비밀번호로도 로그인할 수 있어요.': "You don't need a password. Set one to also log in with the email above.",
+  '비밀번호를 정했어요. 이제 이메일로도 로그인할 수 있어요': 'Password set. You can now log in with your email too.', '보안을 위해 다시 로그인한 뒤 바꿔 주세요.': 'For security, log in again and then change it.',
+  '로그인을 취소했어요': 'Login cancelled', '이메일 정보를 받지 못해 로그인하지 못했어요. 다른 방법으로 시도해 주세요.': "We didn't get an email address, so login failed. Please try another way.",
+  '소셜 로그인에 실패했어요. 잠시 후 다시 시도해 주세요.': 'Social login failed. Please try again shortly.',
   '가입한 이메일을 적으면 비밀번호를 새로 정하는 링크를 보내 드려요.': "Enter the email you signed up with and we'll send a link to set a new password.",
   '8자 이상, 문장처럼 길게도 좋아요': 'At least 8 characters; a long phrase works well', '보기': 'Show', '숨기기': 'Hide', '비밀번호 보기': 'Show password', '비밀번호 숨기기': 'Hide password',
   '8자 이상. 숫자·기호를 섞거나 길게 쓸수록 안전해요.': 'At least 8 characters. Longer, or mixed with digits and symbols, is safer.', 'Caps Lock이 켜져 있어요.': 'Caps Lock is on.',

@@ -739,3 +739,17 @@ select.inline{border-radius:10px;border-color:var(--line);background-color:var(-
   .prev.frame{aspect-ratio:16/10}
 }
 .welcome .wlinks .linkbtn{padding:0;border:0;background:none;cursor:pointer}
+
+/* social login buttons: each provider's own colors, kept after the generic .btn rules */
+.social{display:flex;flex-direction:column;gap:8px}
+.sbtn{display:flex;align-items:center;justify-content:center;gap:9px;font-weight:600;min-height:44px}
+.sbtn svg{flex:none}
+.sbtn.busy{opacity:.6;cursor:progress}
+.btn.sbtn-kakao{background:#FEE500;color:rgba(0,0,0,.85);border-color:#FEE500}
+.btn.sbtn-kakao:hover{background:#F5DC00;border-color:#F5DC00;color:rgba(0,0,0,.85)}
+.btn.sbtn-google{background:#fff;color:#1f1f1f;border-color:#dadce0}
+.btn.sbtn-google:hover{background:#f7f8f8;color:#1f1f1f}
+.btn.sbtn-github{background:#24292f;color:#fff;border-color:#24292f}
+.btn.sbtn-apple{background:#000;color:#fff;border-color:#000}
+.ordiv{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12px;margin:2px 0}
+.ordiv::before,.ordiv::after{content:"";flex:1;height:1px;background:var(--line)}

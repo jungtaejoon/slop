@@ -158,6 +158,12 @@ async function boot() {
   try { await api.init(); } catch (e) { console.error(e); }
   // the PKCE login redirect lands with ?code=...; drop it and go back where the user was
   if (location.search.includes('code=')) history.replaceState(null, '', location.pathname + (location.hash || '#/'));
+  // a cancelled or failed social login comes back with ?error=...
+  if (/[?&]error(_description)?=/.test(location.search)) {
+    const q = new URLSearchParams(location.search), d = q.get('error_description') || q.get('error') || '';
+    history.replaceState(null, '', location.pathname + '#/login');
+    toast(/denied|cancel/i.test(d) ? '로그인을 취소했어요' : /email/i.test(d) ? '이메일 정보를 받지 못해 로그인하지 못했어요. 다른 방법으로 시도해 주세요.' : '소셜 로그인에 실패했어요. 잠시 후 다시 시도해 주세요.');
+  }
   goAfterLogin();
   await afterAuth();
   api.onAuthChange(async () => { S.votes = { p: {}, c: {} }; await afterAuth(); if (!goAfterLogin()) route(); });
