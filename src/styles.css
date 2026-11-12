@@ -209,8 +209,20 @@ details.prompt pre{white-space:pre-wrap;overflow-wrap:anywhere;font-family:var(-
 .thread-head{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
 .thread-head .sp{flex:1}
 .cbox{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
-textarea,input[type=text],input[type=url],input[type=email],select{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:8px 10px;width:100%}
+textarea,input[type=text],input[type=url],input[type=email],input[type=password],select{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:8px 10px;width:100%}
 textarea{resize:vertical}
+.field .row label{font-size:13px;font-weight:700}
+.pwbox{position:relative;display:flex}
+.pwbox input{padding-right:64px}
+.pweye{position:absolute;right:4px;top:50%;transform:translateY(-50%);border:0;background:none;color:var(--muted);font-size:12px;padding:5px 8px;border-radius:6px;cursor:pointer}
+.pweye:hover,.pweye[aria-pressed="true"]{background:var(--sunk);color:var(--ink)}
+.pwmeter{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;height:4px}
+.pwmeter i{background:var(--sunk);border-radius:2px}
+.pwmeter[data-s="0"] i:nth-child(-n+1){background:var(--warn)}
+.pwmeter[data-s="1"] i:nth-child(-n+2){background:var(--slop)}
+.pwmeter[data-s="2"] i:nth-child(-n+3){background:var(--ok)}
+.pwmeter[data-s="3"] i:nth-child(-n+3),.pwmeter[data-s="4"] i{background:var(--ok)}
+.pwmeter[data-s="4"] i{background:var(--gem)}
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .row .sp{flex:1}
 .flairs{display:flex;flex-wrap:wrap;gap:4px}

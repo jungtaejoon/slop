@@ -69,10 +69,6 @@ export function createSupabaseApi(url, key) {
   };
   api.onAuthChange = (f) => listeners.add(f);
   api.refreshMe = async () => { const { data } = await sb.auth.getSession(); await loadMe(data.session); listeners.forEach((f) => f(api.me)); return api.me; };
-  api.signInEmail = async (email) => {
-    check(await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: authReturn() } }));
-    return { sent: true };
-  };
   api.signUpPassword = async (email, password) => {
     const data = check(await sb.auth.signUp({ email, password, options: { emailRedirectTo: authReturn() } }));
     return { needsConfirm: !data.session };
@@ -80,6 +76,9 @@ export function createSupabaseApi(url, key) {
   api.signInPassword = async (email, password) => { check(await sb.auth.signInWithPassword({ email, password })); };
   api.resetPassword = async (email) => { check(await sb.auth.resetPasswordForEmail(email, { redirectTo: authReturn() + '#/settings' })); };
   api.updatePassword = async (password) => { check(await sb.auth.updateUser({ password })); };
+  // re-check the current password before a change (a left-open tab should not be enough)
+  api.verifyPassword = async (password) => { check(await sb.auth.signInWithPassword({ email: api.me.email, password })); };
+  api.signOutOthers = async () => { check(await sb.auth.signOut({ scope: 'others' })); };
   api.signInOAuth = async (provider) => check(await sb.auth.signInWithOAuth({ provider, options: { redirectTo: authReturn() } }));
   api.signOut = async () => { identity = null; api.me = null; api.guest = null; await sb.auth.signOut(); listeners.forEach((f) => f(null)); };
 
