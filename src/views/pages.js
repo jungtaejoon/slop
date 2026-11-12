@@ -40,7 +40,7 @@ export function renderLogin() {
     const box = $('#social'), list = isNativeApp ? [] : (s.social || []);
     if (!box || !list.length) return;
     box.innerHTML = list.map((o) => `<button type="button" class="btn block sbtn sbtn-${o}" data-oauth="${o}">${SOCIAL[o].icon}<span>${SOCIAL[o].name}로 계속하기</span></button>`).join('')
-      + '<div class="ordiv"><span>또는 이메일로</span></div>';
+      + (list.includes('google') ? googleNote() : '') + '<div class="ordiv"><span>또는 이메일로</span></div>';
     box.hidden = false;
     box.querySelectorAll('[data-oauth]').forEach((b) => (b.onclick = async () => {
       b.disabled = true; b.classList.add('busy');
@@ -86,6 +86,15 @@ const SOCIAL = {
   github: { name: 'GitHub', icon: '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 1.5a10.5 10.5 0 0 0-3.32 20.46c.53.1.72-.23.72-.5v-1.8c-2.92.63-3.54-1.4-3.54-1.4-.48-1.22-1.17-1.54-1.17-1.54-.95-.65.08-.64.08-.64 1.05.07 1.6 1.08 1.6 1.08.94 1.6 2.46 1.14 3.06.87.1-.68.37-1.14.66-1.4-2.33-.27-4.78-1.17-4.78-5.18 0-1.15.4-2.08 1.08-2.82-.1-.27-.47-1.34.1-2.79 0 0 .89-.28 2.9 1.08a10 10 0 0 1 5.27 0c2-1.36 2.89-1.08 2.89-1.08.58 1.45.21 2.52.1 2.79.68.74 1.08 1.67 1.08 2.82 0 4.02-2.45 4.9-4.79 5.16.38.33.71.97.71 1.96v2.9c0 .28.19.61.73.5A10.5 10.5 0 0 0 12 1.5z"/></svg>' },
   apple: { name: 'Apple', icon: '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M16.37 12.6c-.02-2.2 1.8-3.26 1.88-3.31a4.05 4.05 0 0 0-3.18-1.72c-1.35-.14-2.64.8-3.33.8-.69 0-1.74-.78-2.87-.76a4.25 4.25 0 0 0-3.6 2.18c-1.54 2.66-.39 6.6 1.1 8.76.74 1.06 1.61 2.24 2.75 2.2 1.1-.04 1.52-.71 2.86-.71 1.33 0 1.71.71 2.88.69 1.19-.02 1.94-1.07 2.66-2.14.84-1.23 1.19-2.42 1.2-2.48-.03-.01-2.3-.88-2.35-3.51zM14.2 6.13c.6-.74 1.02-1.76.9-2.78-.88.04-1.94.59-2.57 1.32-.56.65-1.06 1.7-.93 2.7.98.08 1.98-.5 2.6-1.24z"/></svg>' },
 };
+// Google's sign-in page names our auth server (the Supabase address), not "Slop": say so up front
+function googleNote() {
+  let host = ''; try { host = new URL(import.meta.env.VITE_SUPABASE_URL).host; } catch { /* */ }
+  if (!host) return '';
+  const lock = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path fill="currentColor" d="M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5zm-3 8V7a3 3 0 1 1 6 0v3H9z"/></svg>';
+  return lang === 'ko'
+    ? `<div class="gnote">${lock}<div><p>Google 화면에 이렇게 나와도 괜찮아요.</p><code>${esc(host)}(으)로 이동</code><p>Slop의 로그인을 처리하는 서버 주소예요. 그대로 계속하면 Slop으로 돌아와요.</p></div></div>`
+    : `<div class="gnote">${lock}<div><p>It's fine if Google shows this:</p><code>continue to ${esc(host)}</code><p>That's Slop's sign-in server. Just continue and you'll come right back to Slop.</p></div></div>`;
+}
 const remember = () => { try { localStorage.setItem('slop-had-login', '1'); } catch { /* */ } };
 // rough strength 0-4: length and variety, minus common patterns and the email itself
 const PW_WORDS = ['너무 쉬워요. 더 길게, 흔하지 않게 써 주세요.', '조금 약해요. 숫자나 기호를 섞거나 더 길게 써 보세요.', '괜찮아요.', '좋아요.', '아주 좋아요.'];
