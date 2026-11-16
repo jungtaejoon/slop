@@ -169,6 +169,7 @@ const D = {
   '신고 대기': 'Open reports', '문제없음 (기각)': 'No problem (dismiss)', '처리할 신고가 없어요.': 'No open reports.', '숨긴 항목': 'Hidden items', '없음': 'none',
   '숨긴 항목이 없어요.': 'Nothing hidden.', '제한된 사람이 없어요.': 'Nobody is restricted.', '운영 기록': 'Moderation log', '사용자': 'User', '아직 기록이 없어요.': 'No entries yet.',
   '커뮤니티 운영자는 각 커뮤니티의': 'Community moderators are added in each community’s', '에서 아이디로 추가해요. 사이트 전체 운영자는 관리자가 따로 지정해요.': 'by username. Site-wide moderators are assigned by an admin.',
+  '▲ 보석으로 판정했어요. 직접 해 보고 바꿔도 돼요': 'Voted ▲ gem. Try it yourself; you can change your vote.', '▼ 슬롭으로 판정했어요. 직접 해 보고 바꿔도 돼요': 'Voted ▼ slop. Try it yourself; you can change your vote.',
   // login & settings
   '연결된 로그인:': 'Connected logins:', '이메일·비밀번호': 'Email & password', '비밀번호 정하기': 'Set password',
   '비밀번호는 없어도 돼요. 정해 두면 위 이메일과 비밀번호로도 로그인할 수 있어요.': "You don't need a password. Set one to also log in with the email above.",

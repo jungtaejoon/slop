@@ -15,6 +15,7 @@ import { mkdirSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
 import { toEnglish } from '../src/i18n.js';
 import { createCardRenderer, postCardSvg, communityCardSvg, isKorean } from './og-card.mjs';
 import { LEGAL, EFFECTIVE } from '../src/legal-content.js';
+import { landingPages } from './landing.mjs';
 
 const URL_ = process.env.VITE_SUPABASE_URL, KEY = process.env.VITE_SUPABASE_ANON_KEY;
 const SITE = (process.env.SITE_URL || 'https://slop.ai.kr').replace(/\/?$/, '/');
@@ -93,7 +94,7 @@ const KIND = { en: { text: 'Text', link: 'Link', image: 'Image', html: 'App', co
 const commName = (name, lang) => (lang === 'ko' ? name : toEnglish(name));
 
 // ---------------------------------------------------------------- posts
-let cards = 0;
+let cards = 0; const imageOf = new Map();
 for (const p of posts) {
   const lang = isKorean(p.title) ? 'ko' : 'en', b = bodyOf.get(p.id) || {};
   const cname = commName(p.community_name, lang), url = `${SITE}p/${p.id}/`;
@@ -102,7 +103,7 @@ for (const p of posts) {
     : [`c/${p.community_slug}`, p.tool && `made with ${p.tool}`, `▲ ${p.up_count} gem · ▼ ${p.down_count} slop · ${p.comment_count} comments`];
   const metaLine = meta.filter(Boolean).join(' · ');
   const desc = clip(`${p.excerpt ? clip(p.excerpt, 110) + ' — ' : ''}${metaLine}`, 180);
-  const image = card(`og/p/${p.id}.png`, postCardSvg(p, `c/${p.community_slug} · ${cname}`)); if (image !== OG) cards++;
+  const image = card(`og/p/${p.id}.png`, postCardSvg(p, `c/${p.community_slug} · ${cname}`)); if (image !== OG) { cards++; imageOf.set(p.id, image); }
   const author = p.is_example ? 'Slop' : (p.author_name || p.author_username || '');
   const content = `<article class="article prerender"><div class="content">
 <div class="pmeta"><a class="cat" href="${SITE}c/${esc(p.community_slug)}/">${esc(cname)}</a><span class="pill">${esc(KIND[lang][p.kind] || '')}</span>${p.tool ? `<span class="pill tool">${esc(p.tool)}</span>` : ''}${author ? `<span>${esc(author)}</span>` : ''}</div>
@@ -142,8 +143,14 @@ for (const doc of ['terms', 'privacy']) {
     content: `<article class="legal" data-ugc lang="en"><h1>${d.title}</h1><p class="muted">Effective: ${EFFECTIVE.en}</p>${d.body}</article>` }));
 }
 
+// ---------------------------------------------------------------- collection pages for searchers ("AI-made games to try", "rate AI apps")
+const landings = landingPages({ posts, SITE, supabaseUrl: URL_, supabaseKey: KEY, isKorean, commName,
+  imageOf: (p) => imageOf.get(p.id) || (Array.isArray(p.images) && p.images[0]) || '' });
+for (const l of landings) { mkdirSync(`${OUT}/${l.path}`, { recursive: true }); writeFileSync(`${OUT}/${l.path}index.html`, l.html); }
+const landingLinks = landings.map((l) => `<a href="${l.url}">${esc(l.html.match(/<h1>(.*?)<\/h1>/)[1])}</a>`).join(' · ');
+
 // ---------------------------------------------------------------- home: recent posts as plain links (crawlers find every post page)
-const home = TEMPLATE.replace('<main class="wrap" id="app"></main>', `<main class="wrap" id="app"><h1>Slop</h1><p>Find the gems in AI-made stuff. Try them, vote ▲ gem or ▼ slop, and say why.</p>
+const home = TEMPLATE.replace('<main class="wrap" id="app"></main>', `<main class="wrap" id="app"><h1>Slop</h1><p>Find the gems in AI-made stuff. Try them, vote ▲ gem or ▼ slop, and say why.</p><p>${landingLinks}</p>
 <div class="list">${posts.slice(0, 40).map((p) => `<article class="post prerender"><div style="min-width:0"><a class="ptitle" href="${SITE}p/${p.id}/">${esc(p.title)}</a></div></article>`).join('')}</div></main>`)
   .replace('<!-- page-meta -->', `<!-- page-meta -->\n  <link rel="canonical" href="${SITE}">`);
 writeFileSync(`${OUT}/index.html`, home);
@@ -173,7 +180,7 @@ writeFileSync(`${OUT}/best/index.html`, page({ title: bestTitle, desc: clip(`The
   body: `<p><a href="${SITE}">SLOP.</a> · Find the gems in AI-made stuff</p><h1>${esc(bestTitle)}</h1>
 <p>People tried these and voted ▲ gem / ▼ slop. Updated every 3 hours.</p>
 <ol style="padding-left:22px">${best.map((p) => `<li style="margin:0 0 14px"><a href="${SITE}p/${p.id}/" style="font-weight:700;font-size:17px">${esc(p.title)}</a><br><span style="color:#5d645b;font-size:14px">${esc(commName(p.community_name, isKorean(p.title) ? 'ko' : 'en'))} · ▲ ${p.up_count} · ▼ ${p.down_count} · ${p.comment_count} comments${p.tool ? ' · ' + esc(p.tool) : ''}</span>${p.excerpt ? `<br><span style="font-size:14px">${esc(clip(p.excerpt, 120))}</span>` : ''}</li>`).join('')}</ol>
-<p><a href="${SITE}#/judge">Judge some yourself →</a></p>` }));
+<p><a href="${SITE}#/judge">Judge some yourself →</a></p><p>${landingLinks}</p>` }));
 
 // ---------------------------------------------------------------- RSS, sitemap, robots
 const rssDate = (d) => new Date(d).toUTCString();
@@ -189,10 +196,11 @@ writeFileSync(`${OUT}/sitemap.xml`, `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 <url><loc>${SITE}</loc><changefreq>hourly</changefreq></url>
 <url><loc>${SITE}best/</loc><changefreq>daily</changefreq></url>
+${landings.map((l) => `<url><loc>${l.url}</loc><changefreq>daily</changefreq></url>`).join('\n')}
 <url><loc>${SITE}terms/</loc></url>
 <url><loc>${SITE}privacy/</loc></url>
 ${comms.map((c) => `<url><loc>${SITE}c/${c.slug}/</loc><lastmod>${day(c.created_at)}</lastmod></url>`).join('\n')}
 ${posts.map((p) => `<url><loc>${SITE}p/${p.id}/</loc><lastmod>${day(p.updated_at)}</lastmod></url>`).join('\n')}
 </urlset>`);
 writeFileSync(`${OUT}/robots.txt`, `User-agent: *\nAllow: /\nSitemap: ${SITE}sitemap.xml\n`);
-console.log(`share pages: ${posts.length} posts (${cards} preview images), ${comms.length} communities, best (${best.length}), home links, rss.xml, sitemap.xml`);
+console.log(`share pages: ${posts.length} posts (${cards} preview images), ${comms.length} communities, best (${best.length}), ${landings.length} collection pages (${landings.map((l) => l.path + ':' + l.count).join(', ')}), home links, rss.xml, sitemap.xml`);

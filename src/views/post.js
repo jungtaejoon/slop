@@ -1,4 +1,4 @@
-import { api, S, $, app, KINDS, FLAIRS, voteBox, verdictInner, who, avatarHtml, sandboxFrame, savePrefs, loadMyVotes, canWrite, isMod, isCommunityMod, remember, commLink, requireLogin, toast, errMsg, go } from '../core.js';
+import { api, S, $, app, KINDS, FLAIRS, voteBox, verdictInner, who, avatarHtml, sandboxFrame, savePrefs, loadMyVotes, canWrite, isMod, isCommunityMod, remember, commLink, requireLogin, toast, errMsg, go, vote } from '../core.js';
 import { esc, md, safeUrl, safeImgs, domain, ago, diffHtml } from '../text.js';
 
 export function closePost() { S.d?.unsub?.(); S.d = null; }
@@ -23,9 +23,19 @@ export async function renderPost(v) {
     if (isMod()) api.listCommunities({ limit: 200 }).then((l) => { l.forEach(remember); if (S.d === d) drawArticle(); }).catch(() => {});
     document.title = `${post.title} · Slop`;
     drawArticle(); drawThread(); drawSide();
+    voteFromLink(post.id);
     let t; d.unsub = api.subscribeComments(v.id, () => { clearTimeout(t); t = setTimeout(reloadComments, 400); });
     api.listRemixes(v.id).then((r) => { if (S.d === d) { d.remixes = r; drawSide(); } }).catch(() => {});
   } catch (e) { console.error(e); if (S.d === d) $('#pArticle').innerHTML = '<div class="banner warnb">글을 불러오지 못했어요. 새로고침해 주세요.</div>'; }
+}
+
+// collection pages (/ai-games/ …) link here with ?vote=1 or ?vote=-1: cast that verdict once, then drop it from the address
+async function voteFromLink(id) {
+  const m = location.search.match(/[?&]vote=(-?1)(?:&|$)/); if (!m) return;
+  const q = location.search.replace(/[?&]vote=-?1/, '').replace(/^&/, '?');
+  history.replaceState(history.state, '', location.pathname + (q === '?' ? '' : q) + location.hash);
+  const ok = await vote('p', id, +m[1], { toggle: false });
+  if (ok) { toast(+m[1] === 1 ? '▲ 보석으로 판정했어요. 직접 해 보고 바꿔도 돼요' : '▼ 슬롭으로 판정했어요. 직접 해 보고 바꿔도 돼요'); document.querySelector(`[data-verdict="${id}"]`)?.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
 }
 
 async function reloadComments() {
