@@ -20,7 +20,7 @@ Pages: EN https://slop.ai.kr/p/467f9a5d-f560-47fa-8bc8-6feb41078077/ · KO https
 
 **X (English)**
 
-> Can you tap at exactly 10 seconds with no clock? A tiny browser test: 5/10/30/60 s, and after 3 tries it tells you if your inner clock runs fast or slow. Mine runs late. Gem or slop? https://slop.ai.kr/p/467f9a5d-f560-47fa-8bc8-6feb41078077/
+> Can you tap at exactly 10 seconds with no clock? A tiny browser test: 5/10/30/60 s, and after 3 tries it tells you if your inner clock runs fast or slow. Gem or slop? https://slop.ai.kr/p/467f9a5d-f560-47fa-8bc8-6feb41078077/
 
 **X / Threads (Korean)**
 
