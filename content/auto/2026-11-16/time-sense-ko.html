@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>시간 감각 테스트</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,sans-serif;background:#111827;color:#f3f4f6;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:16px;user-select:none;-webkit-user-select:none}
+h1{font-size:20px;margin:8px 0 4px}p.s{margin:0 0 12px;color:#9ca3af;font-size:14px;text-align:center}
+.seg{display:flex;gap:6px;margin-bottom:12px}.seg button{background:#1f2937;color:#d1d5db;border:1px solid #374151;border-radius:8px;padding:6px 12px;font-size:15px}
+.seg button.on{background:#f59e0b;color:#111;border-color:#f59e0b}
+#pad{width:min(92vw,360px);height:220px;border-radius:20px;background:#1f2937;display:flex;align-items:center;justify-content:center;text-align:center;font-size:22px;padding:16px;cursor:pointer;touch-action:manipulation;transition:background .2s}
+#pad.run{background:#065f46}#pad.res{background:#312e81}
+#st{display:flex;gap:18px;margin:14px 0 6px;font-size:14px;color:#d1d5db}#st b{color:#fbbf24}
+#hist{width:min(92vw,360px);font-size:14px}#hist div{display:flex;justify-content:space-between;padding:4px 2px;border-bottom:1px solid #1f2937}
+.g{color:#34d399}.m{color:#fbbf24}.b{color:#f87171}
+label{font-size:14px;color:#9ca3af;margin-top:8px}
+</style></head><body>
+<h1>시간 감각 테스트</h1><p class="s">누르면 시작, 시간이 다 됐다 싶을 때 다시 누르세요. 시계는 안 보여요.</p>
+<div class="seg" id="seg"><button data-t="5">5초</button><button data-t="10" class="on">10초</button><button data-t="30">30초</button><button data-t="60">60초</button></div>
+<div id="pad">눌러서 시작 (스페이스바도 돼요)</div>
+<label><input type="checkbox" id="peek"> 시계 보기 (연습 모드)</label>
+<div id="st"><span>평균 오차 <b id="avg">-</b></span><span>최고 <b id="best">-</b></span><span>시도 <b id="n">0</b></span></div>
+<div id="hist"></div>
+<script>
+var L={"u": "초", "tap": "눌러서 시작 (스페이스바도 돼요)", "go": "세는 중... #초에 누르세요", "again": "다시 하려면 누르세요", "v": ["메트로놈", "정확", "괜찮음", "흔들림", "시간 미아"], "slow": "몸속 시계가 느려요: 늦게 누르는 편이에요", "fast": "몸속 시계가 빨라요: 일찍 누르는 편이에요", "even": "뚜렷한 쏠림 없음: 빠름과 늦음이 비슷해요"};
+var target=10,t0=0,running=false,raf=0,data={};
+var pad=document.getElementById('pad'),peek=document.getElementById('peek');
+try{data=JSON.parse(localStorage.getItem('tsense')||'{}')}catch(e){}
+function save(){try{localStorage.setItem('tsense',JSON.stringify(data))}catch(e){}}
+function rec(){return data[target]||(data[target]=[])}
+function fmt(x){return (x>=0?'+':'')+x.toFixed(2)+L.u}
+function verdict(p){return p<2?[L.v[0],'g']:p<5?[L.v[1],'g']:p<10?[L.v[2],'m']:p<20?[L.v[3],'m']:[L.v[4],'b']}
+function draw(){
+ var r=rec(),h=document.getElementById('hist');
+ document.getElementById('n').textContent=r.length;
+ if(!r.length){document.getElementById('avg').textContent='-';document.getElementById('best').textContent='-';h.innerHTML='';return}
+ var s=0,b=1e9;r.forEach(function(x){s+=Math.abs(x);b=Math.min(b,Math.abs(x))});
+ document.getElementById('avg').textContent='±'+(s/r.length).toFixed(2)+L.u;
+ document.getElementById('best').textContent='±'+b.toFixed(2)+L.u;
+ var bias=r.reduce(function(a,x){return a+x},0)/r.length,out='';
+ if(r.length>=3)out+='<div><span>'+(bias>0.05*target?L.slow:bias<-0.05*target?L.fast:L.even)+'</span></div>';
+ r.slice(-8).reverse().forEach(function(x){var v=verdict(Math.abs(x)/target*100);out+='<div><span>'+(target+x).toFixed(2)+L.u+'</span><span class="'+v[1]+'">'+fmt(x)+' · '+v[0]+'</span></div>'});
+ h.innerHTML=out;
+}
+function tick(){pad.textContent=((performance.now()-t0)/1000).toFixed(1)+L.u;raf=requestAnimationFrame(tick)}
+function hit(){
+ if(!running){running=true;t0=performance.now();pad.className='run';pad.textContent=L.go.replace('#',target);if(peek.checked)tick();return}
+ var e=(performance.now()-t0)/1000;if(e<0.3)return;running=false;cancelAnimationFrame(raf);
+ var d=e-target,v=verdict(Math.abs(d)/target*100);
+ rec().push(+d.toFixed(3));if(rec().length>50)rec().shift();save();
+ pad.className='res';pad.innerHTML='<div><div style="font-size:40px">'+e.toFixed(2)+L.u+'</div><div class="'+v[1]+'">'+fmt(d)+' · '+v[0]+'</div><div style="font-size:14px;color:#c7d2fe;margin-top:8px">'+L.again+'</div></div>';
+ draw();
+}
+pad.addEventListener('pointerdown',function(e){e.preventDefault();hit()});
+document.addEventListener('keydown',function(e){if(e.code==='Space'){e.preventDefault();hit()}});
+document.getElementById('seg').addEventListener('click',function(e){var t=e.target.getAttribute('data-t');if(!t||running)return;target=+t;
+ [].forEach.call(this.children,function(b){b.className=b===e.target?'on':''});pad.className='';pad.textContent=L.tap;draw()});
+draw();
+</script></body></html>
