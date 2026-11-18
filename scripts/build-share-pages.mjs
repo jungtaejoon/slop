@@ -193,7 +193,7 @@ writeFileSync(`${OUT}/best/index.html`, page({ title: bestTitle, desc: clip(`The
 const rssDate = (d) => new Date(d).toUTCString();
 writeFileSync(`${OUT}/rss.xml`, `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel>
-<title>Slop: new posts</title><link>${SITE}</link><description>Find the gems in AI-made stuff</description>
+<title>Slop(슬롭) 새 글</title><link>${SITE}</link><description>AI가 만든 앱·게임·그림·글을 써 보고 보석인지 슬롭인지 판정하는 커뮤니티 Slop의 새 글. Find the gems in AI-made stuff.</description><language>ko</language><lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
 <atom:link href="${SITE}rss.xml" rel="self" type="application/rss+xml"/>
 ${posts.slice(0, 50).map((p) => `<item><title>${esc(p.title)}</title><link>${SITE}p/${p.id}/</link><guid isPermaLink="true">${SITE}p/${p.id}/</guid><category>${esc(p.community_name)}</category><pubDate>${rssDate(p.created_at)}</pubDate><description>${esc(clip(p.excerpt, 300))}</description></item>`).join('\n')}
 </channel></rss>`);
