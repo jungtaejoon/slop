@@ -150,9 +150,16 @@ for (const l of landings) { mkdirSync(`${OUT}/${l.path}`, { recursive: true }); 
 const landingLinks = landings.map((l) => `<a href="${l.url}">${esc(l.html.match(/<h1>(.*?)<\/h1>/)[1])}</a>`).join(' · ');
 
 // ---------------------------------------------------------------- home: recent posts as plain links (crawlers find every post page)
-const home = TEMPLATE.replace('<main class="wrap" id="app"></main>', `<main class="wrap" id="app"><h1>Slop</h1><p>Find the gems in AI-made stuff. Try them, vote ▲ gem or ▼ slop, and say why.</p><p>${landingLinks}</p>
+const homeLd = { '@context': 'https://schema.org', '@graph': [
+  { '@type': 'WebSite', '@id': `${SITE}#website`, url: SITE, name: 'Slop', alternateName: ['슬롭', 'Slop 슬롭', 'slop.ai.kr'],
+    description: 'AI로 만든 앱·게임·그림·글·코드를 올리고 써 본 뒤 보석인지 슬롭인지 판정하는 커뮤니티. A community that judges AI-made work.',
+    inLanguage: ['ko', 'en'], publisher: { '@id': `${SITE}#org` } },
+  { '@type': 'Organization', '@id': `${SITE}#org`, name: 'Slop', alternateName: '슬롭', url: SITE, logo: `${SITE}icon-512.png`,
+    sameAs: ['https://jungtaejoon.github.io/blog/', 'https://disquiet.io/products/slop'] }] };
+const home = TEMPLATE.replace('<main class="wrap" id="app"></main>', `<main class="wrap" id="app"><h1>Slop(슬롭): AI가 만든 것들 속에서 보석을 캐는 커뮤니티</h1><p lang="ko">AI로 만든 앱·게임·그림·글·코드·프롬프트를 올리고, 페이지에서 바로 써 본 뒤 ▲ 보석인지 ▼ 슬롭인지 투표하고 이유를 남겨요.</p><p>Find the gems in AI-made stuff. Try them, vote ▲ gem or ▼ slop, and say why.</p><p>${landingLinks}</p>
 <div class="list">${posts.slice(0, 40).map((p) => `<article class="post prerender"><div style="min-width:0"><a class="ptitle" href="${SITE}p/${p.id}/">${esc(p.title)}</a></div></article>`).join('')}</div></main>`)
-  .replace('<!-- page-meta -->', `<!-- page-meta -->\n  <link rel="canonical" href="${SITE}">`);
+  .replace('<!-- page-meta -->', `<!-- page-meta -->\n  <link rel="canonical" href="${SITE}">`)
+  .replace('<!-- /page-meta -->', `<script type="application/ld+json">${JSON.stringify(homeLd).replace(/</g, '\\u003c')}</script>\n  <!-- /page-meta -->`);
 writeFileSync(`${OUT}/index.html`, home);
 
 // ---------------------------------------------------------------- weekly best: a plain landing page that is easy to share every week
