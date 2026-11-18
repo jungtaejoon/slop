@@ -33,8 +33,14 @@ jobs:
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
           SITE_URL: ${{ steps.pages.outputs.base_url }}
+      # remember the sitemap that is live now, so IndexNow only reports what this deploy changes
+      - run: curl -sf "${{ steps.pages.outputs.base_url }}/sitemap.xml" -o /tmp/old-sitemap.xml || true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
       - id: deployment
         uses: actions/deploy-pages@v4
+      - name: Tell IndexNow search engines (Bing, Naver…) about new pages
+        run: node scripts/indexnow.mjs /tmp/old-sitemap.xml || true
+        env:
+          SITE_URL: ${{ steps.pages.outputs.base_url }}
