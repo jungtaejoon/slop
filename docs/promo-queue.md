@@ -37,3 +37,8 @@ Pages: EN https://slop.ai.kr/p/77cd0d8b-d488-43e6-82e9-4ddd781d1abc/ · KO https
 **X / Threads (Korean)**
 
 > AI한테 감사 메시지 부탁하면 아무에게나 보내도 되는 글이 나오죠. 이 프롬프트는 AI가 먼저 나를 인터뷰해요. 한 번에 한 질문씩 최대 6개, 그다음 내 말로 초안을 쓰고 모르는 건 [빈칸]으로 남겨요. 사과문·자소서·축사에도. 보석인지 슬롭인지 판정해 주세요 👉 https://slop.ai.kr/p/866c94be-51cb-4977-b4fb-bd70722e7932/
+
+Posted 2026-11-19 (owner approved in chat):
+- X (EN): https://x.com/jungtaejoon/status/2123224915495289108
+- Threads (KO): https://www.threads.com/@jungtaejoon82/post/Df547AHE32YxskPMR9SMzN3Zr6s5rMFh2x5Gs80
+- Note: Threads links typed character by character get cut to `slop.ai` (a different site). Paste the whole text at once so the link and preview card cover `slop.ai.kr`.
