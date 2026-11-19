@@ -32,7 +32,7 @@ Pages: EN https://slop.ai.kr/p/77cd0d8b-d488-43e6-82e9-4ddd781d1abc/ · KO https
 
 **X (English)**
 
-> AI thank-you notes read like they could go to anyone. This prompt makes the AI interview you first: one question at a time, 6 max, then a draft in your own words with [blanks] instead of made-up details. Gem or slop? https://slop.ai.kr/p/77cd0d8b-d488-43e6-82e9-4ddd781d1abc/
+> AI thank-you notes could go to anyone. This prompt makes the AI interview you first: one question at a time, 6 max, then a draft in your own words with [blanks] instead of made-up details. Gem or slop? https://slop.ai.kr/p/77cd0d8b-d488-43e6-82e9-4ddd781d1abc/
 
 **X / Threads (Korean)**
 
