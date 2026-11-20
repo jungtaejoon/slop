@@ -17,11 +17,23 @@ Deno.serve(async (req) => {
   let body: { type?: string; id?: string };
   try { body = await req.json(); } catch { return reply(400, 'bad json'); }
   const { type, id } = body || {};
-  if (!['posts', 'comments'].includes(type || '') || !/^[0-9a-f-]{36}$/.test(id || '')) return reply(400, 'bad request');
+  if (!['posts', 'comments', 'test'].includes(type || '') || !/^[0-9a-f-]{36}$/.test(id || '')) return reply(400, 'bad request');
 
   const user = Deno.env.get('GMAIL_USER'), pass = Deno.env.get('GMAIL_APP_PASSWORD');
   if (!user || !pass) return reply(503, 'mail not configured');
   const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
+
+  // test mail: only with a one-time ticket that someone with database access put in notify_log
+  if (type === 'test') {
+    const { data: t } = await sb.from('notify_log').delete().eq('kind', 'test-pending').eq('id', id!).select();
+    if (!t?.length) return reply(403, 'no test ticket');
+    try {
+      const mail = nodemailer.createTransport({ host: 'smtp.gmail.com', port: 465, secure: true, auth: { user, pass } });
+      await mail.sendMail({ from: `Slop 알림 <${user}>`, to: Deno.env.get('NOTIFY_TO') || user, subject: '[Slop] 알림 테스트',
+        text: `메일 알림이 잘 연결됐어요.\n앞으로 jungtaejoon 외의 사람이 글이나 댓글을 쓰면 이렇게 바로 알려 드려요.\n\n${SITE}` });
+    } catch (e) { console.error('mail failed', e); return reply(502, 'mail failed: ' + (e as Error).message); }
+    return reply(200, 'test sent');
+  }
 
   const sel = type === 'posts' ? 'id,title,body,kind,created_at,author_id,community_id' : 'id,text,post_id,parent_id,created_at,author_id';
   const { data: row } = await sb.from(type!).select(sel).eq('id', id!).maybeSingle();
