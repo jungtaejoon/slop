@@ -42,3 +42,9 @@ Posted 2026-11-19 (owner approved in chat):
 - X (EN): https://x.com/jungtaejoon/status/2123224915495289108
 - Threads (KO): https://www.threads.com/@jungtaejoon82/post/Df547AHE32YxskPMR9SMzN3Zr6s5rMFh2x5Gs80
 - Note: Threads links typed character by character get cut to `slop.ai` (a different site). Paste the whole text at once so the link and preview card cover `slop.ai.kr`.
+
+## 2026-11-20: GeekNews Show GN (site intro)
+
+Posted 2026-11-20 (owner approved in chat): https://news.hada.io/topic?id=37503
+- Link: https://slop.ai.kr/?utm_source=geeknews → check `utm:geeknews` in referrals.
+- Body: the approved draft in docs/promo-blocked.md section 1.
