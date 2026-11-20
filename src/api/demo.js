@@ -47,6 +47,9 @@ export function createDemoApi() {
   api.authSettings = async () => ({ autoConfirm: true, guests: false });
   api.trackView = () => {};
   api.viewStats = async () => [];
+  api.trackReferral = () => {};
+  api.referralStats = async () => [];
+  api.viewStatsSince = async () => [];
   api.deleteAccount = async () => { throw Object.assign(new Error('데모에서는 계정을 지울 수 없어요'), { code: 'demo' }); };
   const prof = (id) => db.profiles[id] || null;
   const isMod = () => ['mod', 'admin'].includes(api.me?.role);

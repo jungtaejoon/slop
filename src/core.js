@@ -102,6 +102,32 @@ export function countView(key) {
   api.trackView?.(key);
 }
 
+// where this visit came from: counted once per browser session (first page only), nothing about the visitor
+const SOURCES = [[/(^|\.)google\./, 'google'], [/(^|\.)naver\.(com|me)$/, 'naver'], [/(^|\.)daum\.net$|(^|\.)kakao\.com$/, 'daum-kakao'],
+  [/(^|\.)bing\.com$/, 'bing'], [/(^|\.)duckduckgo\.com$/, 'duckduckgo'], [/(^|\.)yahoo\./, 'yahoo'], [/^t\.co$|(^|\.)x\.com$|(^|\.)twitter\.com$/, 'x'],
+  [/(^|\.)facebook\.com$|^fb\.me$/, 'facebook'], [/(^|\.)instagram\.com$/, 'instagram'], [/(^|\.)threads\.(net|com)$/, 'threads'],
+  [/(^|\.)youtube\.com$|^youtu\.be$/, 'youtube'], [/(^|\.)reddit\.com$/, 'reddit'], [/(^|\.)linkedin\.com$|^lnkd\.in$/, 'linkedin'],
+  [/(^|\.)chatgpt\.com$|(^|\.)openai\.com$/, 'chatgpt'], [/(^|\.)perplexity\.ai$/, 'perplexity'], [/(^|\.)claude\.ai$/, 'claude'],
+  [/(^|\.)github\.com$/, 'github']];
+export function referralSource(ref, search = '') {
+  const utm = /[?&]utm_source=([^&#]+)/.exec(search);
+  if (utm) return 'utm:' + decodeURIComponent(utm[1]).toLowerCase().replace(/[^a-z0-9._-]/g, '').slice(0, 50) || 'utm';
+  if (!ref) return 'direct';
+  if (/^android-app:/.test(ref)) return 'app';
+  let u; try { u = new URL(ref); } catch { return 'direct'; }
+  const host = u.hostname.toLowerCase().replace(/^(www|m|mobile)\./, '');
+  if (host === location.hostname.replace(/^www\./, '')) return null; // moving around inside Slop
+  if (host === 'jungtaejoon.github.io') return u.pathname.startsWith('/blog') ? 'slop-log' : 'jungtaejoon.github.io';
+  for (const [re, name] of SOURCES) if (re.test(host)) return name;
+  return host.replace(/[^a-z0-9.-]/g, '').slice(0, 60) || 'direct';
+}
+export function countReferral(landing) {
+  if (navigator.webdriver || /bot|crawl|spider|slurp|headless|preview/i.test(navigator.userAgent)) return;
+  try { if (sessionStorage.getItem('slop-ref')) return; sessionStorage.setItem('slop-ref', '1'); } catch { /* count anyway */ }
+  const src = referralSource(document.referrer, location.search);
+  if (src) api.trackReferral?.(src, landing || 'other');
+}
+
 export function requireLogin(msg = '로그인이 필요해요') {
   if (api.me) { if (api.me.banned) { toast('작성이 제한된 계정이에요'); return false; } return true; }
   toast(msg); try { sessionStorage.setItem('slop-after-login', currentHash()); } catch { /* ignore */ }

@@ -2,13 +2,14 @@ import './styles.css';
 import { startTranslator, lang, setLang } from './i18n.js';
 startTranslator();
 { const ls = document.getElementById('langSel'); ls.value = lang; ls.onchange = () => setLang(ls.value); }
-import { api, S, $, icon, isMod, anyCommunityMod, go, currentHash, toAppUrl, countView, BASE_PATH, isStandalone, isNativeApp, openInstall, toggleBlock, vote, toggleSave, toggleFollow, report, share, openShare, avatarHtml, toast, loadMyCommunities } from './core.js';
+import { api, S, $, icon, isMod, anyCommunityMod, go, currentHash, toAppUrl, countView, countReferral, BASE_PATH, isStandalone, isNativeApp, openInstall, toggleBlock, vote, toggleSave, toggleFollow, report, share, openShare, avatarHtml, toast, loadMyCommunities } from './core.js';
 import { esc } from './text.js';
 import { renderFeed } from './views/feed.js';
 import { renderPost, closePost } from './views/post.js';
 import { renderCompose, closeCompose } from './views/compose.js';
 import { renderLogin, renderSettings, renderProfile, renderInbox, renderLegal } from './views/pages.js';
 import { renderMod, modAction } from './views/mod.js';
+import { renderStats } from './views/stats.js';
 import { renderDirectory, renderCommunityForm } from './views/communities.js';
 import { renderJudge } from './views/judge.js';
 import { renderShorts, closeShorts } from './views/shorts.js';
@@ -30,7 +31,7 @@ function parse() {
   if (a === 'translate' && b && ['ko', 'en'].includes(c)) return { name: 'compose', mode: 'translate', id: b, lang: c };
   if (a === 'remix' && b) return { name: 'compose', mode: 'remix', id: b, n: c ? +c : null };
   if (a === 'u' && b) return { name: 'profile', username: b };
-  if (['login', 'settings', 'inbox', 'mod', 'judge'].includes(a)) return { name: a };
+  if (['login', 'settings', 'inbox', 'mod', 'judge', 'stats'].includes(a)) return { name: a };
   if (a === 'terms' || a === 'privacy') return { name: 'legal', doc: a };
   if (a === 'shorts') return { name: 'shorts', id: b || null };
   return { name: 'feed', special: 'home' };
@@ -54,6 +55,7 @@ async function route() {
   if (v.name === 'profile') return renderProfile(v);
   if (v.name === 'inbox') return renderInbox();
   if (v.name === 'mod') return renderMod();
+  if (v.name === 'stats') return renderStats();
   if (v.name === 'communities') return renderDirectory();
   if (v.name === 'judge') return renderJudge();
   if (v.name === 'cform') return renderCommunityForm(v);
@@ -66,6 +68,7 @@ function trackView(v) {
   const key = v.name === 'feed' ? (v.slug ? 'c/' + v.slug : v.special === 'home' ? 'home' : v.special)
     : v.name === 'post' ? 'p/' + v.id : v.name === 'profile' ? 'u/' + v.username
     : v.name === 'legal' ? v.doc : ['judge', 'communities'].includes(v.name) ? v.name : null;
+  countReferral(key || ({ submit: 'submit', login: 'login', shorts: 'shorts' })[v.name] || 'other');
   countView(key);
 }
 
@@ -87,7 +90,7 @@ export function renderAuth() {
     <button class="authbtn" id="meBtn" aria-haspopup="menu" aria-expanded="false" style="border:0;background:none;padding:0;cursor:pointer">${avatarHtml(m, 34).replace('class="av', 'class="me av')}</button>
     <div class="menu" id="meMenu" role="menu" hidden><div class="who-line">${esc(m.name)} · @${esc(m.username)}${m.role !== 'member' ? ` · ${m.role === 'admin' ? '관리자' : '운영자'}` : ''}</div>
       <a href="#/u/${esc(m.username)}" role="menuitem">내 프로필</a><a href="#/saved" role="menuitem">저장함</a><a href="#/settings" role="menuitem">프로필 설정</a>
-      <a href="#/communities/new" role="menuitem">커뮤니티 만들기</a>${anyCommunityMod() ? '<a href="#/mod" role="menuitem">운영</a>' : ''}${isStandalone() ? '' : '<button data-act="install" role="menuitem">앱 설치</button>'}<button id="logout" role="menuitem">로그아웃</button></div>`;
+      <a href="#/communities/new" role="menuitem">커뮤니티 만들기</a>${anyCommunityMod() ? '<a href="#/mod" role="menuitem">운영</a>' : ''}${m.role === 'admin' ? '<a href="#/stats" role="menuitem">유입 모니터링</a>' : ''}${isStandalone() ? '' : '<button data-act="install" role="menuitem">앱 설치</button>'}<button id="logout" role="menuitem">로그아웃</button></div>`;
   const btn = $('#meBtn'), menu = $('#meMenu');
   btn.onclick = (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; btn.setAttribute('aria-expanded', String(!menu.hidden)); };
   $('#logout').onclick = async () => { await api.signOut(); toast('로그아웃했어요'); go('/'); };

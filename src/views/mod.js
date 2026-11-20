@@ -89,7 +89,7 @@ async function drawViewStats() {
   rows.filter((r) => r.day >= weekAgo).forEach((r) => byPath.set(r.path, (byPath.get(r.path) || 0) + r.views));
   const top = [...byPath.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
   const label = (p) => (p.startsWith('p/') ? esc(S.cache.get(p.slice(2))?.title || p) : esc(p));
-  el.innerHTML = `<h2>방문 통계</h2><p class="hint" style="margin:0 0 6px">최근 14일</p>
+  el.innerHTML = `<h2>방문 통계</h2><p class="hint" style="margin:0 0 6px">최근 14일 · <a href="#/stats">유입 모니터링 열기 →</a></p>
     <div class="vstats">${days.map(([d, n]) => `<div class="vrow"><span class="mono">${d.slice(5)}</span><i style="width:${Math.max(4, Math.round((n / max) * 100))}%"></i><b class="mono">${n}</b></div>`).join('')}</div>
     <p class="hint" style="margin:12px 0 6px">이번 주 많이 본 페이지</p>
     <div class="vstats">${top.map(([p, n]) => `<div class="vrow"><a href="#/${esc(p)}" data-ugc>${label(p)}</a><b class="mono">${n}</b></div>`).join('')}</div>`;
