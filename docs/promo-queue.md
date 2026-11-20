@@ -48,3 +48,9 @@ Posted 2026-11-19 (owner approved in chat):
 Posted 2026-11-20 (owner approved in chat): https://news.hada.io/topic?id=37503
 - Link: https://slop.ai.kr/?utm_source=geeknews → check `utm:geeknews` in referrals.
 - Body: the approved draft in docs/promo-blocked.md section 1.
+
+## 2026-11-20: claude-warmup on X (English)
+
+Posted 2026-11-20 (owner approved the shortened text in chat): https://x.com/jungtaejoon/status/2123593021279363123
+- Link: https://slop.ai.kr/p/041cb17b-b075-4052-ab28-6c5f84bcc0ee/?utm_source=x → check `utm:x` in referrals.
+- The first draft was over 280 characters (free account), so it was shortened before posting.
