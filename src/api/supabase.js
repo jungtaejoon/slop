@@ -261,6 +261,7 @@ export function createSupabaseApi(url, key) {
   api.trackView = (path) => { sb.rpc('track_view', { p_path: path }).then(() => {}, () => {}); };
   api.trackReferral = (source, landing) => { sb.rpc('track_referral', { p_source: source, p_landing: landing }).then(() => {}, () => {}); };
   api.referralStats = async (since) => check(await sb.from('referrals').select('day,source,landing,visits').gte('day', since).order('day').limit(20000));
+  api.blogStats = async (since) => check(await sb.from('blog_traffic').select('day,path,source,views,visits').gte('day', since).order('day').limit(20000));
   api.viewStatsSince = async (since) => check(await sb.from('page_views').select('day,path,views').gte('day', since).order('day').limit(20000));
   api.viewStats = async () => check(await sb.from('page_views').select('day,path,views')
     .gte('day', new Date(Date.now() - 13 * 864e5).toISOString().slice(0, 10)).order('day'));
