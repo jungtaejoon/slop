@@ -1,6 +1,6 @@
 // Quick judge mode: one post at a time, ▲ gem / ▼ slop / skip, one tap each.
 // The fastest way for a newcomer to take part, and it keeps the "waiting for a verdict" queue short.
-import { api, S, $, app, KINDS, who, sandboxFrame, loadMyVotes, commLink, remember, vote, followIds } from '../core.js';
+import { api, S, $, app, KINDS, who, sandboxFrame, loadMyVotes, commLink, remember, vote, followIds, kindPill } from '../core.js';
 import { tt } from '../i18n.js';
 import { esc, md, safeUrl, safeImgs, domain } from '../text.js';
 import { getCode } from './feed.js';
@@ -43,7 +43,7 @@ function draw() {
     <div class="row judge-top"><div><h1 style="font-size:24px">판정하기</h1><p class="muted" style="margin:2px 0 0">하나씩 보고 바로 판정해요. 오늘 <b class="mono">${n}</b>개 · 남은 글 <b class="mono">${J.queue.length - J.i}</b>개</p></div><span class="sp"></span>
       <div class="seg" role="group" aria-label="범위">${[['all', '전체'], ['mine', '팔로우한 곳']].map(([k, l]) => `<button data-scope="${k}" aria-pressed="${J.scope === k}"${k === 'mine' && !api.me ? ' disabled' : ''}>${l}</button>`).join('')}</div></div>
     <article class="judge-card">
-      <div class="pmeta">${commLink(p.community)}<span class="pill">${esc(KINDS[p.kind]?.[0] || '')}</span>${p.tool ? `<span class="pill tool">${esc(p.tool)}</span>` : ''}${p.isExample ? '<span class="pill ex">예시</span>' : ''}${who(p.author, p.isExample)}<span class="mono">보석 ${p.up} · 슬롭 ${p.down}</span></div>
+      <div class="pmeta">${kindPill(p.kind)}${commLink(p.community)}${p.tool ? `<span class="pill tool">${esc(p.tool)}</span>` : ''}${p.isExample ? '<span class="pill ex">예시</span>' : ''}${who(p.author, p.isExample)}<span class="mono">보석 ${p.up} · 슬롭 ${p.down}</span></div>
       <h2 class="judge-title"><a href="#/p/${p.id}">${esc(p.title)}</a></h2>
       ${preview}${p.excerpt ? `<div class="md judge-body">${md(p.excerpt)}</div>${p.excerpt.length >= 395 ? `<a class="judge-more" href="#/p/${p.id}">…더 보기</a>` : ''}` : ''}
     </article>

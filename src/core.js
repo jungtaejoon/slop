@@ -8,7 +8,7 @@ import { lang, tt } from './i18n.js';
 const SB_URL = import.meta.env.VITE_SUPABASE_URL, SB_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 export const api = withBlocking(SB_URL && SB_KEY ? createSupabaseApi(SB_URL, SB_KEY) : createDemoApi());
 
-export const KINDS = { text: ['글', '본문 중심'], link: ['링크', '외부 주소'], image: ['이미지', '사진 업로드'], html: ['실행물', 'HTML 바로 실행'], code: ['코드', '복사해서 쓰기'] };
+export const KINDS = { html: ['실행물', '올리면 바로 실행돼요'], image: ['이미지', '그림·사진·디자인'], text: ['글', '글·프롬프트·아이디어'], code: ['코드', '복사해서 쓰는 코드'], link: ['링크', '밖에 있는 결과물'] };
 export const FLAIRS = { opinion: '의견', gem: '가치 발견', improve: '개선 제안', question: '질문', info: '출처·정보' };
 export const TOOLS = ['Claude', 'ChatGPT', 'Gemini', 'Midjourney', 'Stable Diffusion', 'DALL·E', 'Flux', 'Suno', 'Udio', 'Sora', 'Runway', 'Cursor', 'Copilot', 'v0', 'Lovable'];
 export const REPORT_REASONS = ['스팸·광고', '악성 코드·위험한 실행물', '혐오·괴롭힘', '개인정보 노출', '저작권 침해', '잘못된 게시판', '기타'];
@@ -292,7 +292,20 @@ const P = {
   link: '<path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/>',
   code: '<path d="m8 8-5 4 5 4M16 8l5 4-5 4"/>', image: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 17-5-5-9 8"/>',
   flag: '<path d="M5 21V4h11l-1 4 4 0v9H9l1-4H5"/>',
+  app: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="m10 12.5 4 2.5-4 2.5Z" fill="currentColor"/>',
+  upload: '<path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/>',
+  download: '<path d="M12 4v12"/><path d="m7 11 5 5 5-5"/><path d="M4 20h16"/>',
+  copy: '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a1 1 0 0 1 1-1h10"/>',
+  check: '<path d="m5 12 5 5 9-10"/>', x: '<path d="M6 6l12 12M18 6 6 18"/>',
+  shield: '<path d="M12 3 5 6v6c0 4.4 3 7.6 7 9 4-1.4 7-4.6 7-9V6Z"/><path d="m9 12 2 2 4-4"/>',
+  ext: '<path d="M14 4h6v6"/><path d="M20 4 10 14"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
+  left: '<path d="m15 5-7 7 7 7"/>', right: '<path d="m9 5 7 7-7 7"/>',
+  wand: '<path d="m4 20 11-11"/><path d="M17 3v4M15 5h4M20 11v2M19 12h2M9 3v2M8 4h2"/>',
 };
+// each kind of post has its own icon and accent, used on badges, filters and the composer
+export const KIND_ICON = { html: 'app', image: 'image', text: 'text', code: 'code', link: 'link' };
+export const KIND_ORDER = ['html', 'image', 'text', 'code', 'link'];
+export const kindPill = (k) => (KINDS[k] ? `<span class="kpill k-${k}">${icon(KIND_ICON[k])}<span>${KINDS[k][0]}</span></span>` : '');
 export const icon = (n) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n] || ''}</svg>`;
 const GRADS = ['linear-gradient(135deg,#0E9F96,#3B82C4)', 'linear-gradient(135deg,#6D5BD0,#C2418F)', 'linear-gradient(135deg,#E2702A,#D9466F)', 'linear-gradient(135deg,#1F9D55,#0E9F96)',
   'linear-gradient(135deg,#3B5BDB,#6D5BD0)', 'linear-gradient(135deg,#D97706,#E2702A)', 'linear-gradient(135deg,#0F766E,#155E75)', 'linear-gradient(135deg,#BE185D,#7C3AED)'];

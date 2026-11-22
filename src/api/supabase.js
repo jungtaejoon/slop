@@ -91,7 +91,7 @@ export function createSupabaseApi(url, key) {
   api.profileStats = async (id) => check(await sb.rpc('profile_stats', { uid: id }));
 
   // personalized order from recommend_posts(); plain filters (search, tag, tool, author, saved) use "hot" instead
-  const recOk = (o) => o.sort === 'rec' && !o.q && !o.tag && !o.tool && !o.authorId && !['saved', 'gems'].includes(o.special);
+  const recOk = (o) => o.sort === 'rec' && !o.q && !o.tag && !o.tool && !o.kind && !o.authorId && !['saved', 'gems'].includes(o.special);
   async function recommend(o) {
     const limit = o.limit || 30, offset = o.offset || 0;
     if (o.special === 'home' && !o.followIds?.length) return { posts: [], hasMore: false };
@@ -115,6 +115,7 @@ export function createSupabaseApi(url, key) {
     q = q.eq('hidden', false);
     if (o.authorId) q = q.eq('author_id', o.authorId);
     if (o.tool) q = q.eq('tool', o.tool);
+    if (o.kind) q = q.eq('kind', o.kind);
     // content language is inferred from the title: Hangul means Korean
     if (o.clang === 'ko') q = q.filter('title', 'match', '[가-힣]'); else if (o.clang === 'en') q = q.not('title', 'match', '[가-힣]');
     // one card per language group: with every language shown, prefer the edition in the interface language

@@ -1,7 +1,7 @@
-import { api, S, $, app, KINDS, voteBox, who, sandboxFrame, savePrefs, loadMyVotes, canWrite, isCommunityMod, followIds, followedComms, remember, commBySlug, commLink, followBtn, icon, gradFor, cav, isStandalone, seenPosts, REC_SEED, REC_REASONS } from '../core.js';
+import { api, S, $, app, KINDS, voteBox, who, sandboxFrame, savePrefs, loadMyVotes, canWrite, isCommunityMod, followIds, followedComms, remember, commBySlug, commLink, followBtn, icon, gradFor, cav, isStandalone, seenPosts, REC_SEED, REC_REASONS, KIND_ICON, KIND_ORDER, kindPill } from '../core.js';
 import { md } from '../text.js';
 import { t as tr } from '../i18n.js';
-import { esc, safeUrl, safeImgs, domain, ago } from '../text.js';
+import { esc, safeUrl, safeImgs, domain, ago, ytId } from '../text.js';
 
 const PAGE = 30;
 let feedToken = 0;
@@ -43,10 +43,12 @@ export async function renderFeed() {
     ${v.special === 'gems' ? '' : `<div class="sortbar"><div class="seg" role="group" aria-label="정렬">${sorts.map(([k, l]) => `<button data-sort="${k}" aria-pressed="${S.prefs.sort === k}">${l}</button>`).join('')}</div>
       ${S.prefs.sort === 'top' ? `<select class="inline" id="win" aria-label="기간">${[['day', '오늘'], ['week', '이번 주'], ['month', '이번 달'], ['all', '전체 기간']].map(([k, l]) => `<option value="${k}"${S.prefs.win === k ? ' selected' : ''}>${l}</option>`).join('')}</select>` : ''}
       <span class="sp"></span><select class="inline" id="clang" aria-label="콘텐츠 언어">${[['all', '모든 언어'], ['en', 'English'], ['ko', '한국어']].map(([k, l]) => `<option value="${k}"${S.prefs.clang === k ? ' selected' : ''}>${l}</option>`).join('')}</select><div class="seg" role="group" aria-label="보기">${[['card', '카드'], ['compact', '목록']].map(([k, l]) => `<button data-layout="${k}" aria-pressed="${S.prefs.layout === k}">${l}</button>`).join('')}</div></div>`}
+    ${v.special === 'saved' ? '' : `<div class="kindbar" role="group" aria-label="종류">${[['', '전체'], ...KIND_ORDER.map((k) => [k, KINDS[k][0]])].map(([k, l]) => `<button class="kchip${k ? ' k-' + k : ''}" data-kindf="${k}" aria-pressed="${(F.kind || '') === k}">${k ? icon(KIND_ICON[k]) : ''}<span>${l}</span></button>`).join('')}</div>`}
     ${S.q || F.tool || F.tag ? `<div class="filters">${S.q ? `<button class="fchip" data-clear="q">검색: ${esc(S.q)} ✕</button>` : ''}${F.tool ? `<button class="fchip" data-clear="tool">도구: ${esc(F.tool)} ✕</button>` : ''}${F.tag ? `<button class="fchip" data-clear="tag">#${esc(F.tag)} ✕</button>` : ''}</div>` : ''}
     <div id="feedBody"><div class="list">${'<div class="skel"></div>'.repeat(3)}</div></div></div><aside class="side" id="side"></aside></div>`;
   const wo = $('#welcomeOff'); if (wo) wo.onclick = () => { try { localStorage.setItem('slop-welcome-off', '1'); } catch { /* */ } $('#welcome')?.remove(); };
   app.querySelectorAll('[data-sort]').forEach((b) => (b.onclick = () => { S.prefs.sort = b.dataset.sort; savePrefs(); renderFeed(); }));
+  app.querySelectorAll('[data-kindf]').forEach((b) => (b.onclick = () => { S.filters = { ...S.filters, kind: b.dataset.kindf || null }; renderFeed(); }));
   app.querySelectorAll('[data-layout]').forEach((b) => (b.onclick = () => { S.prefs.layout = b.dataset.layout; savePrefs(); drawList(); }));
   app.querySelectorAll('[data-clear]').forEach((b) => (b.onclick = () => { const k = b.dataset.clear; if (k === 'q') { S.q = ''; $('#gq').value = ''; } else S.filters = { ...S.filters, [k]: null }; renderFeed(); }));
   const w = $('#win'); if (w) w.onchange = () => { S.prefs.win = w.value; savePrefs(); renderFeed(); };
@@ -60,7 +62,7 @@ async function loadPage(my) {
   const v = S.view, F = S.filters || {};
   try {
     const special = S.feed.homeFallback ? null : v.special;
-    const r = await api.listPosts({ communityId: v.communityId, special, followIds: followIds(), clang: S.prefs.clang, sort: S.prefs.sort, win: S.prefs.win, q: S.q, tool: F.tool, tag: F.tag, offset: S.feed.posts.length, limit: PAGE, seen: S.feed.seen ??= seenPosts(), seed: REC_SEED });
+    const r = await api.listPosts({ communityId: v.communityId, special, followIds: followIds(), clang: S.prefs.clang, sort: S.prefs.sort, win: S.prefs.win, q: S.q, tool: F.tool, tag: F.tag, kind: F.kind, offset: S.feed.posts.length, limit: PAGE, seen: S.feed.seen ??= seenPosts(), seed: REC_SEED });
     if (my !== feedToken || S.view !== v) return;
     r.posts.forEach((p) => { S.cache.set(p.id, Object.assign(S.cache.get(p.id) || {}, p)); if (p.community) remember(p.community); });
     await loadMyVotes(r.posts.map((p) => p.id));
@@ -75,10 +77,10 @@ function drawList() {
   app.querySelectorAll('[data-layout]').forEach((b) => b.setAttribute('aria-pressed', String(S.prefs.layout === b.dataset.layout)));
   if (f.error && !f.posts.length) { el.innerHTML = `<div class="banner warnb">글을 불러오지 못했어요. 잠시 후 새로고침해 주세요.</div>`; return; }
   if (!f.posts.length) {
-    const otherLangs = S.prefs.clang !== 'all' && !S.q && !S.filters?.tool && !S.filters?.tag && v.special !== 'saved';
+    const otherLangs = S.prefs.clang !== 'all' && !S.q && !S.filters?.tool && !S.filters?.tag && !S.filters?.kind && v.special !== 'saved';
     el.innerHTML = v.special === 'saved' && !api.me ? '<div class="banner">저장함은 로그인해야 쓸 수 있어요. <a class="btn sm" href="#/login">로그인</a></div>'
       : otherLangs ? `<div class="empty"><h2>이 언어로 된 글이 아직 없어요</h2><p class="muted">다른 언어로 된 글이 있을 수 있어요.</p><button class="btn" id="allLangs">모든 언어 보기</button>${canWrite() && v.special !== 'gems' ? ` <a class="btn pri" href="#/submit${v.slug ? '/' + esc(v.slug) : ''}">첫 글 올리기</a>` : ''}</div>`
-      : S.q || S.filters?.tool || S.filters?.tag ? '<div class="banner">조건에 맞는 글이 없어요.</div>'
+      : S.q || S.filters?.tool || S.filters?.tag || S.filters?.kind ? '<div class="banner">조건에 맞는 글이 없어요.</div>'
       : v.special === 'gems' ? '<div class="empty"><h2>아직 보석으로 판정된 글이 없어요</h2><p class="muted">판정하기에서 ▲/▼를 눌러 주세요. 보석 3표 이상, 비율 75% 이상이면 여기에 모여요.</p><a class="btn" href="#/judge">판정하러 가기</a></div>'
       : v.special === 'saved' ? '<div class="banner">저장한 글이 없어요. 글 아래의 "저장"을 누르면 여기에 모여요.</div>'
       : S.prefs.sort === 'contro' ? '<div class="banner">의견이 갈리는 글이 아직 없어요.</div>'
@@ -99,7 +101,7 @@ export function postRow(p) {
   const showExcerpt = !compact && p.excerpt && (p.kind === 'text' || p.kind === 'link' || p.kind === 'code');
   return `<article class="post">${voteBox('p', p.id)}<div style="min-width:0">
     <div class="pmeta">${p.pinned ? '<span class="pill pin">고정</span>' : ''}${p.hidden ? '<span class="pill warn">숨김</span>' : ''}${p.locked ? '<span class="pill">잠김</span>' : ''}
-      ${commLink(p.community)}<span class="pill">${esc(KINDS[p.kind]?.[0] || '')}</span>
+      ${kindPill(p.kind)}${commLink(p.community)}
       ${p.tool ? `<button class="pill tool" data-act="tool" data-v="${esc(p.tool)}">${esc(p.tool)}</button>` : ''}
       <span class="pill gem" data-gembadge="${p.id}"${p.isGem ? '' : ' hidden'}>보석</span>${p.isExample ? '<span class="pill ex">예시</span>' : ''}${fresh && !p.isExample ? '<span class="pill new">NEW</span>' : ''}${S.prefs.sort === 'rec' && ['taste', 'gem', 'popular'].includes(p.recReason) ? `<span class="pill why">${REC_REASONS[p.recReason]}</span>` : ''}${p.remixOf ? '<span class="pill">리믹스</span>' : ''}
       ${who(p.author, p.isExample)}<span>${ago(p.createdAt)}</span>${p.version > 1 ? `<span>수정 v${p.version}</span>` : ''}</div>
@@ -114,8 +116,12 @@ export function postRow(p) {
 function previewHtml(p) {
   if (p.kind === 'image' && safeImgs(p.images).length > 1) return `<a class="prev gallery3" href="#/p/${p.id}">${safeImgs(p.images).slice(0, 3).map((u) => `<img src="${esc(u)}" alt="" loading="lazy">`).join('')}</a>`;
   if (p.kind === 'image' && safeImgs(p.images).length) return `<a class="prev" href="#/p/${p.id}"><img src="${esc(safeImgs(p.images)[0])}" alt="" loading="lazy"></a>`;
-  if (p.kind === 'html') return `<a class="prev frame" href="#/p/${p.id}" data-frame="${p.id}"><span class="ph">미리보기 준비 중…</span><span class="playhint">▶ 눌러서 실행</span></a>`;
-  if (p.kind === 'link' && safeUrl(p.url)) return `<a class="prev linkp" href="${esc(p.url)}" target="_blank" rel="noopener noreferrer"><span class="fav">${icon('link')}</span><span class="d">${esc(domain(p.url))}</span><span class="muted" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.url)}</span><span>↗</span></a>`;
+  if (p.kind === 'html') return `<a class="prev frame" href="#/p/${p.id}" data-frame="${p.id}"><span class="ph">미리보기 준비 중…</span><span class="playhint">${icon('play')}<span>눌러서 실행</span></span></a>`;
+  if (p.kind === 'link' && safeUrl(p.url)) {
+    const yt = ytId(p.url), d = domain(p.url);
+    return `<a class="prev linkp${yt ? ' yt' : ''}" href="${esc(p.url)}" target="_blank" rel="noopener noreferrer">${yt ? `<span class="ytthumb"><img src="https://i.ytimg.com/vi/${yt}/mqdefault.jpg" alt="" loading="lazy" referrerpolicy="no-referrer"><i>${icon('play')}</i></span>` : `<span class="fav" aria-hidden="true">${esc(d.slice(0, 1).toUpperCase())}</span>`}
+      <span class="lmeta"><span class="d">${esc(d)}</span><span class="u">${esc(p.url.replace(/^https?:\/\/(www\.)?/, ''))}</span></span><span class="go">${icon('ext')}</span></a>`;
+  }
   return '';
 }
 // colourful cover for posts that have no image or runnable preview
@@ -123,11 +129,11 @@ function coverHtml(p) {
   const kind = { text: ['text', '글'], code: ['code', '코드'], link: ['link', '링크'] }[p.kind] || ['text', '글'];
   const body = p.kind === 'code' ? (p.codeHead || p.excerpt) : p.excerpt;
   if (!body) return '';
-  return `<a class="cover${p.kind === 'code' ? ' code' : ''}" href="#/p/${p.id}" style="--cv:${gradFor(p.community?.slug || p.id)}"><span class="k">${icon(kind[0])}<span>${kind[1]}</span></span><span class="q" data-ugc>${esc(body.slice(0, 300))}</span></a>`;
+  return `<a class="cover${p.kind === 'code' ? ' code' : ''}" href="#/p/${p.id}" style="--cv:${gradFor(p.community?.slug || p.id)}"><span class="k">${icon(kind[0])}<span>${p.kind === 'code' && p.codeLang ? esc(p.codeLang) : kind[1]}</span></span><span class="q" data-ugc>${esc(body.slice(0, 300))}</span></a>`;
 }
 function thumbHtml(p) {
   if (p.kind === 'image' && safeImgs(p.images).length) return `<a class="thumb" href="#/p/${p.id}"><img src="${esc(safeImgs(p.images)[0])}" alt="" loading="lazy"></a>`;
-  return `<a class="thumb" href="#/p/${p.id}" style="--cv:${gradFor(p.community?.slug || p.id)}">${icon({ text: 'text', link: 'link', html: 'play', code: 'code' }[p.kind] || 'text')}</a>`;
+  return `<a class="thumb" href="#/p/${p.id}" style="--cv:${gradFor(p.community?.slug || p.id)}">${icon(KIND_ICON[p.kind] || 'text')}</a>`;
 }
 
 const codeCache = new Map();

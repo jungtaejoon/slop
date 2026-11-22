@@ -1,5 +1,5 @@
-import { api, S, $, app, KINDS, FLAIRS, voteBox, verdictInner, who, avatarHtml, sandboxFrame, savePrefs, loadMyVotes, canWrite, isMod, isCommunityMod, remember, commLink, requireLogin, toast, errMsg, go, vote } from '../core.js';
-import { esc, md, safeUrl, safeImgs, domain, ago, diffHtml } from '../text.js';
+import { api, S, $, app, KINDS, FLAIRS, voteBox, verdictInner, who, avatarHtml, sandboxFrame, savePrefs, loadMyVotes, canWrite, isMod, isCommunityMod, remember, commLink, requireLogin, toast, errMsg, go, vote, icon, kindPill } from '../core.js';
+import { esc, md, safeUrl, safeImgs, domain, ago, diffHtml, ytId, readMins } from '../text.js';
 
 export function closePost() { S.d?.unsub?.(); S.d = null; }
 
@@ -62,24 +62,28 @@ function drawArticle() {
   const latest = d.versions.length ? d.versions[d.versions.length - 1].n : p.version, old = v.n !== latest, prev = d.versions.find((x) => x.n === v.n - 1);
   const mine = api.me && p.authorId === api.me.id, canMod = isCommunityMod(p.communityId);
   let main = '';
-  if (p.kind === 'link' && safeUrl(v.url)) main += `<a class="linkcard" href="${esc(v.url)}" target="_blank" rel="noopener noreferrer"><span class="d">${esc(domain(v.url))} ↗</span><span>${esc(v.url)}</span></a>`;
+  if (p.kind === 'link' && safeUrl(v.url)) {
+    const yt = ytId(v.url);
+    if (yt) main += `<button type="button" class="ytbox" data-yt="${yt}" aria-label="영상 재생"><img src="https://i.ytimg.com/vi/${yt}/hqdefault.jpg" alt="" referrerpolicy="no-referrer"><i>${icon('play')}</i></button>`;
+    main += `<a class="linkcard" href="${esc(v.url)}" target="_blank" rel="noopener noreferrer"><span class="lc-ic">${icon('ext')}</span><span class="lc-t"><span class="d">${esc(domain(v.url))}</span><span>${esc(v.url)}</span></span></a><p class="trustnote">${icon('ext')}<span>Slop 밖의 사이트예요. 새 탭에서 열려요.</span></p>`;
+  }
   const imgs = safeImgs(v.images);
-  if (p.kind === 'image' && imgs.length) main += `<div class="gallery${imgs.length === 1 ? ' one' : ''}">${imgs.map((u) => `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="" loading="lazy"></a>`).join('')}</div>`;
+  if (p.kind === 'image' && imgs.length) main += `<div class="gallery${imgs.length === 1 ? ' one' : imgs.length === 2 ? ' two' : ''}">${imgs.map((u, i) => `<a href="${esc(u)}" data-lb="${i}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="" loading="lazy"></a>`).join('')}</div>${imgs.length > 1 ? `<p class="trustnote"><span>이미지 ${imgs.length}장 · 눌러서 크게 보기</span></p>` : ''}`;
   if (p.kind === 'html' || p.kind === 'code') {
     const tabs = p.kind === 'html' ? [['run', '실행'], ['code', '코드']] : [['code', '코드']]; if (prev) tabs.push(['diff', `v${prev.n} 대비 변경점`]);
     if (!tabs.some((t) => t[0] === d.tab)) d.tab = tabs[0][0];
     main += `<div class="stage" id="pStage"><div class="stage-bar"><div class="seg">${tabs.map(([k, l]) => `<button data-ptab="${k}" aria-pressed="${d.tab === k}">${l}</button>`).join('')}</div><span class="sp"></span>
-      ${p.codeLang ? `<span class="pill">${esc(p.codeLang)}</span>` : ''}${d.tab === 'run' ? '<button class="btn sm" id="rerun">다시 실행</button><button class="btn sm" id="fs">전체화면</button>' : ''}${d.tab !== 'diff' ? '<button class="btn sm" id="copy">코드 복사</button>' : ''}</div>
-      <div id="stageBody"></div></div>`;
+      ${p.codeLang ? `<span class="pill">${esc(p.codeLang)}</span>` : ''}${d.tab === 'run' ? '<button class="btn sm" id="rerun">다시 실행</button><button class="btn sm" id="fs">전체화면</button>' : ''}${d.tab === 'code' ? `<button class="btn sm" id="wrapBtn" aria-pressed="${!!d.wrap}">줄 바꿈</button><button class="btn sm" id="dl">${icon('download')}<span>내려받기</span></button>` : ''}${d.tab !== 'diff' ? `<button class="btn sm" id="copy">${icon('copy')}<span>코드 복사</span></button>` : ''}</div>
+      <div id="stageBody"></div></div>${p.kind === 'html' ? `<p class="trustnote">${icon('shield')}<span>격리된 창에서 실행돼요. 이 실행물은 내 Slop 계정이나 저장된 정보에 접근할 수 없어요.</span></p>` : ''}`;
   }
   if (v.body) main += `<div class="md">${md(v.body)}</div>`;
   if ((p.kind === 'text' || p.kind === 'link' || p.kind === 'image') && prev && (prev.body || '') !== (v.body || '')) main += `<details class="prompt"><summary>v${prev.n} 대비 본문 변경점</summary>${diffHtml(prev.body || '', v.body || '')}</details>`;
-  if (v.prompt) main += `<details class="prompt"${p.community?.slug === 'prompt' ? ' open' : ''}><summary>사용한 프롬프트</summary><pre>${esc(v.prompt)}</pre></details>`;
-  el.innerHTML = `<article class="article">${voteBox('p', p.id)}<div class="content">
+  if (v.prompt) main += `<details class="prompt"${p.community?.slug === 'prompt' || p.kind === 'image' ? ' open' : ''}><summary>사용한 프롬프트</summary><pre>${esc(v.prompt)}</pre><button type="button" class="btn sm" id="copyPrompt">${icon('copy')}<span>프롬프트 복사</span></button></details>`;
+  el.innerHTML = `<article class="article k-${p.kind}">${voteBox('p', p.id)}<div class="content">
     <div><div class="pmeta">${p.pinned ? '<span class="pill pin">고정</span>' : ''}${p.hidden ? '<span class="pill warn">숨김</span>' : ''}${p.locked ? '<span class="pill">댓글 잠김</span>' : ''}
-      ${commLink(p.community)}<span class="pill">${esc(KINDS[p.kind]?.[0] || '')}</span>
+      ${kindPill(p.kind)}${commLink(p.community)}
       ${p.tool ? `<button class="pill tool" data-act="tool" data-v="${esc(p.tool)}">${esc(p.tool)}</button>` : ''}<span class="pill gem" data-gembadge="${p.id}"${p.isGem ? '' : ' hidden'}>보석</span>${p.isExample ? '<span class="pill ex">예시</span>' : ''}
-      ${who(p.author, p.isExample)}<span>${ago(p.createdAt)}</span>${p.version > 1 ? `<span>· 수정 ${ago(p.updatedAt)}</span>` : ''}${p.views ? `<span>· 조회 ${p.views}</span>` : ''}</div>
+      ${who(p.author, p.isExample)}<span>${ago(p.createdAt)}</span>${p.version > 1 ? `<span>· 수정 ${ago(p.updatedAt)}</span>` : ''}${p.views ? `<span>· 조회 ${p.views}</span>` : ''}${p.kind === 'text' && (v.body || '').length > 400 ? `<span>· 읽는 데 ${readMins(v.body)}분</span>` : ''}</div>
     <h1 lang="${/[가-힣]/.test(v.title || p.title) ? 'ko' : 'en'}">${esc(v.title || p.title)}</h1>
     ${p.remixOf ? `<div class="muted" style="font-size:13px;margin:-4px 0 8px">↳ 리믹스 원본: <a href="#/p/${esc(p.remixOf)}${p.remixOfVersion ? '/v/' + p.remixOfVersion : ''}"><span${p.remixTitle ? ' data-ugc' : ''}>${esc(p.remixTitle || '원본 글')}</span>${p.remixOfVersion ? ` v${p.remixOfVersion}` : ''}</a></div>` : ''}
     ${p.hidden ? `<div class="banner warnb" style="margin:0 0 8px">운영자가 숨긴 글이에요${p.hiddenReason ? ` (사유: ${esc(p.hiddenReason)})` : ''}. 작성자와 운영자에게만 보여요.</div>` : ''}
@@ -101,14 +105,19 @@ function drawArticle() {
   const sb = $('#stageBody');
   if (sb) {
     if (d.tab === 'run') mountRunner(sb, v.code || '');
-    else if (d.tab === 'code') sb.innerHTML = `<pre class="code">${esc(v.code || '')}</pre>`;
+    else if (d.tab === 'code') sb.innerHTML = codeView(v.code || '', d.wrap);
     else sb.innerHTML = diffHtml(prev.code || '', v.code || '');
     el.querySelectorAll('[data-ptab]').forEach((b) => (b.onclick = () => { d.tab = b.dataset.ptab; drawArticle(); }));
     // restarting only swaps the frame, so fullscreen stays on
     const rr = $('#rerun'); if (rr) rr.onclick = () => { mountRunner(sb, v.code || ''); if (isFull($('#pStage'))) focusRunner($('#pStage')); };
     const fs = $('#fs'); if (fs) bindFullscreen($('#pStage'), fs);
+    const wb = $('#wrapBtn'); if (wb) wb.onclick = () => { d.wrap = !d.wrap; drawArticle(); };
+    const dl = $('#dl'); if (dl) dl.onclick = () => downloadCode(p, v);
     const cp = $('#copy'); if (cp) cp.onclick = () => navigator.clipboard?.writeText(v.code || '').then(() => toast('코드를 복사했어요'), () => toast('복사하지 못했어요. 코드 탭에서 직접 선택해 주세요'));
   }
+  const cpp = $('#copyPrompt'); if (cpp) cpp.onclick = () => navigator.clipboard?.writeText(v.prompt || '').then(() => toast('프롬프트를 복사했어요'), () => toast('복사하지 못했어요'));
+  el.querySelectorAll('[data-lb]').forEach((a) => (a.onclick = (e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); openLightbox(imgs, +a.dataset.lb); }));
+  const yb = el.querySelector('.ytbox'); if (yb) yb.onclick = () => { const f = document.createElement('iframe'); f.className = 'ytframe'; f.src = `https://www.youtube-nocookie.com/embed/${yb.dataset.yt}?autoplay=1`; f.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen'; f.allowFullscreen = true; f.title = 'YouTube'; f.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin'); yb.replaceWith(f); };
   const del = $('#delPost');
   if (del) del.onclick = async () => {
     if (!d.delArm) { d.delArm = true; drawArticle(); return; }
@@ -116,6 +125,30 @@ function drawArticle() {
     try { await api.deletePost(p.id); if (canMod && !mine) await api.log('delete', 'post', p.id, p.title, '', p.communityId); S.cache.delete(p.id); toast('삭제했어요'); go(p.community ? '/c/' + p.community.slug : '/'); }
     catch (e) { toast(errMsg(e, '삭제하지 못했어요')); del.disabled = false; }
   };
+}
+
+// code with line numbers; numbers are hidden while wrapping, where they would no longer line up
+function codeView(code, wrap) {
+  const n = code.split('\n').length;
+  return `<div class="codeview${wrap ? ' wrap' : ''}"><pre class="gut" aria-hidden="true">${Array.from({ length: n }, (_, i) => i + 1).join('\n')}</pre><pre class="code">${esc(code)}</pre></div>`;
+}
+const EXT = { python: 'py', py: 'py', javascript: 'js', js: 'js', typescript: 'ts', ts: 'ts', bash: 'sh', sh: 'sh', shell: 'sh', html: 'html', css: 'css', json: 'json', sql: 'sql', lua: 'lua', go: 'go', rust: 'rs', java: 'java', c: 'c', cpp: 'cpp', ruby: 'rb', php: 'php', swift: 'swift', kotlin: 'kt', markdown: 'md', yaml: 'yml' };
+function downloadCode(p, v) {
+  const ext = p.kind === 'html' ? 'html' : EXT[(p.codeLang || '').toLowerCase()] || 'txt';
+  const name = ((v.title || p.title || 'slop').toLowerCase().replace(/[^a-z0-9가-힣]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'slop') + '.' + ext;
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([v.code || ''], { type: 'text/plain;charset=utf-8' })); a.download = name;
+  document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+// in-page image viewer: arrows or swipe-free buttons to move, Esc or the backdrop to close
+function openLightbox(imgs, start) {
+  let i = start; const back = document.activeElement, box = document.createElement('div');
+  box.className = 'lightbox'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-modal', 'true'); box.setAttribute('aria-label', '이미지 크게 보기');
+  const draw = () => { box.innerHTML = `<button class="lb-x" data-lbact="close" aria-label="닫기">${icon('x')}</button>${imgs.length > 1 ? `<button class="lb-nav prev" data-lbact="prev" aria-label="이전 이미지">${icon('left')}</button><button class="lb-nav next" data-lbact="next" aria-label="다음 이미지">${icon('right')}</button><span class="lb-count mono">${i + 1} / ${imgs.length}</span>` : ''}<img src="${esc(imgs[i])}" alt=""><a class="lb-open" href="${esc(imgs[i])}" target="_blank" rel="noopener">${icon('ext')}<span>원본 열기</span></a>`; box.querySelector('.lb-x').focus(); };
+  const close = () => { box.remove(); document.removeEventListener('keydown', key, true); back?.focus?.(); };
+  const move = (n) => { i = (i + n + imgs.length) % imgs.length; draw(); };
+  const key = (e) => { if (e.key === 'Escape') { e.stopPropagation(); close(); } else if (e.key === 'ArrowLeft') move(-1); else if (e.key === 'ArrowRight') move(1); };
+  box.onclick = (e) => { const a = e.target.closest('[data-lbact]')?.dataset.lbact; if (a === 'prev') move(-1); else if (a === 'next') move(1); else if (a === 'close' || e.target === box) close(); };
+  document.addEventListener('keydown', key, true); document.body.append(box); draw();
 }
 
 function modBar(p) {

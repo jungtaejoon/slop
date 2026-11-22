@@ -10,6 +10,11 @@ const BASE = new URL(document.baseURI).pathname.replace(/[^/]*$/, '');
 export const safeImgs = (a) => (a || []).map(safeImg).filter(Boolean).map((u) => (/^https?:/i.test(u) ? u : BASE + u));
 export const domain = (u) => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return ''; } };
 
+// YouTube video id from a watch / short / youtu.be link, or ''
+export const ytId = (u) => { try { const x = new URL(u), h = x.hostname.replace(/^(www|m)\./, ''); const id = h === 'youtu.be' ? x.pathname.slice(1) : h === 'youtube.com' ? (x.searchParams.get('v') || (x.pathname.match(/^\/(?:shorts|embed|live)\/([^/?]+)/) || [])[1] || '') : ''; return /^[A-Za-z0-9_-]{6,15}$/.test(id) ? id : ''; } catch { return ''; } };
+// rough reading time in minutes: Korean about 500 characters a minute, other text about 220 words
+export const readMins = (s) => { const t = String(s || ''), ko = (t.match(/[가-힣]/g) || []).length, words = (t.replace(/[가-힣]/g, ' ').match(/\S+/g) || []).length; return Math.max(1, Math.round(ko / 500 + words / 220)); };
+
 export function md(src) {
   const blocks = []; let s = String(src || '').replace(/\r/g, '');
   s = s.replace(/```[^\n]*\n([\s\S]*?)```/g, (m, c) => { blocks.push(`<pre class="code">${esc(c.replace(/\n$/, ''))}</pre>`); return `\n\u0000${blocks.length - 1}\u0000\n`; });
