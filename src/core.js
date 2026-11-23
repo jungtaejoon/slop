@@ -151,6 +151,24 @@ export function sandboxFrame(code, title = '실행물') {
   f.title = title; f.srcdoc = code; return f;
 }
 
+/* ---------- what you get back for a verdict: how everyone else judged it ---------- */
+const dayKey = () => 'slop-judged-' + new Date().toISOString().slice(0, 10);
+export const judgeStats = () => { try { return { n: +localStorage.getItem(dayKey()) || 0, agree: +localStorage.getItem(dayKey() + '-a') || 0, known: +localStorage.getItem(dayKey() + '-k') || 0 }; } catch { return { n: 0, agree: 0, known: 0 }; } };
+// counts today's verdict; up0 / down0 are the others' votes before mine
+export function recordVerdict(d, up0, down0) {
+  const s = judgeStats(), tot = up0 + down0, same = d > 0 ? up0 : down0;
+  try { localStorage.setItem(dayKey(), s.n + 1); if (tot) { localStorage.setItem(dayKey() + '-k', s.known + 1); if (same * 2 >= tot) localStorage.setItem(dayKey() + '-a', s.agree + 1); } } catch { /* */ }
+}
+export function revealHtml(d, up0, down0) {
+  const tot = up0 + down0, same = d > 0 ? up0 : down0, pct = tot ? Math.round((same / tot) * 100) : 0, g = tot ? Math.round((up0 / tot) * 100) : 50;
+  const mine = d > 0 ? '<b class="rv-g">▲ 보석</b>' : '<b class="rv-s">▼ 슬롭</b>';
+  if (!tot) return `<div class="reveal"><p class="rv-h"><span>내 판정:</span> ${mine}</p><p class="rv-t">첫 판정이에요. 다른 사람의 판정이 모이면 비교해 볼 수 있어요.</p></div>`;
+  return `<div class="reveal"><p class="rv-h"><span>내 판정:</span> ${mine}</p>
+    <div class="rv-bar" aria-hidden="true"><i style="width:${g}%"></i></div>
+    <p class="rv-n"><span class="rv-g">보석 ${up0}</span><span class="rv-s">슬롭 ${down0}</span></p>
+    <p class="rv-t">${pct >= 50 ? `다른 사람 ${tot}명 중 ${pct}%가 나와 같은 판정이에요.` : `다른 사람 ${tot}명 중 ${pct}%만 나와 같아요. 소수 의견이에요.`}</p></div>`;
+}
+
 /* ---------- dialog ---------- */
 export function openDialog({ title, desc, reasons, submit, onSubmit, noteLabel = '자세한 내용 (선택)', noNote = false }) {
   const d = $('#dlg'), f = $('#dlgForm'), back = document.activeElement;

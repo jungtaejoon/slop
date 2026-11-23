@@ -1,6 +1,6 @@
-import { api, S, $, app, KINDS, voteBox, who, sandboxFrame, savePrefs, loadMyVotes, canWrite, isCommunityMod, followIds, followedComms, remember, commBySlug, commLink, followBtn, icon, gradFor, cav, isStandalone, seenPosts, REC_SEED, REC_REASONS, KIND_ICON, KIND_ORDER, kindPill } from '../core.js';
+import { api, S, $, app, KINDS, voteBox, who, sandboxFrame, savePrefs, loadMyVotes, canWrite, isCommunityMod, followIds, followedComms, remember, commBySlug, commLink, followBtn, icon, gradFor, cav, isStandalone, seenPosts, REC_SEED, REC_REASONS, KIND_ICON, KIND_ORDER, kindPill, vote, recordVerdict, revealHtml } from '../core.js';
 import { md } from '../text.js';
-import { t as tr } from '../i18n.js';
+import { t as tr, tt } from '../i18n.js';
 import { esc, safeUrl, safeImgs, domain, ago, ytId } from '../text.js';
 
 const PAGE = 30;
@@ -33,9 +33,7 @@ export async function renderFeed() {
       <ol class="steps"><li><b>둘러보고 써 봐요.</b> 실행물은 그 자리에서 바로 돌아가요.</li><li><b>▲보석 / ▼슬롭으로 판정해요.</b> 이유를 댓글로 남기면 더 좋아요.</li><li><b>내가 만든 것도 올려요.</b> 판정과 의견을 받아 다음 버전으로 키워요.</li></ol>
       <div class="row"><a class="btn pri" href="#/shorts">넘겨보며 구경하기</a><a class="btn" href="#/judge">지금 하나 판정해 보기</a></div>
       <div class="wlinks"><a href="#/login">가입하기</a><a href="#/communities">커뮤니티 둘러보기</a>${!isStandalone() && matchMedia('(pointer:coarse)').matches ? '<button class="linkbtn" data-act="install">앱으로 받기</button>' : ''}</div></div>
-      <div class="wart" aria-hidden="true"><div class="wc back"><i class="sh"></i><i class="ln"></i><i class="ln s"></i></div>
-        <div class="wc front"><div class="wtop"><i class="cv"></i><i class="ln"></i></div><div class="wshot"><i></i><i></i><i></i><i></i></div><i class="ln"></i><i class="ln s"></i>
-        <div class="wvote"><span class="g">▲ 128</span><span class="bar"><i></i></span><span class="s">▼ 14</span></div></div><span class="wgem">◆</span></div></section>` : '';
+      <div class="wpick" id="wPick"><div class="skel" style="height:300px"></div></div></section>` : '';
   app.innerHTML = `${welcome}<div class="layout"><div style="min-width:0">
     <div class="fhead"><div class="chead">${c ? cav(c, true) : ''}<div><h1>${esc(title)}</h1><p${c ? ' class="mono"' : ''}>${esc(sub)}</p>${c?.description ? `<p>${esc(c.description)}</p>` : ''}</div></div>
       <div class="row">${c ? followBtn(c) : ''}${v.special === 'gems' ? '<button class="btn" data-act="sharebest">이번 주 보석 공유</button>' : ''}${v.special !== 'saved' ? `<a class="btn${c ? '' : ' pri'}" href="#/submit${c ? '/' + esc(c.slug) : ''}">글쓰기</a>` : ''}</div></div>
@@ -46,6 +44,7 @@ export async function renderFeed() {
     ${v.special === 'saved' ? '' : `<div class="kindbar" role="group" aria-label="종류">${[['', '전체'], ...KIND_ORDER.map((k) => [k, KINDS[k][0]])].map(([k, l]) => `<button class="kchip${k ? ' k-' + k : ''}" data-kindf="${k}" aria-pressed="${(F.kind || '') === k}">${k ? icon(KIND_ICON[k]) : ''}<span>${l}</span></button>`).join('')}</div>`}
     ${S.q || F.tool || F.tag ? `<div class="filters">${S.q ? `<button class="fchip" data-clear="q">검색: ${esc(S.q)} ✕</button>` : ''}${F.tool ? `<button class="fchip" data-clear="tool">도구: ${esc(F.tool)} ✕</button>` : ''}${F.tag ? `<button class="fchip" data-clear="tag">#${esc(F.tag)} ✕</button>` : ''}</div>` : ''}
     <div id="feedBody"><div class="list">${'<div class="skel"></div>'.repeat(3)}</div></div></div><aside class="side" id="side"></aside></div>`;
+  if (welcome) todaysPick(my);
   const wo = $('#welcomeOff'); if (wo) wo.onclick = () => { try { localStorage.setItem('slop-welcome-off', '1'); } catch { /* */ } $('#welcome')?.remove(); };
   app.querySelectorAll('[data-sort]').forEach((b) => (b.onclick = () => { S.prefs.sort = b.dataset.sort; savePrefs(); renderFeed(); }));
   app.querySelectorAll('[data-kindf]').forEach((b) => (b.onclick = () => { S.filters = { ...S.filters, kind: b.dataset.kindf || null }; renderFeed(); }));
@@ -56,6 +55,30 @@ export async function renderFeed() {
   renderSide(c);
   S.feed = { posts: [], hasMore: false, loading: true, homeFallback };
   await loadPage(my);
+}
+
+// First screen for a visitor: one app to try right there and judge, a different one each day.
+async function todaysPick(my) {
+  const el = () => (my === feedToken ? $('#wPick') : null);
+  let list = [];
+  try { list = (await api.listPosts({ sort: 'top', win: 'all', kind: 'html', clang: S.prefs.clang, limit: 7 })).posts; } catch { /* no pick */ }
+  if (!list.length) { el()?.remove(); return; }
+  const p0 = list[Math.floor(Date.now() / 864e5) % list.length];
+  S.cache.set(p0.id, Object.assign(S.cache.get(p0.id) || {}, p0)); const p = S.cache.get(p0.id);
+  await loadMyVotes([p.id]);
+  const box = el(); if (!box) return;
+  const mine = S.votes.p[p.id] || 0;
+  box.innerHTML = `<div class="wp-head"><span class="eyebrow">오늘의 한 판</span><a href="#/p/${p.id}" class="wp-title" data-ugc>${esc(p.title)}</a></div>
+    <div class="runner wp-run" id="wpRun"><span class="ph">불러오는 중…</span></div>
+    <div id="wpOut">${mine ? `<p class="wp-done">이미 판정한 글이에요. <a href="#/judge">다른 글 판정하기 →</a></p>` : `<p class="wp-hint" id="wpHint">직접 해 보고 판정해 주세요. 가입은 필요 없어요.</p>
+      <div class="wp-act"><button class="jbtn s" data-wp="-1" disabled>▼ 슬롭이다</button><button class="jbtn g" data-wp="1" disabled>▲ 보석이다</button></div>`}</div>`;
+  getCode(p.id).then((code) => { const r = my === feedToken && $('#wpRun'); if (!r) return; r.replaceChildren(sandboxFrame(code || `<p>${tt('실행할 코드가 없어요')}</p>`, p.title)); setTimeout(() => box.querySelectorAll('[data-wp]').forEach((b) => (b.disabled = false)), 3000); });
+  box.querySelectorAll('[data-wp]').forEach((b) => (b.onclick = async () => {
+    const d = +b.dataset.wp, up0 = p.up, down0 = p.down; box.querySelectorAll('[data-wp]').forEach((x) => (x.disabled = true));
+    if (!(await vote('p', p.id, d, { toggle: false }))) { box.querySelectorAll('[data-wp]').forEach((x) => (x.disabled = false)); return; }
+    recordVerdict(d, up0, down0);
+    $('#wpOut').innerHTML = `${revealHtml(d, up0, down0)}<div class="wp-act"><a class="btn" href="#/p/${p.id}">이유 남기기</a><a class="btn pri" href="#/judge">하나 더 판정하기 →</a></div>`;
+  }));
 }
 
 async function loadPage(my) {

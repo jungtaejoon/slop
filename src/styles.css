@@ -907,3 +907,35 @@ footer .wrap{align-items:flex-start;padding-block:26px 30px;gap:18px 40px}
 .foot-cols h3{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:2px}
 .foot-cols a,.foot-cols button{color:var(--muted);text-decoration:none;font-size:13px;background:none;border:0;padding:0;text-align:left;cursor:pointer}
 .foot-cols a:hover,.foot-cols button:hover{color:var(--ink);text-decoration:underline}
+
+/* ================= 2026-11-23: a verdict gets an answer; the first screen has something to try ================= */
+.reveal{border:1px solid var(--line);background:var(--surface);border-radius:16px;padding:16px 18px;margin:12px 0;animation:rv .28s ease-out}
+@keyframes rv{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.reveal{animation:none}}
+.reveal p{margin:0}
+.rv-h{font-size:15px;display:flex;gap:8px;align-items:baseline}.rv-h span{color:var(--muted);font-size:13px}
+.rv-g{color:var(--gem-ink)}.rv-s{color:var(--slop)}
+.rv-bar{height:10px;border-radius:999px;background:var(--slop);overflow:hidden;margin:12px 0 6px}
+.rv-bar i{display:block;height:100%;background:var(--gem);border-right:2px solid var(--surface)}
+.rv-n{display:flex;justify-content:space-between;font-size:12.5px;font-weight:700;font-variant-numeric:tabular-nums}
+.rv-t{margin-top:10px!important;font-size:14.5px;color:var(--ink)}
+.jlock{margin:0 0 8px;text-align:center;font-size:13px;color:var(--muted)}
+.jstat{margin:2px 0 0;font-size:12.5px}
+.jbtn{text-decoration:none;color:var(--ink)}
+.jbtn.n{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.jbtn.n small{color:inherit;opacity:.7}
+.wpick{min-width:0;display:flex;flex-direction:column;gap:10px;background:var(--surface);border:1px solid var(--line-strong);border-radius:18px;padding:14px;box-shadow:var(--shadow-md)}
+.wp-head{display:flex;flex-direction:column;gap:2px;min-width:0}
+.welcome .wp-head .eyebrow{margin-bottom:2px}
+.wp-title{font-weight:700;font-size:15.5px;line-height:1.35;text-decoration:none;color:var(--ink);overflow-wrap:anywhere}
+.wp-title:hover{text-decoration:underline}
+.wp-run{height:300px;border-radius:12px;overflow:hidden;border:1px solid var(--line)}
+.wp-run .ph{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-size:12px}
+.welcome .wp-hint,.welcome .wp-done{margin:0;font-size:13px;max-width:none}
+.wp-act{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.wp-act .jbtn{padding:11px 8px;font-size:15px;box-shadow:none}
+.welcome .wp-act .btn{justify-content:center;padding:10px 12px;font-size:14px}
+.wpick .reveal{margin:0 0 10px;padding:12px 14px;border-radius:12px;background:var(--bg)}
+.welcome .reveal p{max-width:none;font-size:14px;margin:0}
+.welcome .reveal .rv-n{font-size:12.5px}
+@media (max-width:900px){.wp-run{height:340px}}

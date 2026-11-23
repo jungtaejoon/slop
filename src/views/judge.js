@@ -1,14 +1,12 @@
 // Quick judge mode: one post at a time, ▲ gem / ▼ slop / skip, one tap each.
 // The fastest way for a newcomer to take part, and it keeps the "waiting for a verdict" queue short.
-import { api, S, $, app, KINDS, who, sandboxFrame, loadMyVotes, commLink, remember, vote, followIds, kindPill } from '../core.js';
+import { api, S, $, app, KINDS, who, sandboxFrame, loadMyVotes, commLink, remember, vote, followIds, kindPill, judgeStats, recordVerdict, revealHtml } from '../core.js';
 import { tt } from '../i18n.js';
 import { esc, md, safeUrl, safeImgs, domain } from '../text.js';
 import { getCode } from './feed.js';
 
 let J = null;
-const todayKey = () => 'slop-judged-' + new Date().toISOString().slice(0, 10);
-const judgedToday = () => { try { return +localStorage.getItem(todayKey()) || 0; } catch { return 0; } };
-const bump = () => { try { localStorage.setItem(todayKey(), judgedToday() + 1); } catch { /* */ } };
+const TRY_MS = 3000; // apps: look before you judge
 
 export async function renderJudge() {
   const my = (J = { queue: [], i: 0, scope: J?.scope || 'all', token: Symbol() });
@@ -28,9 +26,9 @@ export async function renderJudge() {
 }
 
 function draw() {
-  const p = J.queue[J.i], n = judgedToday();
+  const p = J.queue[J.i], st = judgeStats(), n = st.n; J.reveal = null; clearInterval(J.lockT);
   if (!p) {
-    app.innerHTML = `<div class="judge"><div class="empty" style="text-align:center"><h2>판정할 글을 다 봤어요 🎉</h2><p class="muted">오늘 ${n}개를 판정했어요. 새 글이 올라오면 다시 와 주세요.</p>
+    app.innerHTML = `<div class="judge"><div class="empty" style="text-align:center"><h2>판정할 글을 다 봤어요 🎉</h2><p class="muted">오늘 ${n}개를 판정했어요. 새 글이 올라오면 다시 와 주세요.</p>${st.known ? `<p class="muted">다른 사람과 같은 판정 ${st.agree}번 · 다른 판정 ${st.known - st.agree}번</p>` : ''}
       <div class="row" style="justify-content:center"><a class="btn pri" href="#/gems">보석함 보기</a><a class="btn" href="#/submit">내가 만든 것 올리기</a></div></div></div>`;
     return;
   }
@@ -40,45 +38,60 @@ function draw() {
   else if (p.kind === 'link' && safeUrl(p.url)) preview = `<a class="linkcard" href="${esc(p.url)}" target="_blank" rel="noopener noreferrer"><span class="d">${esc(domain(p.url))} ↗</span><span>${esc(p.url)}</span></a>`;
   else if (p.kind === 'code' && p.codeHead) preview = `<pre class="code">${esc(p.codeHead)}</pre>`;
   app.innerHTML = `<div class="judge">
-    <div class="row judge-top"><div><h1 style="font-size:24px">판정하기</h1><p class="muted" style="margin:2px 0 0">하나씩 보고 바로 판정해요. 오늘 <b class="mono">${n}</b>개 · 남은 글 <b class="mono">${J.queue.length - J.i}</b>개</p></div><span class="sp"></span>
+    <div class="row judge-top"><div><h1 style="font-size:24px">판정하기</h1><p class="muted" style="margin:2px 0 0">하나씩 보고 바로 판정해요. 오늘 <b class="mono">${n}</b>개 · 남은 글 <b class="mono">${J.queue.length - J.i}</b>개</p>${st.known ? `<p class="muted jstat">다른 사람과 같은 판정 ${st.agree}번 · 다른 판정 ${st.known - st.agree}번</p>` : ''}</div><span class="sp"></span>
       <div class="seg" role="group" aria-label="범위">${[['all', '전체'], ['mine', '팔로우한 곳']].map(([k, l]) => `<button data-scope="${k}" aria-pressed="${J.scope === k}"${k === 'mine' && !api.me ? ' disabled' : ''}>${l}</button>`).join('')}</div></div>
     <article class="judge-card">
-      <div class="pmeta">${kindPill(p.kind)}${commLink(p.community)}${p.tool ? `<span class="pill tool">${esc(p.tool)}</span>` : ''}${p.isExample ? '<span class="pill ex">예시</span>' : ''}${who(p.author, p.isExample)}<span class="mono">보석 ${p.up} · 슬롭 ${p.down}</span></div>
+      <div class="pmeta">${kindPill(p.kind)}${commLink(p.community)}${p.tool ? `<span class="pill tool">${esc(p.tool)}</span>` : ''}${p.isExample ? '<span class="pill ex">예시</span>' : ''}${who(p.author, p.isExample)}</div>
       <h2 class="judge-title"><a href="#/p/${p.id}">${esc(p.title)}</a></h2>
       ${preview}${p.excerpt ? `<div class="md judge-body">${md(p.excerpt)}</div>${p.excerpt.length >= 395 ? `<a class="judge-more" href="#/p/${p.id}">…더 보기</a>` : ''}` : ''}
     </article>
-    <div class="judge-actions">
+    <div id="jReveal"></div>
+    <p class="jlock" id="jLock" hidden></p>
+    <div class="judge-actions" id="jActions">
       <button class="jbtn s" data-j="-1" title="슬롭 (←)">▼ 슬롭이다<small>←</small></button>
       <button class="jbtn k" data-j="0" title="건너뛰기 (↓)">모르겠어요<small>↓</small></button>
       <button class="jbtn g" data-j="1" title="보석 (→)">▲ 보석이다<small>→</small></button>
     </div>
   </div>`;
   if (p.kind === 'html') getCode(p.id).then((code) => { const el = $('#jRun'); if (el && J.queue[J.i] === p) el.replaceChildren(sandboxFrame(code || `<p>${tt('실행할 코드가 없어요')}</p>`, p.title)); });
+  // apps: the verdict buttons wake up after a moment with the thing itself
+  if (p.kind === 'html') {
+    const until = Date.now() + TRY_MS, lock = $('#jLock'), btns = () => app.querySelectorAll('[data-j="1"],[data-j="-1"]');
+    J.lockUntil = until; btns().forEach((b) => (b.disabled = true)); lock.hidden = false;
+    const tick = () => { const left = Math.ceil((until - Date.now()) / 1000); if (left <= 0 || J.queue[J.i] !== p) { clearInterval(J.lockT); if (J.queue[J.i] === p && !J.reveal) { btns().forEach((b) => (b.disabled = false)); lock.hidden = true; } return; } lock.textContent = tt('먼저 직접 해 보세요. 판정 버튼이 곧 켜져요') + ` (${left})`; };
+    tick(); J.lockT = setInterval(tick, 250);
+  } else J.lockUntil = 0;
   app.querySelectorAll('[data-scope]').forEach((b) => (b.onclick = () => { J.scope = b.dataset.scope; renderJudge(); }));
   app.querySelectorAll('[data-j]').forEach((b) => (b.onclick = () => judge(+b.dataset.j)));
 }
 
-// Judging is meant to be quick: a verdict moves straight on to the next post while the
-// vote saves in the background (a failed save shows its own toast). Reasons are left
-// on the post page, where the full comment thread is.
+// A verdict is answered right away with how everyone else judged the same post; the vote
+// saves in the background (a failed save shows its own toast). Reasons are left on the
+// post page, where the full comment thread is.
 async function judge(d) {
   const p = J.queue[J.i]; if (!p || J.busy) return;
+  if (J.reveal) return next();
   if (d === 0) return next();
+  if (J.lockUntil > Date.now()) return;
+  const up0 = p.up, down0 = p.down;
   // the very first vote may need a guest sign-in; wait for that one so it isn't lost
   if (!api.uid()) {
     J.busy = true; app.querySelectorAll('[data-j]').forEach((b) => (b.disabled = true));
     const saved = await vote('p', p.id, d, { toggle: false });
     J.busy = false;
     if (!saved) { app.querySelectorAll('[data-j]').forEach((b) => (b.disabled = false)); return; }
-    bump(); return next();
-  }
-  bump(); next();
-  vote('p', p.id, d, { toggle: false });
+  } else vote('p', p.id, d, { toggle: false });
+  recordVerdict(d, up0, down0); J.reveal = d;
+  $('#jReveal').innerHTML = revealHtml(d, up0, down0);
+  $('#jActions').innerHTML = `<a class="jbtn k" href="#/p/${p.id}">이유 남기기<small>글로 가기</small></a><span></span><button class="jbtn n" id="jNext">다음 글<small>→</small></button>`;
+  $('#jNext').onclick = next; $('#jNext').focus({ preventScroll: true });
+  $('#jReveal').scrollIntoView({ block: 'center', behavior: 'smooth' });
 }
 function next() { J.i++; draw(); window.scrollTo(0, 0); }
 
 document.addEventListener('keydown', (e) => {
   if (S.view.name !== 'judge' || !J || /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName) || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (J.reveal && e.key === 'Enter') return; // the focused "next" button handles it
   const k = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: 0 }[e.key];
   if (k === undefined) return;
   e.preventDefault(); judge(k);

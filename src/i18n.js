@@ -16,6 +16,11 @@ export function setLang(l) { try { localStorage.setItem(KEY, l); } catch { /* */
 
 /* exact text-node translations (Korean → English) */
 const D = {
+  // 2026-11-23: verdict reveal, today's pick
+  '내 판정:': 'Your verdict:', '▲ 보석': '▲ Gem', '▼ 슬롭': '▼ Slop', '첫 판정이에요. 다른 사람의 판정이 모이면 비교해 볼 수 있어요.': 'You are the first to judge this. Once others weigh in you can compare.',
+  '먼저 직접 해 보세요. 판정 버튼이 곧 켜져요': 'Try it first. The verdict buttons turn on in a moment',
+  '이유 남기기': 'Say why', '글로 가기': 'open the post', '다음 글': 'Next', '오늘의 한 판': "Today's pick", '직접 해 보고 판정해 주세요. 가입은 필요 없어요.': 'Try it, then judge. No sign-up needed.',
+  '이미 판정한 글이에요.': 'You already judged this one.', '다른 글 판정하기 →': 'Judge another →', '하나 더 판정하기 →': 'Judge one more →',
   // 2026-11-22: kinds, composer by kind, post views
   '올리면 바로 실행돼요': 'Runs right in the post', '그림·사진·디자인': 'Art, photos, design', '글·프롬프트·아이디어': 'Writing, prompts, ideas', '복사해서 쓰는 코드': 'Code to copy and use', '밖에 있는 결과물': 'Something hosted elsewhere',
   '전체': 'All', '종류': 'Kind', '눌러서 실행': 'Click to run', '영상 재생': 'Play video',
@@ -307,6 +312,11 @@ const D = {
 /* dynamic text nodes: [regex, replacement] (replacement may be a function) */
 const tr = (s) => D[s] ?? s;
 const R = [
+  [/^보석 (\d+)$/, 'Gem $1'], [/^슬롭 (\d+)$/, 'Slop $1'],
+  [/^다른 사람 (\d+)명 중 (\d+)%가 나와 같은 판정이에요\.$/, '$2% of the $1 others judged it the same way.'],
+  [/^다른 사람 (\d+)명 중 (\d+)%만 나와 같아요\. 소수 의견이에요\.$/, 'Only $2% of the $1 others agree with you. You are in the minority.'],
+  [/^다른 사람과 같은 판정 (\d+)번 · 다른 판정 (\d+)번$/, 'With the majority $1 times · against it $2 times'],
+  [/^먼저 직접 해 보세요\. 판정 버튼이 곧 켜져요 \((\d+)\)$/, 'Try it first. The verdict buttons turn on in a moment ($1)'],
   [/^이미지 (\d+)장 · 눌러서 크게 보기$/, '$1 images · click to enlarge'], [/^· 읽는 데 (\d+)분$/, '· $1 min read'], [/^([\d,]+)자$/, '$1 chars'],
   [/^([\d,]+)줄 · ([\d.]+) KB \/ 400 KB$/, '$1 lines · $2 KB / 400 KB'],
   [/^사람들은 AI 결과물을 쉽게 "슬롭"이라고 부르지만, 그 안에도 쓸모 있고 재미있는 게 숨어 있어요\. 여기서 같이 캐내요\.$/, 'People are quick to call AI output "slop", but useful and fun things hide in there too. Dig them up with us.'],
