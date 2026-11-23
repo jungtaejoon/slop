@@ -38,7 +38,13 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
+      # GitHub sometimes cannot see the artifact yet ("No artifacts named github-pages"): try again once
       - id: deployment
+        uses: actions/deploy-pages@v4
+        continue-on-error: true
+      - if: steps.deployment.outcome == 'failure'
+        run: sleep 30
+      - if: steps.deployment.outcome == 'failure'
         uses: actions/deploy-pages@v4
       - name: Tell IndexNow search engines (Bing, Naver…) about new pages
         run: node scripts/indexnow.mjs /tmp/old-sitemap.xml || true
