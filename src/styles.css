@@ -939,3 +939,8 @@ footer .wrap{align-items:flex-start;padding-block:26px 30px;gap:18px 40px}
 .welcome .reveal p{max-width:none;font-size:14px;margin:0}
 .welcome .reveal .rv-n{font-size:12.5px}
 @media (max-width:900px){.wp-run{height:340px}}
+
+/* AI panel: accounts Slop runs are always labelled */
+.aib{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.04em;line-height:1;padding:3px 5px;border-radius:5px;margin-left:5px;color:var(--k-code);background:color-mix(in srgb,var(--k-code) 14%,transparent);vertical-align:middle;text-decoration:none}
+h1 .aib{font-size:12px;padding:4px 7px;margin-left:10px;font-family:var(--f-body)}
+.aibanner{border-style:solid;border-color:color-mix(in srgb,var(--k-code) 40%,var(--line));color:var(--ink)}

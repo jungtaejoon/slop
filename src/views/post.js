@@ -1,4 +1,4 @@
-import { api, S, $, app, KINDS, FLAIRS, voteBox, verdictInner, who, avatarHtml, sandboxFrame, savePrefs, loadMyVotes, canWrite, isMod, isCommunityMod, remember, commLink, requireLogin, toast, errMsg, go, vote, icon, kindPill } from '../core.js';
+import { api, S, $, app, KINDS, FLAIRS, voteBox, verdictInner, who, avatarHtml, sandboxFrame, savePrefs, loadMyVotes, canWrite, isMod, isCommunityMod, remember, commLink, requireLogin, toast, errMsg, go, vote, icon, kindPill, aiBadge } from '../core.js';
 import { esc, md, safeUrl, safeImgs, domain, ago, diffHtml, ytId, readMins } from '../text.js';
 
 export function closePost() { S.d?.unsub?.(); S.d = null; }
@@ -224,7 +224,7 @@ function drawThread() {
     const low = !c.deleted && sc <= -4 && !d.expanded.has(c.id), col = d.collapsed.has(c.id) || low;
     if (col) return `<button class="collapsed" data-expand="${c.id}">[+] ${c.deleted ? '삭제된 댓글' : low ? `점수가 낮아 접힌 댓글 (${sc}점)` : '접힌 댓글'} · 답글 ${count(c.id)}개</button>`;
     return `<div class="cmt${c.flair === 'gem' && !c.deleted ? ' gemc' : ''}" id="c-${c.id}"><button class="rail" data-collapse="${c.id}" title="접기" aria-label="이 스레드 접기"><i></i></button><div style="min-width:0">
-      <div class="ch">${c.blocked ? '<span>차단한 사용자</span>' : c.deleted ? '<span>삭제됨</span>' : `${c.author ? `<a class="who nm" href="#/u/${esc(c.author.username)}">${avatarHtml(c.author, 22)}<span>${esc(c.author.name)}</span></a>` : '<span>탈퇴한 사용자</span>'}${c.authorId && c.authorId === p.authorId ? '<span class="pill">작성자</span>' : ''}
+      <div class="ch">${c.blocked ? '<span>차단한 사용자</span>' : c.deleted ? '<span>삭제됨</span>' : `${c.author ? `<a class="who nm" href="#/u/${esc(c.author.username)}">${avatarHtml(c.author, 22)}<span>${esc(c.author.name)}</span>${aiBadge(c.author)}</a>` : '<span>탈퇴한 사용자</span>'}${c.authorId && c.authorId === p.authorId ? '<span class="pill">작성자</span>' : ''}
         ${c.flair !== 'opinion' ? `<span class="flair ${esc(c.flair)}">${esc(FLAIRS[c.flair] || '')}</span>` : ''}`}<span class="pill">v${c.version}</span>${c.hidden ? '<span class="pill warn">숨김</span>' : ''}${c.resolvedIn ? `<a class="pill gem" href="#/p/${p.id}/v/${c.resolvedIn}" style="text-decoration:none">v${c.resolvedIn}에서 반영</a>` : ''}<span>${ago(c.createdAt)}</span>${c.editedAt ? '<span>· 수정됨</span>' : ''}</div>
       ${d.editing === c.id ? box('edit:' + c.id, '') : (c.blocked ? '<div class="muted">[차단한 사용자의 댓글]</div>' : c.deleted ? '<div class="muted">[삭제된 댓글]</div>' : `<div class="ctext">${esc(c.text)}</div>`)}
       ${c.deleted || c.blocked ? '' : `<div class="cact">${voteBox('c', c.id, true)}${canWrite() && !p.locked && depth < 8 ? `<button class="linkbtn" data-reply="${c.id}">답글</button>` : ''}

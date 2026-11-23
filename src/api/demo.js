@@ -47,6 +47,7 @@ export function createDemoApi() {
   api.authSettings = async () => ({ autoConfirm: true, guests: false });
   api.trackView = () => {};
   api.viewStats = async () => [];
+  api.aiAccounts = async () => [];
   api.trackReferral = () => {};
   api.referralStats = async () => [];
   api.viewStatsSince = async () => [];

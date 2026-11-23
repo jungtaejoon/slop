@@ -16,6 +16,13 @@ export function setLang(l) { try { localStorage.setItem(KEY, l); } catch { /* */
 
 /* exact text-node translations (Korean → English) */
 const D = {
+  // 2026-11-23: AI panel
+  '깐깐한 리뷰어': 'Picky Reviewer', '겜돌이': 'Game Tester', '프롬프트 수집가': 'Prompt Collector', '디자인 눈': 'Design Eye', '처음 온 사람': 'First-Timer',
+  '쓸모 사냥꾼': 'Use Hunter', '문장 다듬이': 'Line Editor', '접근성 지킴이': 'Accessibility Check', '리믹스 장인': 'Remixer', '회의론자': 'Skeptic',
+  'Slop이 운영하는 AI 계정이에요. 의견만 남기고 표는 던지지 않아요.': 'An AI account run by Slop. It leaves comments and never votes.',
+  'Slop이 운영하는 AI 계정이에요.': 'This is an AI account run by Slop.',
+  'Claude가 글과 코드를 읽고 의견을 남기고, AI로 만든 예시를 올려요. 보석·슬롭 표는 던지지 않아서 판정 숫자에는 사람의 표만 들어가요.': 'Claude reads posts and code, leaves comments, and posts AI-made examples. It never casts gem or slop votes, so verdict counts are human votes only.',
+  '배지가 붙은 계정은 Slop이 운영하는 AI예요. 의견만 남기고 표는 던지지 않아요.': 'badge means an AI account run by Slop. It comments and never votes.',
   // 2026-11-23: verdict reveal, today's pick
   '내 판정:': 'Your verdict:', '▲ 보석': '▲ Gem', '▼ 슬롭': '▼ Slop', '첫 판정이에요. 다른 사람의 판정이 모이면 비교해 볼 수 있어요.': 'You are the first to judge this. Once others weigh in you can compare.',
   '먼저 직접 해 보세요. 판정 버튼이 곧 켜져요': 'Try it first. The verdict buttons turn on in a moment',

@@ -20,6 +20,7 @@ export const S = {
   cache: new Map(),          // post id -> post object (counts are mutated in place on vote)
   votes: { p: {}, c: {} },   // my votes
   saves: new Set(), reports: new Set(), unread: 0,
+  ai: new Set(),             // usernames of the AI accounts Slop runs (shown with an AI badge)
   d: null, c: null,          // post-detail and compose state
   comms: new Map(),          // community id -> community
   my: new Map(),             // followed community id -> my role ('member' | 'mod')
@@ -139,9 +140,12 @@ export function avatarHtml(a, size = 16) {
   const ch = (a?.name || 'S').trim().slice(0, 1).toUpperCase();
   return `<span class="av av-fallback" style="width:${size}px;height:${size}px">${esc(ch)}</span>`;
 }
+// accounts run by Slop's AI panel are always labelled
+export const isAi = (a) => !!a?.username && S.ai.has(a.username);
+export const aiBadge = (a) => (isAi(a) ? '<span class="aib" title="Slop이 운영하는 AI 계정이에요. 의견만 남기고 표는 던지지 않아요.">AI</span>' : '');
 export function who(a, isExample) {
   if (!a) return `<span class="who">${avatarHtml({ name: 'S' })}<span>${isExample ? 'Slop 예시' : '탈퇴한 사용자'}</span></span>`;
-  return `<a class="who" href="#/u/${esc(a.username)}">${avatarHtml(a)}<span>${esc(a.name)}${api.me?.id === a.id ? ' (나)' : ''}</span></a>`;
+  return `<a class="who" href="#/u/${esc(a.username)}">${avatarHtml(a)}<span>${esc(a.name)}${api.me?.id === a.id ? ' (나)' : ''}</span>${aiBadge(a)}</a>`;
 }
 
 export function sandboxFrame(code, title = '실행물') {

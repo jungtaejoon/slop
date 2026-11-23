@@ -87,6 +87,7 @@ export function createSupabaseApi(url, key) {
     check(await sb.from('profiles').update({ username, display_name: displayName, bio }).eq('id', api.me.id));
     return api.refreshMe();
   };
+  api.aiAccounts = async () => check(await sb.from('profiles').select('username').eq('is_ai', true)).map((r) => r.username);
   api.getProfileByUsername = async (u) => shape.profile(check(await sb.from('profiles').select('*').eq('username', u).maybeSingle()));
   api.profileStats = async (id) => check(await sb.rpc('profile_stats', { uid: id }));
 

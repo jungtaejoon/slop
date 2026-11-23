@@ -175,7 +175,8 @@ async function boot() {
 }
 async function afterAuth() {
   renderAuth();
-  const [saves, reports] = await Promise.all([api.mySaves().catch(() => new Set()), api.myReports().catch(() => new Set()), loadMyCommunities(), api.loadBlocks()]);
+  const [saves, reports, , , ai] = await Promise.all([api.mySaves().catch(() => new Set()), api.myReports().catch(() => new Set()), loadMyCommunities(), api.loadBlocks(), S.ai.size ? [...S.ai] : api.aiAccounts().catch(() => [])]);
+  S.ai = new Set(ai);
   window.dispatchEvent(new Event('slop:follows')); // redraws the nav and any "내 커뮤니티" list
   S.saves = saves; S.reports = reports;
   await refreshUnread();

@@ -209,7 +209,7 @@ async function renderSide(c) {
         <a class="btn gem block" href="#/judge" style="margin-bottom:8px">판정하기: 한 장씩 넘기며 판정</a>
       ${canWrite() ? '<div class="row"><a class="btn pri sm" href="#/submit">글쓰기</a><a class="btn sm" href="#/communities/new">커뮤니티 만들기</a></div>' : !api.me ? '<a class="btn block" href="#/login">로그인하고 참여하기</a>' : ''}</section>`)
     + `<section class="panel"><h2>판정 기준</h2><ul><li><b style="color:var(--gem)">▲ 보석</b>: 쓸모 있거나, 재미있거나, 영감을 줘요.</li><li><b style="color:var(--slop)">▼ 슬롭</b>: 시간이 아까웠어요.</li>
-      <li>"가치 발견" 댓글로 어디가 좋은지 짚어 주면 다른 사람이 찾는 데 큰 도움이 돼요.</li><li>AI가 만들었다는 이유만으로 내리지 말아 주세요.</li><li>스팸, 악성 코드, 괴롭힘, 개인정보 노출은 "신고"해 주세요.</li></ul></section>
+      <li>"가치 발견" 댓글로 어디가 좋은지 짚어 주면 다른 사람이 찾는 데 큰 도움이 돼요.</li><li>AI가 만들었다는 이유만으로 내리지 말아 주세요.</li><li><span class="aib">AI</span> 배지가 붙은 계정은 Slop이 운영하는 AI예요. 의견만 남기고 표는 던지지 않아요.</li><li>스팸, 악성 코드, 괴롭힘, 개인정보 노출은 "신고"해 주세요.</li></ul></section>
     ${st?.tools?.length ? `<section class="panel"><h2>만든 도구</h2><div class="chips">${st.tools.map((t) => `<button class="chip" data-act="tool" data-v="${esc(t.name)}" aria-pressed="${F.tool === t.name}">${esc(t.name)}<span class="mono">${t.n}</span></button>`).join('')}</div></section>` : ''}
     ${st?.tags?.length ? `<section class="panel"><h2>많이 쓰인 태그</h2><div class="chips">${st.tags.map((t) => `<button class="chip" data-act="tag" data-v="${esc(t.name)}" aria-pressed="${F.tag === t.name}">#${esc(t.name)}<span class="mono">${t.n}</span></button>`).join('')}</div></section>` : ''}
     ${!c ? '<section class="panel" id="discover"></section>' : ''}`;
