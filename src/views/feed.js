@@ -141,8 +141,8 @@ function previewHtml(p) {
   if (p.kind === 'image' && safeImgs(p.images).length) return `<a class="prev" href="#/p/${p.id}"><img src="${esc(safeImgs(p.images)[0])}" alt="" loading="lazy"></a>`;
   if (p.kind === 'html') return `<a class="prev frame" href="#/p/${p.id}" data-frame="${p.id}"><span class="ph">미리보기 준비 중…</span><span class="playhint">${icon('play')}<span>눌러서 실행</span></span></a>`;
   if (p.kind === 'link' && safeUrl(p.url)) {
-    const yt = ytId(p.url), d = domain(p.url);
-    return `<a class="prev linkp${yt ? ' yt' : ''}" href="${esc(p.url)}" target="_blank" rel="noopener noreferrer">${yt ? `<span class="ytthumb"><img src="https://i.ytimg.com/vi/${yt}/mqdefault.jpg" alt="" loading="lazy" referrerpolicy="no-referrer"><i>${icon('play')}</i></span>` : `<span class="fav" aria-hidden="true">${esc(d.slice(0, 1).toUpperCase())}</span>`}
+    const yt = ytId(p.url), d = domain(p.url), shot = !yt && safeImgs(p.images)[0];
+    return `${shot ? `<a class="prev" href="#/p/${p.id}"><img src="${esc(shot)}" alt="" loading="lazy"></a>` : ''}<a class="prev linkp${yt ? ' yt' : ''}" href="${esc(p.url)}" target="_blank" rel="noopener noreferrer">${yt ? `<span class="ytthumb"><img src="https://i.ytimg.com/vi/${yt}/mqdefault.jpg" alt="" loading="lazy" referrerpolicy="no-referrer"><i>${icon('play')}</i></span>` : `<span class="fav" aria-hidden="true">${esc(d.slice(0, 1).toUpperCase())}</span>`}
       <span class="lmeta"><span class="d">${esc(d)}</span><span class="u">${esc(p.url.replace(/^https?:\/\/(www\.)?/, ''))}</span></span><span class="go">${icon('ext')}</span></a>`;
   }
   return '';
@@ -155,7 +155,7 @@ function coverHtml(p) {
   return `<a class="cover${p.kind === 'code' ? ' code' : ''}" href="#/p/${p.id}" style="--cv:${gradFor(p.community?.slug || p.id)}"><span class="k">${icon(kind[0])}<span>${p.kind === 'code' && p.codeLang ? esc(p.codeLang) : kind[1]}</span></span><span class="q" data-ugc>${esc(body.slice(0, 300))}</span></a>`;
 }
 function thumbHtml(p) {
-  if (p.kind === 'image' && safeImgs(p.images).length) return `<a class="thumb" href="#/p/${p.id}"><img src="${esc(safeImgs(p.images)[0])}" alt="" loading="lazy"></a>`;
+  if ((p.kind === 'image' || p.kind === 'link') && safeImgs(p.images).length) return `<a class="thumb" href="#/p/${p.id}"><img src="${esc(safeImgs(p.images)[0])}" alt="" loading="lazy"></a>`;
   return `<a class="thumb" href="#/p/${p.id}" style="--cv:${gradFor(p.community?.slug || p.id)}">${icon(KIND_ICON[p.kind] || 'text')}</a>`;
 }
 

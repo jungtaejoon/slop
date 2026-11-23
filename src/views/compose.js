@@ -62,7 +62,7 @@ export async function renderCompose(v) {
       <p class="khelp" id="kHelp"></p></section>
     <section class="cstep"><h2><b>2</b><span id="mainLabel">내용</span></h2>
       <div class="field" data-for="link"><label for="fUrl" class="sr">링크 주소</label><input type="url" id="fUrl" inputmode="url" value="${esc(f.url)}" placeholder="https://"><div id="linkPrev"></div></div>
-      <div class="field" data-for="image"><div class="drop" id="drop" tabindex="0" role="button">${icon('upload')}<span id="dropText">${DROP_TEXT}</span></div><input type="file" id="fFile" accept="image/png,image/jpeg,image/gif,image/webp" multiple hidden><div class="upl" id="upl"></div></div>
+      <div class="field" data-for="image link"><span class="flabel" data-for="link">스크린샷 (선택)</span><div class="drop" id="drop" tabindex="0" role="button">${icon('upload')}<span id="dropText">${DROP_TEXT}</span></div><input type="file" id="fFile" accept="image/png,image/jpeg,image/gif,image/webp" multiple hidden><div class="upl" id="upl"></div></div>
       <div class="field" data-for="html code"><label for="fCode" class="sr" id="codeLabel">코드</label>
         <div class="codebar"><button type="button" class="btn sm" id="loadFile">${icon('upload')}<span>파일에서 불러오기</span></button><input type="file" id="fCodeFile" hidden><input type="text" id="fLang" data-for="code" maxlength="20" value="${esc(f.codeLang)}" placeholder="언어 (예: python)" aria-label="언어"><span class="sp"></span><span class="hint mono" id="codeSize"></span></div>
         <textarea id="fCode" class="codeed" spellcheck="false">${esc(f.code)}</textarea>
@@ -189,7 +189,7 @@ function bind(v, f) {
   fi.onchange = () => { addFiles(fi.files); fi.value = ''; };
   drop.ondragover = (e) => { e.preventDefault(); drop.classList.add('over'); }; drop.ondragleave = () => drop.classList.remove('over');
   drop.ondrop = (e) => { e.preventDefault(); drop.classList.remove('over'); addFiles(e.dataTransfer.files); };
-  $('#cmp').addEventListener('paste', (e) => { const fs = [...(e.clipboardData?.files || [])]; if (fs.length && st.kind === 'image') { e.preventDefault(); addFiles(fs); } });
+  $('#cmp').addEventListener('paste', (e) => { const fs = [...(e.clipboardData?.files || [])]; if (fs.length && (st.kind === 'image' || st.kind === 'link')) { e.preventDefault(); addFiles(fs); } });
   drawUpl();
   const ai = $('#aiGo'); if (ai) ai.onclick = () => suggest(ai);
   $('#cmp').onsubmit = (e) => { e.preventDefault(); submit(v); };
@@ -199,7 +199,7 @@ function readForm() {
   const kind = S.c.kind, code = $('#fCode').value, hasCode = kind === 'html' || kind === 'code';
   return { communityId: $('#fCat').value, kind, title: $('#fTitle').value.trim(), body: $('#fBody').value.trim(), url: kind === 'link' ? $('#fUrl').value.trim() : '',
     code: hasCode ? code : '', codeLang: kind === 'code' ? $('#fLang').value.trim() : '', codeHead: kind === 'code' ? code.split('\n').slice(0, 8).join('\n').slice(0, 600) : '',
-    tool: $('#fTool').value.trim(), prompt: $('#fPrompt').value.trim(), images: kind === 'image' ? [...S.c.images] : [],
+    tool: $('#fTool').value.trim(), prompt: $('#fPrompt').value.trim(), images: kind === 'image' || kind === 'link' ? [...S.c.images] : [],
     tags: [...new Set($('#fTags').value.split(',').map((t) => t.trim().toLowerCase().replace(/^#/, '')).filter(Boolean))].slice(0, 5).map((t) => t.slice(0, 24)) };
 }
 let draftT;

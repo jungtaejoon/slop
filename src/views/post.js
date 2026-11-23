@@ -68,7 +68,7 @@ function drawArticle() {
     main += `<a class="linkcard" href="${esc(v.url)}" target="_blank" rel="noopener noreferrer"><span class="lc-ic">${icon('ext')}</span><span class="lc-t"><span class="d">${esc(domain(v.url))}</span><span>${esc(v.url)}</span></span></a><p class="trustnote">${icon('ext')}<span>Slop 밖의 사이트예요. 새 탭에서 열려요.</span></p>`;
   }
   const imgs = safeImgs(v.images);
-  if (p.kind === 'image' && imgs.length) main += `<div class="gallery${imgs.length === 1 ? ' one' : imgs.length === 2 ? ' two' : ''}">${imgs.map((u, i) => `<a href="${esc(u)}" data-lb="${i}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="" loading="lazy"></a>`).join('')}</div>${imgs.length > 1 ? `<p class="trustnote"><span>이미지 ${imgs.length}장 · 눌러서 크게 보기</span></p>` : ''}`;
+  if ((p.kind === 'image' || p.kind === 'link') && imgs.length) main += `<div class="gallery${imgs.length === 1 ? ' one' : imgs.length === 2 ? ' two' : ''}">${imgs.map((u, i) => `<a href="${esc(u)}" data-lb="${i}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="" loading="lazy"></a>`).join('')}</div>${imgs.length > 1 ? `<p class="trustnote"><span>이미지 ${imgs.length}장 · 눌러서 크게 보기</span></p>` : ''}`;
   if (p.kind === 'html' || p.kind === 'code') {
     const tabs = p.kind === 'html' ? [['run', '실행'], ['code', '코드']] : [['code', '코드']]; if (prev) tabs.push(['diff', `v${prev.n} 대비 변경점`]);
     if (!tabs.some((t) => t[0] === d.tab)) d.tab = tabs[0][0];

@@ -36,7 +36,7 @@ const D = {
   '줄 바꿈': 'Wrap', '내려받기': 'Download', '프롬프트 복사': 'Copy prompt', '프롬프트를 복사했어요': 'Prompt copied', '복사하지 못했어요': 'Could not copy',
   '이미지 크게 보기': 'Image viewer', '이전 이미지': 'Previous image', '다음 이미지': 'Next image', '원본 열기': 'Open original',
   '<!doctype html> … AI가 만들어 준 HTML 파일 전체를 붙여 넣으세요': '<!doctype html> … paste the whole HTML file the AI made',
-  '무엇을 올리나요?': 'What are you posting?', '제목과 본문': 'Title and text', '내용': 'Content', '어디에, 무엇으로': 'Where, and made with what', '실행할 HTML 코드': 'HTML to run', '링크 주소': 'Link URL',
+  '무엇을 올리나요?': 'What are you posting?', '스크린샷 (선택)': 'Screenshots (optional)', '제목과 본문': 'Title and text', '내용': 'Content', '어디에, 무엇으로': 'Where, and made with what', '실행할 HTML 코드': 'HTML to run', '링크 주소': 'Link URL',
   '파일에서 불러오기': 'Load from file', '넓게': 'Wide', '휴대폰': 'Phone', '미리보기 너비': 'Preview width', '서식': 'Formatting', '굵게': 'Bold', '목록': 'List', '인용': 'Quote', '• 목록': '• List', '❝ 인용': '❝ Quote',
   '설명': 'Description', '소개': 'About it', '선택': 'optional', '대표': 'Cover', '대표로': 'Make cover', '올리기 전 확인': 'Before you post', '이렇게 올리면 좋아요': 'Tips for this kind of post',
   '파일이 400KB를 넘어요': 'The file is over 400 KB',
